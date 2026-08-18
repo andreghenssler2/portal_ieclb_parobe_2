@@ -26,7 +26,7 @@ function slugify(string $text): string
 
 function uniqueSlug(PDO $pdo, string $table, string $title, ?int $ignoreId = null): string
 {
-    $allowed = ['posts', 'comunidades', 'categorias'];
+    $allowed = ['posts', 'paginas', 'comunidades', 'categorias'];
     if (!in_array($table, $allowed, true)) {
         throw new InvalidArgumentException('Tabela inválida para slug.');
     }
@@ -59,4 +59,55 @@ function formatDateBr(?string $date): string
         return '';
     }
     return (new DateTime($date))->format('d/m/Y H:i');
+}
+
+function formatBytes(int $bytes): string
+{
+    if ($bytes < 1024) {
+        return $bytes . ' B';
+    }
+
+    $units = ['KB', 'MB', 'GB', 'TB'];
+    $value = $bytes / 1024;
+    foreach ($units as $unit) {
+        if ($value < 1024 || $unit === 'TB') {
+            return number_format($value, $value >= 10 ? 0 : 1, ',', '.') . ' ' . $unit;
+        }
+        $value /= 1024;
+    }
+
+    return $bytes . ' B';
+}
+
+function mediaUrl(?string $path): string
+{
+    if (!$path) {
+        return '';
+    }
+
+    if (preg_match('#^https?://#i', $path)) {
+        return $path;
+    }
+
+    return url(ltrim($path, '/'));
+}
+
+function logAction(PDO $pdo, string $acao, ?string $entidade = null, ?int $entidadeId = null, ?string $detalhes = null): void
+{
+    try {
+        $stmt = $pdo->prepare(
+            'INSERT INTO logs (usuario_id, acao, entidade, entidade_id, detalhes, ip)
+             VALUES (:usuario_id, :acao, :entidade, :entidade_id, :detalhes, :ip)'
+        );
+        $stmt->execute([
+            'usuario_id' => Auth::id(),
+            'acao' => mb_substr($acao, 0, 120),
+            'entidade' => $entidade !== null ? mb_substr($entidade, 0, 100) : null,
+            'entidade_id' => $entidadeId,
+            'detalhes' => $detalhes,
+            'ip' => isset($_SERVER['REMOTE_ADDR']) ? mb_substr((string)$_SERVER['REMOTE_ADDR'], 0, 45) : null,
+        ]);
+    } catch (Throwable $e) {
+        // O log não deve interromper a operação principal.
+    }
 }

@@ -8,5 +8,6 @@ require_once __DIR__ . '/mod/auth/Session.php';
 require_once __DIR__ . '/mod/security/Csrf.php';
 require_once __DIR__ . '/mod/auth/Auth.php';
 require_once __DIR__ . '/app/Helpers/functions.php';
+require_once __DIR__ . '/app/Services/MediaService.php';
 
 Session::start();

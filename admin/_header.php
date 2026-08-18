@@ -27,6 +27,8 @@ $user = Auth::user();
             <div class="list-group list-group-flush pt-3">
                 <a class="list-group-item list-group-item-action" href="<?= e(url('admin/index.php')) ?>">Dashboard</a>
                 <a class="list-group-item list-group-item-action" href="<?= e(url('admin/noticias/index.php')) ?>">Notícias</a>
+                <a class="list-group-item list-group-item-action" href="<?= e(url('admin/paginas/index.php')) ?>">Páginas</a>
+                <a class="list-group-item list-group-item-action" href="<?= e(url('admin/midias/index.php')) ?>">Mídia</a>
                 <a class="list-group-item list-group-item-action" href="<?= e(url('admin/comunidades/index.php')) ?>">Comunidades</a>
                 <a class="list-group-item list-group-item-action" href="<?= e(url()) ?>" target="_blank">Ver portal</a>
             </div>

@@ -1,3 +1,19 @@
+<?php
+$menuPaginas = [];
+try {
+    $menuPdo = $pdo ?? Database::connection();
+    $menuPaginas = $menuPdo->query(
+        "SELECT titulo, slug
+         FROM paginas
+         WHERE status = 'publicado'
+           AND exibir_menu = 1
+           AND (publicado_em IS NULL OR publicado_em <= NOW())
+         ORDER BY ordem ASC, titulo ASC"
+    )->fetchAll();
+} catch (Throwable $e) {
+    // Mantém o portal acessível mesmo antes da migração da v0.3.0 ser executada.
+}
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -17,6 +33,9 @@
             <ul class="navbar-nav ms-auto gap-lg-2">
                 <li class="nav-item"><a class="nav-link" href="<?= e(url()) ?>">Início</a></li>
                 <li class="nav-item"><a class="nav-link" href="<?= e(url('comunidades.php')) ?>">Comunidades</a></li>
+                <?php foreach ($menuPaginas as $menuPagina): ?>
+                    <li class="nav-item"><a class="nav-link" href="<?= e(url('pagina.php?slug=' . urlencode($menuPagina['slug']))) ?>"><?= e($menuPagina['titulo']) ?></a></li>
+                <?php endforeach; ?>
                 <li class="nav-item"><a class="nav-link" href="<?= e(url('admin/login.php')) ?>">Área administrativa</a></li>
             </ul>
         </div>

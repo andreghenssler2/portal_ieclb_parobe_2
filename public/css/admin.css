@@ -2,3 +2,7 @@ body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sa
 aside .list-group-item { border: 0; padding: .8rem 1.25rem; }
 aside .list-group-item:hover { background: #f4f6f8; }
 .card { border-radius: .85rem; }
+.media-thumb { height: 190px; object-fit: cover; background: #eef1f4; }
+.media-file-placeholder { min-height: 190px; display: flex; align-items: center; justify-content: center; background: #eef1f4; color: #495057; font-size: 2rem; }
+.media-preview { max-height: 420px; object-fit: contain; }
+.featured-preview { max-width: 320px; max-height: 180px; object-fit: cover; }
