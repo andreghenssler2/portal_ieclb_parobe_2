@@ -1,0 +1,17 @@
+<?php
+require_once __DIR__ . '/../../bootstrap.php';
+Auth::requireLogin();
+$pdo = Database::connection();
+$posts = $pdo->query("SELECT p.*, c.nome AS comunidade_nome, cat.nome AS categoria_nome FROM posts p LEFT JOIN comunidades c ON c.id=p.comunidade_id LEFT JOIN categorias cat ON cat.id=p.categoria_id ORDER BY p.id DESC")->fetchAll();
+$pageTitle = 'Notícias';
+require __DIR__ . '/../_header.php';
+?>
+<div class="d-flex justify-content-between align-items-center mb-4"><div><h1 class="h3 mb-1">Notícias</h1><p class="text-secondary mb-0">Conteúdo publicado no portal.</p></div><a class="btn btn-primary" href="<?= e(url('admin/noticias/form.php')) ?>">Nova notícia</a></div>
+<div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle">
+<thead><tr><th>Título</th><th>Comunidade</th><th>Categoria</th><th>Status</th><th>Publicação</th><th></th></tr></thead><tbody>
+<?php if (!$posts): ?><tr><td colspan="6" class="text-secondary">Nenhuma notícia cadastrada.</td></tr><?php endif; ?>
+<?php foreach ($posts as $post): ?><tr>
+<td class="fw-semibold"><?= e($post['titulo']) ?></td><td><?= e($post['comunidade_nome'] ?: 'Paroquial') ?></td><td><?= e($post['categoria_nome'] ?: '-') ?></td><td><span class="badge text-bg-secondary"><?= e($post['status']) ?></span></td><td><?= e(formatDateBr($post['publicado_em'])) ?></td><td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('admin/noticias/form.php?id='.(int)$post['id'])) ?>">Editar</a></td>
+</tr><?php endforeach; ?>
+</tbody></table></div></div>
+<?php require __DIR__ . '/../_footer.php'; ?>

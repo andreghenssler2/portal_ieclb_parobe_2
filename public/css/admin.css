@@ -1,0 +1,4 @@
+body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+aside .list-group-item { border: 0; padding: .8rem 1.25rem; }
+aside .list-group-item:hover { background: #f4f6f8; }
+.card { border-radius: .85rem; }
