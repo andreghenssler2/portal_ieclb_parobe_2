@@ -12,7 +12,7 @@ require __DIR__ . '/../_header.php';
 <thead><tr><th>Título</th><th>Comunidade</th><th>Categoria</th><th>Status</th><th>Publicação</th><th></th></tr></thead><tbody>
 <?php if (!$posts): ?><tr><td colspan="6" class="text-secondary">Nenhuma notícia cadastrada.</td></tr><?php endif; ?>
 <?php foreach ($posts as $post): ?><tr>
-<td class="fw-semibold"><?= e($post['titulo']) ?></td><td><?= e($post['comunidade_nome'] ?: 'Paroquial') ?></td><td><?= e($post['categoria_nome'] ?: '-') ?></td><td><span class="badge text-bg-secondary"><?= e($post['status']) ?></span></td><td><?= e(formatDateBr($post['publicado_em'])) ?></td><td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('admin/noticias/form.php?id='.(int)$post['id'])) ?>">Editar</a></td>
+<td class="fw-semibold"><?= e($post['titulo']) ?></td><td><?= e($post['comunidade_nome'] ?: 'Paroquial') ?></td><td><?= e($post['categoria_nome'] ?: '-') ?></td><td><span class="badge text-bg-secondary"><?= e($post['status']) ?></span></td><td><?= e(formatDateBr($post['publicado_em'])) ?></td><td class="text-end"><div class="d-flex gap-1 justify-content-end"><?php if (!empty($post['slug'])): ?><a class="btn btn-sm btn-outline-primary" target="_blank" href="<?= e(contentUrl('noticia', (string)$post['slug'])) ?>">Ver</a><?php endif; ?><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('admin/noticias/form.php?id='.(int)$post['id'])) ?>">Editar</a></div></td>
 </tr><?php endforeach; ?>
 </tbody></table></div></div>
 <?php require __DIR__ . '/../_footer.php'; ?>

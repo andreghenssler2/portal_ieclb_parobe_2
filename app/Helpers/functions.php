@@ -12,6 +12,63 @@ function url(string $path = ''): string
     return rtrim(BASE_URL, '/') . '/' . ltrim($path, '/');
 }
 
+
+
+/**
+ * Gera a URL pública amigável de um conteúdo usando a slug salva no banco.
+ * Ex.: /noticia/minha-noticia, /pagina/quem-somos, /evento/culto-especial.
+ */
+function contentUrl(string $type, string $slug): string
+{
+    $allowed = ['noticia', 'pagina', 'evento'];
+    if (!in_array($type, $allowed, true)) {
+        throw new InvalidArgumentException('Tipo de conteúdo inválido.');
+    }
+
+    $slug = trim($slug);
+    if ($slug === '' || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug)) {
+        throw new InvalidArgumentException('Slug inválida.');
+    }
+
+    return url($type . '/' . rawurlencode($slug));
+}
+
+/**
+ * Obtém a slug diretamente do caminho da URL atual, sem usar $_GET.
+ * Funciona também quando o portal está instalado em uma subpasta.
+ */
+function routeSlug(string $type): string
+{
+    $allowed = ['noticia', 'pagina', 'evento'];
+    if (!in_array($type, $allowed, true)) {
+        return '';
+    }
+
+    $requestPath = (string)(parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? '');
+    $basePath = (string)(parse_url(BASE_URL, PHP_URL_PATH) ?? '');
+
+    $basePath = '/' . trim($basePath, '/');
+    if ($basePath !== '/') {
+        if ($requestPath === $basePath) {
+            $requestPath = '/';
+        } elseif (str_starts_with($requestPath, $basePath . '/')) {
+            $requestPath = substr($requestPath, strlen($basePath));
+        }
+    }
+
+    $segments = array_values(array_filter(explode('/', trim($requestPath, '/')), static fn($segment) => $segment !== ''));
+    if (count($segments) !== 2 || strtolower($segments[0]) !== $type) {
+        return '';
+    }
+
+    $slug = strtolower(rawurldecode($segments[1]));
+    if (!preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug)) {
+        return '';
+    }
+
+    return $slug;
+}
+
 function slugify(string $text): string
 {
     $text = trim($text);

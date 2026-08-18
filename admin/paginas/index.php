@@ -53,7 +53,7 @@ require __DIR__ . '/../_header.php';
                     <td><?= e(formatDateBr($pagina['publicado_em'])) ?></td>
                     <td class="text-end text-nowrap">
                         <?php if ($pagina['status'] === 'publicado'): ?>
-                            <a class="btn btn-sm btn-outline-primary" target="_blank" href="<?= e(url('pagina.php?slug=' . urlencode($pagina['slug']))) ?>">Ver</a>
+                            <a class="btn btn-sm btn-outline-primary" target="_blank" href="<?= e(contentUrl('pagina', (string)$pagina['slug'])) ?>">Ver</a>
                         <?php endif; ?>
                         <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('admin/paginas/form.php?id=' . (int)$pagina['id'])) ?>">Editar</a>
                     </td>

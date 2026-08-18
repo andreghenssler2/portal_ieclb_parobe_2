@@ -35,7 +35,7 @@ try {
                 <li class="nav-item"><a class="nav-link" href="<?= e(url('agenda.php')) ?>">Agenda</a></li>
                 <li class="nav-item"><a class="nav-link" href="<?= e(url('comunidades.php')) ?>">Comunidades</a></li>
                 <?php foreach ($menuPaginas as $menuPagina): ?>
-                    <li class="nav-item"><a class="nav-link" href="<?= e(url('pagina.php?slug=' . urlencode($menuPagina['slug']))) ?>"><?= e($menuPagina['titulo']) ?></a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= e(contentUrl('pagina', (string)$menuPagina['slug'])) ?>"><?= e($menuPagina['titulo']) ?></a></li>
                 <?php endforeach; ?>
                 <li class="nav-item"><a class="nav-link" href="<?= e(url('admin/login.php')) ?>">Área administrativa</a></li>
             </ul>

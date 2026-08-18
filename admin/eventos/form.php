@@ -168,7 +168,7 @@ require __DIR__ . '/../_header.php';
         <p class="text-secondary mb-0">Cadastre cultos e eventos da paróquia ou de uma comunidade.</p>
     </div>
     <?php if ($id && $evento['status'] === 'publicado'): ?>
-        <a class="btn btn-outline-primary" target="_blank" href="<?= e(url('evento.php?slug=' . urlencode((string)$evento['slug']))) ?>">Visualizar</a>
+        <a class="btn btn-outline-primary" target="_blank" href="<?= e(contentUrl('evento', (string)$evento['slug'])) ?>">Visualizar</a>
     <?php endif; ?>
 </div>
 

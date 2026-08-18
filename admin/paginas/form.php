@@ -153,7 +153,7 @@ require __DIR__ . '/../_header.php';
         <p class="text-secondary mb-0">Crie páginas institucionais com URL própria.</p>
     </div>
     <?php if ($id && $pagina['status'] === 'publicado'): ?>
-        <a class="btn btn-outline-primary" target="_blank" href="<?= e(url('pagina.php?slug=' . urlencode((string)$pagina['slug']))) ?>">Visualizar</a>
+        <a class="btn btn-outline-primary" target="_blank" href="<?= e(contentUrl('pagina', (string)$pagina['slug'])) ?>">Visualizar</a>
     <?php endif; ?>
 </div>
 

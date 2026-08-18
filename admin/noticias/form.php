@@ -106,7 +106,7 @@ require __DIR__ . '/../_header.php';
 <div class="col-md-4"><label class="form-label">Publicar em</label><input type="datetime-local" class="form-control" name="publicado_em" value="<?= $post['publicado_em'] ? e((new DateTime((string)$post['publicado_em']))->format('Y-m-d\TH:i')) : '' ?>"></div>
 <div class="col-md-4 d-flex align-items-end"><div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="destaque" id="destaque" <?= $post['destaque']?'checked':'' ?>><label class="form-check-label" for="destaque">Destacar na página inicial</label></div></div>
 </div>
-<div class="mt-4 d-flex gap-2"><button class="btn btn-primary">Salvar</button><a class="btn btn-outline-secondary" href="<?= e(url('admin/noticias/index.php')) ?>">Cancelar</a></div>
+<div class="mt-4 d-flex gap-2"><button class="btn btn-primary">Salvar</button><a class="btn btn-outline-secondary" href="<?= e(url('admin/noticias/index.php')) ?>">Cancelar</a><?php if ($id && !empty($post['slug'])): ?><a class="btn btn-outline-primary" target="_blank" href="<?= e(contentUrl('noticia', (string)$post['slug'])) ?>">Visualizar</a><?php endif; ?></div>
 </div></form>
 <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
 <script>

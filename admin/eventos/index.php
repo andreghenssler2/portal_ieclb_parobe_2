@@ -97,7 +97,7 @@ require __DIR__ . '/../_header.php';
                     <td><span class="badge text-bg-secondary"><?= e($evento['status']) ?></span></td>
                     <td class="text-end text-nowrap">
                         <?php if ($evento['status'] === 'publicado'): ?>
-                            <a class="btn btn-sm btn-outline-primary" target="_blank" href="<?= e(url('evento.php?slug=' . urlencode($evento['slug']))) ?>">Ver</a>
+                            <a class="btn btn-sm btn-outline-primary" target="_blank" href="<?= e(contentUrl('evento', (string)$evento['slug'])) ?>">Ver</a>
                         <?php endif; ?>
                         <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('admin/eventos/form.php?id=' . (int)$evento['id'])) ?>">Editar</a>
                     </td>
