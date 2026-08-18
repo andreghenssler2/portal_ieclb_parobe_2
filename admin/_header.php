@@ -15,8 +15,10 @@ $user = Auth::user();
 <nav class="navbar navbar-dark bg-dark sticky-top">
     <div class="container-fluid">
         <a class="navbar-brand fw-semibold" href="<?= e(url('admin/index.php')) ?>">IECLB Parobé</a>
-        <div class="d-flex align-items-center gap-3 text-white small">
-            <span><?= e($user['nome'] ?? '') ?> · <?= e($user['perfil_nome'] ?? '') ?></span>
+        <div class="d-flex align-items-center gap-2 text-white small">
+            <a class="text-white text-decoration-none" href="<?= e(url('admin/minha-conta.php')) ?>" title="Minha conta">
+                <?= e($user['nome'] ?? '') ?> · <?= e($user['perfil_nome'] ?? '') ?>
+            </a>
             <a class="btn btn-outline-light btn-sm" href="<?= e(url('admin/logout.php')) ?>">Sair</a>
         </div>
     </div>
@@ -26,12 +28,32 @@ $user = Auth::user();
         <aside class="col-md-3 col-lg-2 p-0 bg-white border-end min-vh-100">
             <div class="list-group list-group-flush pt-3">
                 <a class="list-group-item list-group-item-action" href="<?= e(url('admin/index.php')) ?>">Dashboard</a>
-                <a class="list-group-item list-group-item-action" href="<?= e(url('admin/noticias/index.php')) ?>">Notícias</a>
-                <a class="list-group-item list-group-item-action" href="<?= e(url('admin/paginas/index.php')) ?>">Páginas</a>
-                <a class="list-group-item list-group-item-action" href="<?= e(url('admin/eventos/index.php')) ?>">Eventos e Cultos</a>
-                <a class="list-group-item list-group-item-action" href="<?= e(url('admin/midias/index.php')) ?>">Mídia</a>
-                <a class="list-group-item list-group-item-action" href="<?= e(url('admin/comunidades/index.php')) ?>">Comunidades</a>
+                <?php if (Auth::can('noticias.gerenciar')): ?>
+                    <a class="list-group-item list-group-item-action" href="<?= e(url('admin/noticias/index.php')) ?>">Notícias</a>
+                <?php endif; ?>
+                <?php if (Auth::can('paginas.gerenciar')): ?>
+                    <a class="list-group-item list-group-item-action" href="<?= e(url('admin/paginas/index.php')) ?>">Páginas</a>
+                <?php endif; ?>
+                <?php if (Auth::can('eventos.gerenciar')): ?>
+                    <a class="list-group-item list-group-item-action" href="<?= e(url('admin/eventos/index.php')) ?>">Eventos e Cultos</a>
+                <?php endif; ?>
+                <?php if (Auth::can('midias.gerenciar')): ?>
+                    <a class="list-group-item list-group-item-action" href="<?= e(url('admin/midias/index.php')) ?>">Mídia</a>
+                <?php endif; ?>
+                <?php if (Auth::can('comunidades.gerenciar')): ?>
+                    <a class="list-group-item list-group-item-action" href="<?= e(url('admin/comunidades/index.php')) ?>">Comunidades</a>
+                <?php endif; ?>
+                <?php if (Auth::can('usuarios.gerenciar')): ?>
+                    <a class="list-group-item list-group-item-action" href="<?= e(url('admin/usuarios/index.php')) ?>">Usuários</a>
+                <?php endif; ?>
+                <?php if (Auth::can('permissoes.gerenciar')): ?>
+                    <a class="list-group-item list-group-item-action" href="<?= e(url('admin/perfis/index.php')) ?>">Perfis e Permissões</a>
+                <?php endif; ?>
+                <a class="list-group-item list-group-item-action" href="<?= e(url('admin/minha-conta.php')) ?>">Minha conta</a>
                 <a class="list-group-item list-group-item-action" href="<?= e(url()) ?>" target="_blank">Ver portal</a>
+            </div>
+            <div class="px-3 py-3 small text-secondary border-top mt-3">
+                Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.5.0') ?>
             </div>
         </aside>
         <main class="col-md-9 col-lg-10 p-4">

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 Auth::requireLogin();
+Auth::requirePermission('midias.gerenciar');
 $pdo = Database::connection();
 $error = '';
 

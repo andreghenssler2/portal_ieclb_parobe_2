@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 Auth::requireLogin();
+Auth::requirePermission('paginas.gerenciar');
 $pdo = Database::connection();
 
 $paginas = $pdo->query(

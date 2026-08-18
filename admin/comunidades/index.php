@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 Auth::requireLogin();
+Auth::requirePermission('comunidades.gerenciar');
 $pdo = Database::connection();
 $comunidades = $pdo->query('SELECT * FROM comunidades ORDER BY ordem, nome')->fetchAll();
 $pageTitle = 'Comunidades';

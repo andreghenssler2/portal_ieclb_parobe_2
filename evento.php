@@ -2,7 +2,7 @@
 require_once __DIR__ . '/bootstrap.php';
 $pdo = Database::connection();
 
-$slug = trim((string)($_GET['slug'] ?? ''));
+$slug = trim((string) ($_GET['slug'] ?? ''));
 $stmt = $pdo->prepare(
     "SELECT e.*, c.nome AS comunidade_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt
      FROM eventos e
@@ -25,21 +25,25 @@ if (!$evento) {
 }
 
 $metaTitle = $evento['titulo'] . ' - IECLB Parobé';
-$metaDescription = $evento['resumo'] ?: trim(strip_tags(mb_substr((string)($evento['descricao'] ?? ''), 0, 160)));
+$metaDescription = $evento['resumo'] ?: trim(strip_tags(mb_substr((string) ($evento['descricao'] ?? ''), 0, 160)));
 require __DIR__ . '/theme/ieclb/header.php';
 ?>
 <article class="container py-5 content-reading">
     <header class="mb-4">
         <div class="d-flex flex-wrap gap-2 mb-3">
-            <span class="badge <?= $evento['tipo'] === 'culto' ? 'text-bg-primary' : 'text-bg-info' ?>"><?= e(eventTypeLabel($evento['tipo'])) ?></span>
-            <?php if ((int)$evento['santa_ceia'] === 1): ?><span class="badge text-bg-light border">Com Santa Ceia</span><?php endif; ?>
+            <span
+                class="badge <?= $evento['tipo'] === 'culto' ? 'text-bg-primary' : 'text-bg-info' ?>"><?= e(eventTypeLabel($evento['tipo'])) ?></span>
+            <?php if ((int) $evento['santa_ceia'] === 1): ?><span class="badge text-bg-light border">Com Santa
+                    Ceia</span><?php endif; ?>
         </div>
         <h1 class="display-5 fw-bold mb-3"><?= e($evento['titulo']) ?></h1>
-        <?php if ($evento['resumo']): ?><p class="lead text-secondary"><?= e($evento['resumo']) ?></p><?php endif; ?>
+        <?php if ($evento['resumo']): ?>
+            <p class="lead text-secondary"><?= e($evento['resumo']) ?></p><?php endif; ?>
     </header>
 
     <?php if ($evento['imagem_capa_midia']): ?>
-        <img class="article-cover mb-4" src="<?= e(mediaUrl($evento['imagem_capa_midia'])) ?>" alt="<?= e($evento['imagem_capa_alt'] ?: $evento['titulo']) ?>">
+        <img class="article-cover mb-4" src="<?= e(mediaUrl($evento['imagem_capa_midia'])) ?>"
+            alt="<?= e($evento['imagem_capa_alt'] ?: $evento['titulo']) ?>">
     <?php endif; ?>
 
     <div class="card border-0 shadow-sm mb-4">
@@ -47,8 +51,11 @@ require __DIR__ . '/theme/ieclb/header.php';
             <div class="row g-3">
                 <div class="col-sm-6">
                     <div class="small text-secondary">Data e horário</div>
-                    <div class="fw-semibold"><?= e(formatDateOnlyBr($evento['data_inicio'])) ?> às <?= e(formatTimeBr($evento['data_inicio'])) ?></div>
-                    <?php if ($evento['data_fim']): ?><div class="small text-secondary">Término: <?= e(formatDateBr($evento['data_fim'])) ?></div><?php endif; ?>
+                    <div class="fw-semibold"><?= e(formatDateOnlyBr($evento['data_inicio'])) ?> às
+                        <?= e(formatTimeBr($evento['data_inicio'])) ?></div>
+                    <?php if ($evento['data_fim']): ?>
+                        <div class="small text-secondary">Término: <?= e(formatDateBr($evento['data_fim'])) ?></div>
+                    <?php endif; ?>
                 </div>
                 <div class="col-sm-6">
                     <div class="small text-secondary">Comunidade</div>
@@ -70,8 +77,10 @@ require __DIR__ . '/theme/ieclb/header.php';
         </div>
     </div>
 
-    <?php if ($evento['descricao']): ?><div class="article-body"><?= $evento['descricao'] ?></div><?php endif; ?>
+    <?php if ($evento['descricao']): ?>
+        <div class="article-body"><?= $evento['descricao'] ?></div><?php endif; ?>
 
-    <div class="mt-4"><a class="btn btn-outline-primary" href="<?= e(url('agenda.php')) ?>">Voltar para a agenda</a></div>
+    <div class="mt-4"><a class="btn btn-outline-primary" href="<?= e(url('agenda.php')) ?>">Voltar para a agenda</a>
+    </div>
 </article>
 <?php require __DIR__ . '/theme/ieclb/footer.php'; ?>

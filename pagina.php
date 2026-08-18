@@ -2,7 +2,7 @@
 require_once __DIR__ . '/bootstrap.php';
 $pdo = Database::connection();
 
-$slug = trim((string)($_GET['slug'] ?? ''));
+$slug = trim((string) ($_GET['slug'] ?? ''));
 $stmt = $pdo->prepare(
     "SELECT p.*, u.nome AS autor_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt
      FROM paginas p
@@ -26,7 +26,7 @@ if (!$pagina) {
 }
 
 $metaTitle = $pagina['titulo'] . ' - IECLB Parobé';
-$metaDescription = $pagina['resumo'] ?: trim(strip_tags(mb_substr((string)$pagina['conteudo'], 0, 160)));
+$metaDescription = $pagina['resumo'] ?: trim(strip_tags(mb_substr((string) $pagina['conteudo'], 0, 160)));
 require __DIR__ . '/theme/ieclb/header.php';
 
 $cover = $pagina['imagem_capa_midia'] ?? null;
@@ -34,11 +34,13 @@ $cover = $pagina['imagem_capa_midia'] ?? null;
 <article class="container py-5 content-reading">
     <header class="mb-4">
         <h1 class="display-5 fw-bold mb-3"><?= e($pagina['titulo']) ?></h1>
-        <?php if ($pagina['resumo']): ?><p class="lead text-secondary"><?= e($pagina['resumo']) ?></p><?php endif; ?>
+        <?php if ($pagina['resumo']): ?>
+            <p class="lead text-secondary"><?= e($pagina['resumo']) ?></p><?php endif; ?>
     </header>
 
     <?php if ($cover): ?>
-        <img class="article-cover mb-4" src="<?= e(mediaUrl($cover)) ?>" alt="<?= e($pagina['imagem_capa_alt'] ?: $pagina['titulo']) ?>">
+        <img class="article-cover mb-4" src="<?= e(mediaUrl($cover)) ?>"
+            alt="<?= e($pagina['imagem_capa_alt'] ?: $pagina['titulo']) ?>">
     <?php endif; ?>
 
     <div class="article-body"><?= $pagina['conteudo'] ?></div>

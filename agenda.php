@@ -2,8 +2,8 @@
 require_once __DIR__ . '/bootstrap.php';
 $pdo = Database::connection();
 
-$tipo = trim((string)($_GET['tipo'] ?? ''));
-$comunidadeId = isset($_GET['comunidade']) && $_GET['comunidade'] !== '' ? (int)$_GET['comunidade'] : null;
+$tipo = trim((string) ($_GET['tipo'] ?? ''));
+$comunidadeId = isset($_GET['comunidade']) && $_GET['comunidade'] !== '' ? (int) $_GET['comunidade'] : null;
 
 $where = ["e.status = 'publicado'", 'e.data_inicio >= NOW()'];
 $params = [];
@@ -53,7 +53,7 @@ require __DIR__ . '/theme/ieclb/header.php';
                     <select class="form-select" name="comunidade">
                         <option value="">Todas as comunidades</option>
                         <?php foreach ($comunidades as $comunidade): ?>
-                            <option value="<?= (int)$comunidade['id'] ?>" <?= $comunidadeId === (int)$comunidade['id'] ? 'selected' : '' ?>><?= e($comunidade['nome']) ?></option>
+                            <option value="<?= (int) $comunidade['id'] ?>" <?= $comunidadeId === (int) $comunidade['id'] ? 'selected' : '' ?>><?= e($comunidade['nome']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -67,24 +67,34 @@ require __DIR__ . '/theme/ieclb/header.php';
 
     <div class="row g-4">
         <?php if (!$eventos): ?>
-            <div class="col-12"><div class="alert alert-light border">Nenhum culto ou evento futuro encontrado com esses filtros.</div></div>
+            <div class="col-12">
+                <div class="alert alert-light border">Nenhum culto ou evento futuro encontrado com esses filtros.</div>
+            </div>
         <?php endif; ?>
         <?php foreach ($eventos as $evento): ?>
             <div class="col-md-6 col-xl-4">
                 <article class="card agenda-card h-100 border-0 shadow-sm overflow-hidden">
                     <?php if ($evento['imagem_capa_midia']): ?>
-                        <img src="<?= e(mediaUrl($evento['imagem_capa_midia'])) ?>" class="agenda-card-image" alt="<?= e($evento['imagem_capa_alt'] ?: $evento['titulo']) ?>">
+                        <img src="<?= e(mediaUrl($evento['imagem_capa_midia'])) ?>" class="agenda-card-image"
+                            alt="<?= e($evento['imagem_capa_alt'] ?: $evento['titulo']) ?>">
                     <?php endif; ?>
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center gap-2 mb-3">
-                            <span class="badge <?= $evento['tipo'] === 'culto' ? 'text-bg-primary' : 'text-bg-info' ?>"><?= e(eventTypeLabel($evento['tipo'])) ?></span>
-                            <?php if ((int)$evento['santa_ceia'] === 1): ?><span class="badge text-bg-light border">Santa Ceia</span><?php endif; ?>
+                            <span
+                                class="badge <?= $evento['tipo'] === 'culto' ? 'text-bg-primary' : 'text-bg-info' ?>"><?= e(eventTypeLabel($evento['tipo'])) ?></span>
+                            <?php if ((int) $evento['santa_ceia'] === 1): ?><span class="badge text-bg-light border">Santa
+                                    Ceia</span><?php endif; ?>
                         </div>
-                        <div class="agenda-date mb-2"><?= e(formatDateOnlyBr($evento['data_inicio'])) ?> às <?= e(formatTimeBr($evento['data_inicio'])) ?></div>
-                        <h2 class="h5"><a class="stretched-link text-decoration-none text-dark" href="<?= e(url('evento.php?slug=' . urlencode($evento['slug']))) ?>"><?= e($evento['titulo']) ?></a></h2>
+                        <div class="agenda-date mb-2"><?= e(formatDateOnlyBr($evento['data_inicio'])) ?> às
+                            <?= e(formatTimeBr($evento['data_inicio'])) ?></div>
+                        <h2 class="h5"><a class="stretched-link text-decoration-none text-dark"
+                                href="<?= e(url('evento.php?slug=' . urlencode($evento['slug']))) ?>"><?= e($evento['titulo']) ?></a>
+                        </h2>
                         <div class="small text-secondary mb-2"><?= e($evento['comunidade_nome'] ?: 'Paroquial') ?></div>
-                        <?php if ($evento['local']): ?><div class="small text-secondary"><?= e($evento['local']) ?></div><?php endif; ?>
-                        <?php if ($evento['resumo']): ?><p class="text-secondary mt-3 mb-0"><?= e($evento['resumo']) ?></p><?php endif; ?>
+                        <?php if ($evento['local']): ?>
+                            <div class="small text-secondary"><?= e($evento['local']) ?></div><?php endif; ?>
+                        <?php if ($evento['resumo']): ?>
+                            <p class="text-secondary mt-3 mb-0"><?= e($evento['resumo']) ?></p><?php endif; ?>
                     </div>
                 </article>
             </div>

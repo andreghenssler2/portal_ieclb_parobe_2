@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 Auth::requireLogin();
+Auth::requirePermission('eventos.gerenciar');
 $pdo = Database::connection();
 
 $tipo = trim((string)($_GET['tipo'] ?? ''));

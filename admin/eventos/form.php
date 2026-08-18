@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 Auth::requireLogin();
+Auth::requirePermission('eventos.gerenciar');
 $pdo = Database::connection();
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;

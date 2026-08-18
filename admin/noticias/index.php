@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 Auth::requireLogin();
+Auth::requirePermission('noticias.gerenciar');
 $pdo = Database::connection();
 $posts = $pdo->query("SELECT p.*, c.nome AS comunidade_nome, cat.nome AS categoria_nome FROM posts p LEFT JOIN comunidades c ON c.id=p.comunidade_id LEFT JOIN categorias cat ON cat.id=p.categoria_id ORDER BY p.id DESC")->fetchAll();
 $pageTitle = 'Notícias';

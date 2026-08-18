@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 Auth::requireLogin();
+Auth::requirePermission('midias.gerenciar');
 $pdo = Database::connection();
 $id = (int)($_GET['id'] ?? 0);
 $media = MediaService::find($pdo, $id);

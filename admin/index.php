@@ -3,24 +3,38 @@ require_once __DIR__ . '/../bootstrap.php';
 Auth::requireLogin();
 $pdo = Database::connection();
 
-$stats = [
-    'noticias' => (int)$pdo->query("SELECT COUNT(*) FROM posts WHERE status = 'publicado'")->fetchColumn(),
-    'rascunhos' => (int)$pdo->query("SELECT COUNT(*) FROM posts WHERE status = 'rascunho'")->fetchColumn(),
-    'paginas' => (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status = 'publicado'")->fetchColumn(),
-    'agenda' => (int)$pdo->query("SELECT COUNT(*) FROM eventos WHERE status = 'publicado' AND data_inicio >= NOW()")->fetchColumn(),
-    'comunidades' => (int)$pdo->query("SELECT COUNT(*) FROM comunidades WHERE ativa = 1")->fetchColumn(),
-    'midias' => (int)$pdo->query("SELECT COUNT(*) FROM midias")->fetchColumn(),
-];
+$cards = [];
+$ultimasNoticias = [];
+$proximosEventos = [];
 
-$ultimasNoticias = $pdo->query("SELECT id, titulo, status, publicado_em, created_at FROM posts ORDER BY id DESC LIMIT 5")->fetchAll();
-$proximosEventos = $pdo->query(
-    "SELECT e.id, e.tipo, e.titulo, e.data_inicio, e.santa_ceia, c.nome AS comunidade_nome
-     FROM eventos e
-     LEFT JOIN comunidades c ON c.id = e.comunidade_id
-     WHERE e.status = 'publicado' AND e.data_inicio >= NOW()
-     ORDER BY e.data_inicio ASC
-     LIMIT 6"
-)->fetchAll();
+if (Auth::can('noticias.gerenciar')) {
+    $cards[] = ['Notícias publicadas', (int)$pdo->query("SELECT COUNT(*) FROM posts WHERE status = 'publicado'")->fetchColumn()];
+    $cards[] = ['Rascunhos', (int)$pdo->query("SELECT COUNT(*) FROM posts WHERE status = 'rascunho'")->fetchColumn()];
+    $ultimasNoticias = $pdo->query("SELECT id, titulo, status, publicado_em, created_at FROM posts ORDER BY id DESC LIMIT 5")->fetchAll();
+}
+if (Auth::can('paginas.gerenciar')) {
+    $cards[] = ['Páginas', (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status = 'publicado'")->fetchColumn()];
+}
+if (Auth::can('eventos.gerenciar')) {
+    $cards[] = ['Próximos na agenda', (int)$pdo->query("SELECT COUNT(*) FROM eventos WHERE status = 'publicado' AND data_inicio >= NOW()")->fetchColumn()];
+    $proximosEventos = $pdo->query(
+        "SELECT e.id, e.tipo, e.titulo, e.data_inicio, e.santa_ceia, c.nome AS comunidade_nome
+         FROM eventos e
+         LEFT JOIN comunidades c ON c.id = e.comunidade_id
+         WHERE e.status = 'publicado' AND e.data_inicio >= NOW()
+         ORDER BY e.data_inicio ASC
+         LIMIT 6"
+    )->fetchAll();
+}
+if (Auth::can('comunidades.gerenciar')) {
+    $cards[] = ['Comunidades', (int)$pdo->query("SELECT COUNT(*) FROM comunidades WHERE ativa = 1")->fetchColumn()];
+}
+if (Auth::can('midias.gerenciar')) {
+    $cards[] = ['Mídias', (int)$pdo->query("SELECT COUNT(*) FROM midias")->fetchColumn()];
+}
+if (Auth::can('usuarios.gerenciar')) {
+    $cards[] = ['Usuários ativos', (int)$pdo->query("SELECT COUNT(*) FROM usuarios WHERE ativo = 1")->fetchColumn()];
+}
 
 $pageTitle = 'Dashboard';
 require __DIR__ . '/_header.php';
@@ -28,24 +42,18 @@ require __DIR__ . '/_header.php';
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
     <div>
         <h1 class="h3 mb-1">Dashboard</h1>
-        <p class="text-secondary mb-0">Visão geral do portal.</p>
+        <p class="text-secondary mb-0">Bem-vindo, <?= e(Auth::user()['nome'] ?? '') ?>.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-outline-primary" href="<?= e(url('admin/eventos/form.php')) ?>">Novo evento/culto</a>
-        <a class="btn btn-outline-primary" href="<?= e(url('admin/paginas/form.php')) ?>">Nova página</a>
-        <a class="btn btn-primary" href="<?= e(url('admin/noticias/form.php')) ?>">Nova notícia</a>
+        <?php if (Auth::can('eventos.gerenciar')): ?><a class="btn btn-outline-primary" href="<?= e(url('admin/eventos/form.php')) ?>">Novo evento/culto</a><?php endif; ?>
+        <?php if (Auth::can('paginas.gerenciar')): ?><a class="btn btn-outline-primary" href="<?= e(url('admin/paginas/form.php')) ?>">Nova página</a><?php endif; ?>
+        <?php if (Auth::can('noticias.gerenciar')): ?><a class="btn btn-primary" href="<?= e(url('admin/noticias/form.php')) ?>">Nova notícia</a><?php endif; ?>
     </div>
 </div>
 
+<?php if ($cards): ?>
 <div class="row g-3 mb-4">
-    <?php foreach ([
-        ['Notícias publicadas', $stats['noticias']],
-        ['Rascunhos', $stats['rascunhos']],
-        ['Páginas', $stats['paginas']],
-        ['Próximos na agenda', $stats['agenda']],
-        ['Comunidades', $stats['comunidades']],
-        ['Mídias', $stats['midias']],
-    ] as [$label, $value]): ?>
+    <?php foreach ($cards as [$label, $value]): ?>
         <div class="col-sm-6 col-lg-4 col-xl-2">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
@@ -56,8 +64,12 @@ require __DIR__ . '/_header.php';
         </div>
     <?php endforeach; ?>
 </div>
+<?php else: ?>
+    <div class="alert alert-light border mb-4">Seu perfil ainda não possui módulos administrativos liberados. Você pode acessar sua conta ou visualizar o portal público.</div>
+<?php endif; ?>
 
 <div class="row g-4">
+    <?php if (Auth::can('noticias.gerenciar')): ?>
     <div class="col-xl-7">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white fw-semibold">Últimas notícias</div>
@@ -79,6 +91,9 @@ require __DIR__ . '/_header.php';
             </div>
         </div>
     </div>
+    <?php endif; ?>
+
+    <?php if (Auth::can('eventos.gerenciar')): ?>
     <div class="col-xl-5">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -104,5 +119,6 @@ require __DIR__ . '/_header.php';
             </div>
         </div>
     </div>
+    <?php endif; ?>
 </div>
 <?php require __DIR__ . '/_footer.php'; ?>

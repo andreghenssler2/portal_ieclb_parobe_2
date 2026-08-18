@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 Auth::requireLogin();
+Auth::requirePermission('noticias.gerenciar');
 $pdo = Database::connection();
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 $post = ['titulo'=>'','resumo'=>'','conteudo'=>'','comunidade_id'=>'','categoria_id'=>'','status'=>'rascunho','destaque'=>0,'publicado_em'=>'','imagem_capa_id'=>''];
