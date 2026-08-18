@@ -16,11 +16,11 @@ function url(string $path = ''): string
 
 /**
  * Gera a URL pública amigável de um conteúdo usando a slug salva no banco.
- * Ex.: /noticia/minha-noticia, /pagina/quem-somos, /evento/culto-especial.
+ * Ex.: /noticia/minha-noticia, /pagina/quem-somos, /evento/culto-especial, /formulario/contato.
  */
 function contentUrl(string $type, string $slug): string
 {
-    $allowed = ['noticia', 'pagina', 'evento'];
+    $allowed = ['noticia', 'pagina', 'evento', 'galeria', 'formulario'];
     if (!in_array($type, $allowed, true)) {
         throw new InvalidArgumentException('Tipo de conteúdo inválido.');
     }
@@ -39,7 +39,7 @@ function contentUrl(string $type, string $slug): string
  */
 function routeSlug(string $type): string
 {
-    $allowed = ['noticia', 'pagina', 'evento'];
+    $allowed = ['noticia', 'pagina', 'evento', 'galeria', 'formulario'];
     if (!in_array($type, $allowed, true)) {
         return '';
     }
@@ -83,7 +83,7 @@ function slugify(string $text): string
 
 function uniqueSlug(PDO $pdo, string $table, string $title, ?int $ignoreId = null): string
 {
-    $allowed = ['posts', 'paginas', 'comunidades', 'categorias', 'eventos'];
+    $allowed = ['posts', 'paginas', 'comunidades', 'categorias', 'eventos', 'menus', 'galerias', 'formularios'];
     if (!in_array($table, $allowed, true)) {
         throw new InvalidArgumentException('Tabela inválida para slug.');
     }
@@ -203,4 +203,148 @@ function logAction(PDO $pdo, string $acao, ?string $entidade = null, ?int $entid
     } catch (Throwable $e) {
         // O log não deve interromper a operação principal.
     }
+}
+
+/**
+ * Retorna todas as configurações públicas do portal indexadas pela chave.
+ */
+function siteConfigAll(PDO $pdo): array
+{
+    try {
+        $stmt = $pdo->query('SELECT chave, valor FROM configuracoes ORDER BY chave');
+        $items = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $items[(string)$row['chave']] = (string)($row['valor'] ?? '');
+        }
+        return $items;
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+function siteConfig(PDO $pdo, string $key, string $default = ''): string
+{
+    $settings = siteConfigAll($pdo);
+    return array_key_exists($key, $settings) ? (string)$settings[$key] : $default;
+}
+
+function saveSiteConfig(PDO $pdo, string $key, ?string $value, string $type = 'texto'): void
+{
+    $stmt = $pdo->prepare(
+        'INSERT INTO configuracoes (chave, valor, tipo)
+         VALUES (:chave, :valor, :tipo)
+         ON DUPLICATE KEY UPDATE valor = VALUES(valor), tipo = VALUES(tipo)'
+    );
+    $stmt->execute([
+        'chave' => $key,
+        'valor' => $value,
+        'tipo' => $type,
+    ]);
+}
+
+/**
+ * Carrega o menu público e organiza itens em até um nível de submenu.
+ */
+function publicMenu(PDO $pdo, string $location = 'principal'): array
+{
+    try {
+        $stmt = $pdo->prepare(
+            "SELECT mi.*, p.slug AS pagina_slug, p.status AS pagina_status, p.publicado_em AS pagina_publicado_em
+             FROM menus m
+             INNER JOIN menu_itens mi ON mi.menu_id = m.id
+             LEFT JOIN paginas p ON p.id = mi.pagina_id
+             WHERE m.localizacao = :localizacao
+               AND m.ativo = 1
+               AND mi.ativo = 1
+               AND (
+                    mi.tipo = 'link'
+                    OR (
+                        mi.tipo = 'pagina'
+                        AND p.id IS NOT NULL
+                        AND p.status = 'publicado'
+                        AND (p.publicado_em IS NULL OR p.publicado_em <= NOW())
+                    )
+               )
+             ORDER BY mi.ordem ASC, mi.id ASC"
+        );
+        $stmt->execute(['localizacao' => $location]);
+        $rows = $stmt->fetchAll();
+    } catch (Throwable $e) {
+        return [];
+    }
+
+    $parents = [];
+    $children = [];
+    foreach ($rows as $row) {
+        $row['children'] = [];
+        $parentId = (int)($row['parent_id'] ?? 0);
+        if ($parentId > 0) {
+            $children[$parentId][] = $row;
+        } else {
+            $parents[(int)$row['id']] = $row;
+        }
+    }
+
+    foreach ($parents as $id => &$parent) {
+        $parent['children'] = $children[$id] ?? [];
+    }
+    unset($parent);
+
+    // Se um item filho perdeu o pai, mantém o link visível no nível principal.
+    foreach ($children as $parentId => $orphanChildren) {
+        if (!isset($parents[$parentId])) {
+            foreach ($orphanChildren as $child) {
+                $parents[(int)$child['id']] = $child;
+            }
+        }
+    }
+
+    return array_values($parents);
+}
+
+function menuItemUrl(array $item): string
+{
+    if (($item['tipo'] ?? '') === 'pagina' && !empty($item['pagina_slug'])) {
+        return contentUrl('pagina', (string)$item['pagina_slug']);
+    }
+
+    $target = trim((string)($item['url'] ?? ''));
+    if ($target === '' || $target === '/') {
+        return url();
+    }
+
+    if (preg_match('#^(https?://|mailto:|tel:)#i', $target) || str_starts_with($target, '#')) {
+        return $target;
+    }
+
+    return url(ltrim($target, '/'));
+}
+
+/**
+ * Resolve um destino público interno ou externo de forma consistente.
+ */
+function publicTargetUrl(?string $target): string
+{
+    $target = trim((string)$target);
+    if ($target === '' || $target === '/') {
+        return url();
+    }
+
+    if (preg_match('#^(https?://|mailto:|tel:)#i', $target) || str_starts_with($target, '#')) {
+        return $target;
+    }
+
+    return url(ltrim($target, '/'));
+}
+
+function currentCanonicalUrl(): string
+{
+    $path = (string)(parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?? '/');
+    $basePath = (string)(parse_url(BASE_URL, PHP_URL_PATH) ?? '');
+
+    if ($basePath !== '' && $basePath !== '/' && str_starts_with($path, $basePath)) {
+        $path = substr($path, strlen($basePath)) ?: '/';
+    }
+
+    return rtrim(BASE_URL, '/') . '/' . ltrim($path, '/');
 }

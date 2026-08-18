@@ -65,7 +65,7 @@ require __DIR__ . '/../_header.php';
   <div><h1 class="h3 mb-1">Biblioteca de Mídia</h1><p class="text-secondary mb-0">Imagens e documentos reutilizáveis no portal.</p></div>
 </div>
 <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
-<div class="card border-0 shadow-sm mb-4"><div class="card-body p-4">
+<div class="card border-0 shadow-sm mb-4" id="adicionar-novo"><div class="card-body p-4">
   <form method="post" enctype="multipart/form-data">
     <?= Csrf::field() ?><input type="hidden" name="action" value="upload">
     <div class="row g-3 align-items-end">

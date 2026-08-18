@@ -32,6 +32,34 @@ if (Auth::can('comunidades.gerenciar')) {
 if (Auth::can('midias.gerenciar')) {
     $cards[] = ['Mídias', (int)$pdo->query("SELECT COUNT(*) FROM midias")->fetchColumn()];
 }
+if (Auth::can('galerias.gerenciar')) {
+    try {
+        $cards[] = ['Galerias', (int)$pdo->query("SELECT COUNT(*) FROM galerias WHERE status = 'publicado'")->fetchColumn()];
+    } catch (Throwable $e) {
+        // Atualização v0.7.0 ainda não executada.
+    }
+}
+if (Auth::can('banners.gerenciar')) {
+    try {
+        $cards[] = ['Banners ativos', (int)$pdo->query("SELECT COUNT(*) FROM banners WHERE ativo = 1")->fetchColumn()];
+    } catch (Throwable $e) {
+        // Atualização v0.7.0 ainda não executada.
+    }
+}
+if (Auth::can('menus.gerenciar')) {
+    try {
+        $cards[] = ['Itens de menu', (int)$pdo->query("SELECT COUNT(*) FROM menu_itens WHERE ativo = 1")->fetchColumn()];
+    } catch (Throwable $e) {
+        // Atualização v0.6.0 ainda não executada.
+    }
+}
+if (Auth::can('formularios.gerenciar')) {
+    try {
+        $cards[] = ['Respostas novas', (int)$pdo->query("SELECT COUNT(*) FROM formulario_respostas WHERE status = 'nova'")->fetchColumn()];
+    } catch (Throwable $e) {
+        // Atualização v0.8.0 ainda não executada.
+    }
+}
 if (Auth::can('usuarios.gerenciar')) {
     $cards[] = ['Usuários ativos', (int)$pdo->query("SELECT COUNT(*) FROM usuarios WHERE ativo = 1")->fetchColumn()];
 }
@@ -45,6 +73,11 @@ require __DIR__ . '/_header.php';
         <p class="text-secondary mb-0">Bem-vindo, <?= e(Auth::user()['nome'] ?? '') ?>.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
+        <?php if (Auth::can('formularios.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/formularios/index.php')) ?>">Formulários</a><?php endif; ?>
+        <?php if (Auth::can('configuracoes.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/configuracoes/index.php')) ?>">Configurações</a><?php endif; ?>
+        <?php if (Auth::can('menus.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/menus/index.php')) ?>">Menus</a><?php endif; ?>
+        <?php if (Auth::can('banners.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/banners/form.php')) ?>">Novo banner</a><?php endif; ?>
+        <?php if (Auth::can('galerias.gerenciar')): ?><a class="btn btn-outline-primary" href="<?= e(url('admin/galerias/form.php')) ?>">Nova galeria</a><?php endif; ?>
         <?php if (Auth::can('eventos.gerenciar')): ?><a class="btn btn-outline-primary" href="<?= e(url('admin/eventos/form.php')) ?>">Novo evento/culto</a><?php endif; ?>
         <?php if (Auth::can('paginas.gerenciar')): ?><a class="btn btn-outline-primary" href="<?= e(url('admin/paginas/form.php')) ?>">Nova página</a><?php endif; ?>
         <?php if (Auth::can('noticias.gerenciar')): ?><a class="btn btn-primary" href="<?= e(url('admin/noticias/form.php')) ?>">Nova notícia</a><?php endif; ?>

@@ -1,16 +1,3 @@
-# BEGIN PORTAL_IECLB_ROTAS_V080
-RewriteEngine On
-
-# Compatibilidade com eventual URL antiga do formulário por query string.
-RewriteCond %{THE_REQUEST} \s/+[^\s?]*formulario\.php\?slug=([A-Za-z0-9-]+)(?:[&\s]) [NC]
-RewriteRule ^formulario\.php$ formulario/%1 [R=301,L,NE,QSD]
-
-# Rota pública amigável. A slug é lida do caminho pelo PHP, sem parâmetro GET.
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^formulario/[A-Za-z0-9-]+/?$ formulario.php [L,NC]
-# END PORTAL_IECLB_ROTAS_V080
-
 # BEGIN PORTAL_IECLB_ROTAS_V070
 RewriteEngine On
 

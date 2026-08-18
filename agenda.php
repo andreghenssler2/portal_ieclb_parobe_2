@@ -27,7 +27,8 @@ $stmt->execute($params);
 $eventos = $stmt->fetchAll();
 $comunidades = $pdo->query('SELECT id, nome FROM comunidades WHERE ativa = 1 ORDER BY ordem, nome')->fetchAll();
 
-$metaTitle = 'Agenda - IECLB Parobé';
+$siteLabel = siteConfig($pdo, 'seo_titulo', 'IECLB Parobé');
+$metaTitle = 'Agenda - ' . $siteLabel;
 $metaDescription = 'Próximos cultos e eventos da Paróquia Evangélica de Confissão Luterana de Parobé.';
 require __DIR__ . '/theme/ieclb/header.php';
 ?>

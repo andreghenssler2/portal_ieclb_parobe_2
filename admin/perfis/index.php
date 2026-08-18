@@ -84,7 +84,7 @@ require __DIR__ . '/../_header.php';
 </div>
 <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
 
-<div class="row g-4">
+<div class="row g-4" id="funcoes">
     <div class="col-lg-3">
         <div class="list-group shadow-sm">
             <?php foreach ($perfis as $perfil): ?>
@@ -95,7 +95,7 @@ require __DIR__ . '/../_header.php';
         </div>
     </div>
     <div class="col-lg-9">
-        <form method="post" class="card border-0 shadow-sm">
+        <form method="post" class="card border-0 shadow-sm" id="permissoes">
             <div class="card-header bg-white py-3">
                 <div class="fw-semibold"><?= e($perfilAtual['nome'] ?? '') ?></div>
                 <?php if (($perfilAtual['slug'] ?? '') === 'administrador'): ?><div class="small text-secondary">Este perfil sempre possui acesso total.</div><?php endif; ?>

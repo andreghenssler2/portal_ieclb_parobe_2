@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/bootstrap.php';
 $pdo = Database::connection();
+$siteLabel = siteConfig($pdo, 'seo_titulo', 'IECLB Parobé');
 
 $slug = routeSlug('pagina');
 $stmt = $pdo->prepare(
@@ -18,18 +19,20 @@ $pagina = $stmt->fetch();
 
 if (!$pagina) {
     http_response_code(404);
-    $metaTitle = 'Página não encontrada - IECLB Parobé';
+    $metaTitle = 'Página não encontrada - ' . $siteLabel;
+    $metaDescription = 'O conteúdo solicitado não está disponível.';
     require __DIR__ . '/theme/ieclb/header.php';
     echo '<div class="container py-5"><h1 class="h2">Página não encontrada</h1><p class="text-secondary">O conteúdo solicitado não está disponível.</p><a class="btn btn-primary" href="' . e(url()) . '">Voltar ao início</a></div>';
     require __DIR__ . '/theme/ieclb/footer.php';
     exit;
 }
 
-$metaTitle = $pagina['titulo'] . ' - IECLB Parobé';
-$metaDescription = $pagina['resumo'] ?: trim(strip_tags(mb_substr((string)$pagina['conteudo'], 0, 160)));
-require __DIR__ . '/theme/ieclb/header.php';
-
 $cover = $pagina['imagem_capa_midia'] ?? null;
+$metaTitle = $pagina['titulo'] . ' - ' . $siteLabel;
+$metaDescription = $pagina['resumo'] ?: trim(strip_tags(mb_substr((string)$pagina['conteudo'], 0, 160)));
+$metaImage = $cover ? mediaUrl((string)$cover) : '';
+$canonicalUrl = contentUrl('pagina', (string)$pagina['slug']);
+require __DIR__ . '/theme/ieclb/header.php';
 ?>
 <article class="container py-5 content-reading">
     <header class="mb-4">
@@ -38,7 +41,7 @@ $cover = $pagina['imagem_capa_midia'] ?? null;
     </header>
 
     <?php if ($cover): ?>
-        <img class="article-cover mb-4" src="<?= e(mediaUrl($cover)) ?>" alt="<?= e($pagina['imagem_capa_alt'] ?: $pagina['titulo']) ?>">
+        <img class="article-cover mb-4" src="<?= e(mediaUrl((string)$cover)) ?>" alt="<?= e($pagina['imagem_capa_alt'] ?: $pagina['titulo']) ?>">
     <?php endif; ?>
 
     <div class="article-body"><?= $pagina['conteudo'] ?></div>

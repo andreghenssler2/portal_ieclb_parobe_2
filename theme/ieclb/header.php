@@ -1,17 +1,55 @@
 <?php
-$menuPaginas = [];
+$themePdo = $pdo ?? Database::connection();
+$siteSettings = siteConfigAll($themePdo);
+
+$siteName = trim((string)($siteSettings['site_nome'] ?? '')) ?: 'Paróquia Evangélica de Confissão Luterana de Parobé';
+$brandName = trim((string)($siteSettings['hero_titulo'] ?? '')) ?: 'IECLB Parobé';
+$defaultTitle = trim((string)($siteSettings['seo_titulo'] ?? '')) ?: 'IECLB Parobé';
+$defaultDescription = trim((string)($siteSettings['seo_descricao'] ?? '')) ?: (trim((string)($siteSettings['site_descricao'] ?? '')) ?: 'Portal da IECLB Parobé');
+$defaultKeywords = trim((string)($siteSettings['seo_keywords'] ?? ''));
+
+$resolvedTitle = trim((string)($metaTitle ?? '')) ?: $defaultTitle;
+$resolvedDescription = trim((string)($metaDescription ?? '')) ?: $defaultDescription;
+$resolvedKeywords = trim((string)($metaKeywords ?? '')) ?: $defaultKeywords;
+$resolvedCanonical = trim((string)($canonicalUrl ?? '')) ?: currentCanonicalUrl();
+
+$logoMedia = null;
+$faviconMedia = null;
+$ogMedia = null;
 try {
-    $menuPdo = $pdo ?? Database::connection();
-    $menuPaginas = $menuPdo->query(
-        "SELECT titulo, slug
-         FROM paginas
-         WHERE status = 'publicado'
-           AND exibir_menu = 1
-           AND (publicado_em IS NULL OR publicado_em <= NOW())
-         ORDER BY ordem ASC, titulo ASC"
-    )->fetchAll();
+    $logoId = (int)($siteSettings['site_logo_id'] ?? 0);
+    $faviconId = (int)($siteSettings['site_favicon_id'] ?? 0);
+    $ogId = (int)($siteSettings['seo_og_image_id'] ?? 0);
+    if ($logoId > 0) $logoMedia = MediaService::find($themePdo, $logoId);
+    if ($faviconId > 0) $faviconMedia = MediaService::find($themePdo, $faviconId);
+    if ($ogId > 0) $ogMedia = MediaService::find($themePdo, $ogId);
 } catch (Throwable $e) {
-    // Mantém o portal acessível mesmo antes da migração da v0.3.0 ser executada.
+    // Mantém o tema funcionando mesmo se a mídia configurada tiver sido removida.
+}
+
+$resolvedImage = trim((string)($metaImage ?? ''));
+if ($resolvedImage === '' && $ogMedia) {
+    $resolvedImage = mediaUrl((string)$ogMedia['caminho']);
+}
+
+$menuPrincipal = publicMenu($themePdo, 'principal');
+
+// Compatibilidade durante a atualização: se o novo menu ainda não existir,
+// mantém a navegação utilizada até a v0.5.0.
+if (!$menuPrincipal) {
+    $menuPaginas = [];
+    try {
+        $menuPaginas = $themePdo->query(
+            "SELECT titulo, slug
+             FROM paginas
+             WHERE status = 'publicado'
+               AND exibir_menu = 1
+               AND (publicado_em IS NULL OR publicado_em <= NOW())
+             ORDER BY ordem ASC, titulo ASC"
+        )->fetchAll();
+    } catch (Throwable $e) {
+        $menuPaginas = [];
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -19,25 +57,66 @@ try {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= e($metaTitle ?? APP_NAME) ?></title>
-    <meta name="description" content="<?= e($metaDescription ?? 'Portal da IECLB Parobé') ?>">
+    <title><?= e($resolvedTitle) ?></title>
+    <meta name="description" content="<?= e($resolvedDescription) ?>">
+    <?php if ($resolvedKeywords !== ''): ?><meta name="keywords" content="<?= e($resolvedKeywords) ?>"><?php endif; ?>
+    <link rel="canonical" href="<?= e($resolvedCanonical) ?>">
+
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:type" content="<?= e((string)($metaOgType ?? 'website')) ?>">
+    <meta property="og:title" content="<?= e($resolvedTitle) ?>">
+    <meta property="og:description" content="<?= e($resolvedDescription) ?>">
+    <meta property="og:url" content="<?= e($resolvedCanonical) ?>">
+    <meta property="og:site_name" content="<?= e($siteName) ?>">
+    <?php if ($resolvedImage !== ''): ?><meta property="og:image" content="<?= e($resolvedImage) ?>"><?php endif; ?>
+
+    <meta name="twitter:card" content="<?= $resolvedImage !== '' ? 'summary_large_image' : 'summary' ?>">
+    <meta name="twitter:title" content="<?= e($resolvedTitle) ?>">
+    <meta name="twitter:description" content="<?= e($resolvedDescription) ?>">
+    <?php if ($resolvedImage !== ''): ?><meta name="twitter:image" content="<?= e($resolvedImage) ?>"><?php endif; ?>
+
+    <?php if ($faviconMedia): ?><link rel="icon" href="<?= e(mediaUrl((string)$faviconMedia['caminho'])) ?>"><?php endif; ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= e(url('public/css/site.css')) ?>">
 </head>
 <body>
 <header class="border-bottom bg-white">
     <nav class="navbar navbar-expand-lg container py-3">
-        <a class="navbar-brand fw-bold" href="<?= e(url()) ?>">IECLB Parobé</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu"><span class="navbar-toggler-icon"></span></button>
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= e(url()) ?>">
+            <?php if ($logoMedia): ?>
+                <img src="<?= e(mediaUrl((string)$logoMedia['caminho'])) ?>" class="site-logo" alt="<?= e($brandName) ?>">
+            <?php else: ?>
+                <span><?= e($brandName) ?></span>
+            <?php endif; ?>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu" aria-controls="menu" aria-expanded="false" aria-label="Abrir menu"><span class="navbar-toggler-icon"></span></button>
         <div id="menu" class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto gap-lg-2">
-                <li class="nav-item"><a class="nav-link" href="<?= e(url()) ?>">Início</a></li>
-                <li class="nav-item"><a class="nav-link" href="<?= e(url('agenda.php')) ?>">Agenda</a></li>
-                <li class="nav-item"><a class="nav-link" href="<?= e(url('comunidades.php')) ?>">Comunidades</a></li>
-                <?php foreach ($menuPaginas as $menuPagina): ?>
-                    <li class="nav-item"><a class="nav-link" href="<?= e(contentUrl('pagina', (string)$menuPagina['slug'])) ?>"><?= e($menuPagina['titulo']) ?></a></li>
-                <?php endforeach; ?>
-                <li class="nav-item"><a class="nav-link" href="<?= e(url('admin/login.php')) ?>">Área administrativa</a></li>
+            <ul class="navbar-nav ms-auto gap-lg-2 align-items-lg-center">
+                <?php if ($menuPrincipal): ?>
+                    <?php foreach ($menuPrincipal as $menuItem): ?>
+                        <?php $children = $menuItem['children'] ?? []; $href = menuItemUrl($menuItem); $newTab = (int)($menuItem['nova_aba'] ?? 0) === 1; ?>
+                        <?php if ($children): ?>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="<?= e($href) ?>" role="button" data-bs-toggle="dropdown" aria-expanded="false" <?= $newTab ? 'target="_blank" rel="noopener"' : '' ?>><?= e($menuItem['titulo']) ?></a>
+                                <ul class="dropdown-menu">
+                                    <?php foreach ($children as $child): $childNewTab = (int)($child['nova_aba'] ?? 0) === 1; ?>
+                                        <li><a class="dropdown-item" href="<?= e(menuItemUrl($child)) ?>" <?= $childNewTab ? 'target="_blank" rel="noopener"' : '' ?>><?= e($child['titulo']) ?></a></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </li>
+                        <?php else: ?>
+                            <li class="nav-item"><a class="nav-link" href="<?= e($href) ?>" <?= $newTab ? 'target="_blank" rel="noopener"' : '' ?>><?= e($menuItem['titulo']) ?></a></li>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <li class="nav-item"><a class="nav-link" href="<?= e(url()) ?>">Início</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= e(url('agenda.php')) ?>">Agenda</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= e(url('comunidades.php')) ?>">Comunidades</a></li>
+                    <?php foreach ($menuPaginas as $menuPagina): ?>
+                        <li class="nav-item"><a class="nav-link" href="<?= e(contentUrl('pagina', (string)$menuPagina['slug'])) ?>"><?= e($menuPagina['titulo']) ?></a></li>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                <li class="nav-item"><a class="nav-link admin-link" href="<?= e(url('admin/login.php')) ?>">Área administrativa</a></li>
             </ul>
         </div>
     </nav>

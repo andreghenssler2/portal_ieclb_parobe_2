@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/bootstrap.php';
 $pdo = Database::connection();
+$siteLabel = siteConfig($pdo, 'seo_titulo', 'IECLB Parobé');
 
 $slug = routeSlug('evento');
 $stmt = $pdo->prepare(
@@ -17,15 +18,19 @@ $evento = $stmt->fetch();
 
 if (!$evento) {
     http_response_code(404);
-    $metaTitle = 'Evento não encontrado - IECLB Parobé';
+    $metaTitle = 'Evento não encontrado - ' . $siteLabel;
+    $metaDescription = 'O evento ou culto solicitado não está disponível.';
     require __DIR__ . '/theme/ieclb/header.php';
     echo '<div class="container py-5"><h1 class="h2">Evento ou culto não encontrado</h1><p class="text-secondary">O conteúdo solicitado não está disponível.</p><a class="btn btn-primary" href="' . e(url('agenda.php')) . '">Ver agenda</a></div>';
     require __DIR__ . '/theme/ieclb/footer.php';
     exit;
 }
 
-$metaTitle = $evento['titulo'] . ' - IECLB Parobé';
+$metaTitle = $evento['titulo'] . ' - ' . $siteLabel;
 $metaDescription = $evento['resumo'] ?: trim(strip_tags(mb_substr((string)($evento['descricao'] ?? ''), 0, 160)));
+$metaImage = $evento['imagem_capa_midia'] ? mediaUrl((string)$evento['imagem_capa_midia']) : '';
+$canonicalUrl = contentUrl('evento', (string)$evento['slug']);
+$metaOgType = 'article';
 require __DIR__ . '/theme/ieclb/header.php';
 ?>
 <article class="container py-5 content-reading">
@@ -39,7 +44,7 @@ require __DIR__ . '/theme/ieclb/header.php';
     </header>
 
     <?php if ($evento['imagem_capa_midia']): ?>
-        <img class="article-cover mb-4" src="<?= e(mediaUrl($evento['imagem_capa_midia'])) ?>" alt="<?= e($evento['imagem_capa_alt'] ?: $evento['titulo']) ?>">
+        <img class="article-cover mb-4" src="<?= e(mediaUrl((string)$evento['imagem_capa_midia'])) ?>" alt="<?= e($evento['imagem_capa_alt'] ?: $evento['titulo']) ?>">
     <?php endif; ?>
 
     <div class="card border-0 shadow-sm mb-4">
