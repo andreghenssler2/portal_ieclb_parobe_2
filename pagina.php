@@ -21,18 +21,21 @@ if (!$pagina) {
     http_response_code(404);
     $metaTitle = 'Página não encontrada - ' . $siteLabel;
     $metaDescription = 'O conteúdo solicitado não está disponível.';
-    require __DIR__ . '/theme/ieclb/header.php';
+    $metaNoindex = true;
+    require themeFile($pdo, 'header.php');
     echo '<div class="container py-5"><h1 class="h2">Página não encontrada</h1><p class="text-secondary">O conteúdo solicitado não está disponível.</p><a class="btn btn-primary" href="' . e(url()) . '">Voltar ao início</a></div>';
-    require __DIR__ . '/theme/ieclb/footer.php';
+    require themeFile($pdo, 'footer.php');
     exit;
 }
 
+redirectCanonicalContent('pagina', (string)$pagina['slug']);
 $cover = $pagina['imagem_capa_midia'] ?? null;
-$metaTitle = $pagina['titulo'] . ' - ' . $siteLabel;
-$metaDescription = $pagina['resumo'] ?: trim(strip_tags(mb_substr((string)$pagina['conteudo'], 0, 160)));
+$metaTitle = trim((string)($pagina['seo_titulo'] ?? '')) ?: $pagina['titulo'];
+$metaDescription = trim((string)($pagina['seo_descricao'] ?? '')) ?: ($pagina['resumo'] ?: trim(strip_tags(mb_substr((string)$pagina['conteudo'], 0, 160))));
+$metaNoindex = (int)($pagina['seo_noindex'] ?? 0) === 1;
 $metaImage = $cover ? mediaUrl((string)$cover) : '';
 $canonicalUrl = contentUrl('pagina', (string)$pagina['slug']);
-require __DIR__ . '/theme/ieclb/header.php';
+require themeFile($pdo, 'header.php');
 ?>
 <article class="container py-5 content-reading">
     <header class="mb-4">
@@ -46,4 +49,4 @@ require __DIR__ . '/theme/ieclb/header.php';
 
     <div class="article-body"><?= $pagina['conteudo'] ?></div>
 </article>
-<?php require __DIR__ . '/theme/ieclb/footer.php'; ?>
+<?php require themeFile($pdo, 'footer.php'); ?>

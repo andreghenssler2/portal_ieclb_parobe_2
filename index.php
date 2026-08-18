@@ -1,136 +1,52 @@
 <?php
 require_once __DIR__ . '/bootstrap.php';
 $pdo = Database::connection();
+$reading = siteConfigAll($pdo);
+$postsLimit = max(1, min(30, (int)($reading['reading_home_posts'] ?? 9)));
+$eventsLimit = max(1, min(30, (int)($reading['reading_home_events'] ?? 6)));
+$galleriesLimit = max(1, min(30, (int)($reading['reading_home_galleries'] ?? 3)));
+$communitiesLimit = max(1, min(30, (int)($reading['reading_home_communities'] ?? 10)));
 
 $destaque = $pdo->query("SELECT p.*, c.nome AS comunidade_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt FROM posts p LEFT JOIN comunidades c ON c.id=p.comunidade_id LEFT JOIN midias m ON m.id=p.imagem_capa_id WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em <= NOW()) AND p.destaque=1 ORDER BY p.publicado_em DESC, p.id DESC LIMIT 1")->fetch();
-$posts = $pdo->query("SELECT p.*, c.nome AS comunidade_nome, cat.nome AS categoria_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt FROM posts p LEFT JOIN comunidades c ON c.id=p.comunidade_id LEFT JOIN categorias cat ON cat.id=p.categoria_id LEFT JOIN midias m ON m.id=p.imagem_capa_id WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em <= NOW()) ORDER BY p.publicado_em DESC, p.id DESC LIMIT 9")->fetchAll();
-$comunidades = $pdo->query("SELECT * FROM comunidades WHERE ativa=1 ORDER BY ordem,nome")->fetchAll();
-$agenda = $pdo->query(
-    "SELECT e.id, e.tipo, e.titulo, e.slug, e.resumo, e.data_inicio, e.local, e.santa_ceia, c.nome AS comunidade_nome
-     FROM eventos e
-     LEFT JOIN comunidades c ON c.id = e.comunidade_id
-     WHERE e.status = 'publicado' AND e.data_inicio >= NOW()
-     ORDER BY e.data_inicio ASC
-     LIMIT 6"
-)->fetchAll();
+$posts = $pdo->query("SELECT p.*, c.nome AS comunidade_nome, cat.nome AS categoria_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt FROM posts p LEFT JOIN comunidades c ON c.id=p.comunidade_id LEFT JOIN categorias cat ON cat.id=p.categoria_id LEFT JOIN midias m ON m.id=p.imagem_capa_id WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em <= NOW()) ORDER BY p.publicado_em DESC, p.id DESC LIMIT {$postsLimit}")->fetchAll();
+$comunidades = $pdo->query("SELECT * FROM comunidades WHERE ativa=1 ORDER BY ordem,nome LIMIT {$communitiesLimit}")->fetchAll();
+$agenda = $pdo->query("SELECT e.id,e.tipo,e.titulo,e.slug,e.resumo,e.data_inicio,e.local,e.santa_ceia,c.nome AS comunidade_nome,ec.nome AS categoria_nome FROM eventos e LEFT JOIN comunidades c ON c.id=e.comunidade_id LEFT JOIN evento_categorias ec ON ec.id=e.categoria_evento_id WHERE e.status='publicado' AND e.data_inicio>=NOW() ORDER BY e.data_inicio ASC LIMIT {$eventsLimit}")->fetchAll();
+$banners=[];$galerias=[];
+try{
+$banners=$pdo->query("SELECT b.*,m.caminho AS imagem_caminho,m.alt_text AS imagem_alt FROM banners b INNER JOIN midias m ON m.id=b.imagem_id WHERE b.ativo=1 AND (b.data_inicio IS NULL OR b.data_inicio<=NOW()) AND (b.data_fim IS NULL OR b.data_fim>=NOW()) ORDER BY b.ordem,b.id")->fetchAll();
+$galerias=$pdo->query("SELECT g.id,g.titulo,g.slug,g.descricao,m.caminho AS capa_caminho,m.alt_text AS capa_alt,(SELECT COUNT(*) FROM galeria_midias gm WHERE gm.galeria_id=g.id) AS total_fotos FROM galerias g LEFT JOIN midias m ON m.id=g.imagem_capa_id WHERE g.status='publicado' AND (g.publicado_em IS NULL OR g.publicado_em<=NOW()) ORDER BY COALESCE(g.publicado_em,g.created_at) DESC,g.id DESC LIMIT {$galleriesLimit}")->fetchAll();
+}catch(Throwable $e){}
 
-$banners = [];
-$galerias = [];
-try {
-    $banners = $pdo->query(
-        "SELECT b.*, m.caminho AS imagem_caminho, m.alt_text AS imagem_alt
-         FROM banners b
-         INNER JOIN midias m ON m.id=b.imagem_id
-         WHERE b.ativo=1
-           AND (b.data_inicio IS NULL OR b.data_inicio <= NOW())
-           AND (b.data_fim IS NULL OR b.data_fim >= NOW())
-         ORDER BY b.ordem ASC, b.id ASC"
-    )->fetchAll();
+$homeSettings=siteConfigAll($pdo);$metaTitle=trim((string)($homeSettings['seo_titulo']??''))?:'IECLB Parobé';$metaDescription=trim((string)($homeSettings['seo_descricao']??''))?:'Portal da IECLB Parobé';$heroTitle=trim((string)($homeSettings['hero_titulo']??''))?:'IECLB Parobé';$heroSubtitle=trim((string)($homeSettings['hero_subtitulo']??''))?:'Notícias, cultos, eventos e informações das comunidades da Paróquia de Parobé.';$siteFullName=trim((string)($homeSettings['site_nome']??''))?:'Paróquia Evangélica de Confissão Luterana de Parobé';
+$widgets=homeWidgets($pdo);
+require themeFile($pdo,'header.php');
 
-    $galerias = $pdo->query(
-        "SELECT g.id,g.titulo,g.slug,g.descricao,m.caminho AS capa_caminho,m.alt_text AS capa_alt,
-                (SELECT COUNT(*) FROM galeria_midias gm WHERE gm.galeria_id=g.id) AS total_fotos
-         FROM galerias g
-         LEFT JOIN midias m ON m.id=g.imagem_capa_id
-         WHERE g.status='publicado' AND (g.publicado_em IS NULL OR g.publicado_em <= NOW())
-         ORDER BY COALESCE(g.publicado_em,g.created_at) DESC,g.id DESC
-         LIMIT 3"
-    )->fetchAll();
-} catch (Throwable $e) {
-    // Compatibilidade enquanto a atualização v0.7.0 ainda não foi executada.
-}
-
-$homeSettings = siteConfigAll($pdo);
-$metaTitle = trim((string)($homeSettings['seo_titulo'] ?? '')) ?: 'IECLB Parobé';
-$metaDescription = trim((string)($homeSettings['seo_descricao'] ?? '')) ?: 'Portal da IECLB Parobé';
-$heroTitle = trim((string)($homeSettings['hero_titulo'] ?? '')) ?: 'IECLB Parobé';
-$heroSubtitle = trim((string)($homeSettings['hero_subtitulo'] ?? '')) ?: 'Notícias, cultos, eventos e informações das comunidades da Paróquia de Parobé.';
-$siteFullName = trim((string)($homeSettings['site_nome'] ?? '')) ?: 'Paróquia Evangélica de Confissão Luterana de Parobé';
-require __DIR__ . '/theme/ieclb/header.php';
+foreach($widgets as $widget):
+$type=(string)$widget['tipo'];$widgetTitle=trim((string)($widget['titulo']??''));
 ?>
+<?php if($type==='banners' && $banners): ?>
+<section class="home-banners widget-section" data-widget="banners"><div id="homeBannerCarousel" class="carousel slide" data-bs-ride="carousel"><?php if(count($banners)>1):?><div class="carousel-indicators"><?php foreach($banners as $i=>$banner):?><button type="button" data-bs-target="#homeBannerCarousel" data-bs-slide-to="<?=$i?>" class="<?=$i===0?'active':''?>" aria-label="Banner <?=$i+1?>"></button><?php endforeach;?></div><?php endif;?><div class="carousel-inner"><?php foreach($banners as $i=>$banner):$bannerHref=$banner['url_link']?publicTargetUrl((string)$banner['url_link']):'';?><div class="carousel-item <?=$i===0?'active':''?>"><div class="home-banner-slide position-relative"><img src="<?=e(mediaUrl($banner['imagem_caminho']))?>" class="d-block w-100 home-banner-image" alt="<?=e($banner['imagem_alt']?:$banner['titulo']?:'Destaque')?>"><?php if($banner['titulo']||$banner['subtitulo']||$bannerHref):?><div class="home-banner-overlay"></div><div class="carousel-caption home-banner-caption text-start"><?php if($banner['titulo']):?><h2 class="display-5 fw-bold"><?=e($banner['titulo'])?></h2><?php endif;?><?php if($banner['subtitulo']):?><p class="lead col-lg-8"><?=e($banner['subtitulo'])?></p><?php endif;?><?php if($bannerHref):?><a class="btn btn-light" href="<?=e($bannerHref)?>" <?=(int)$banner['nova_aba']===1?'target="_blank" rel="noopener"':''?>><?=e($banner['texto_botao']?:'Saiba mais')?></a><?php endif;?></div><?php endif;?></div></div><?php endforeach;?></div><?php if(count($banners)>1):?><button class="carousel-control-prev" type="button" data-bs-target="#homeBannerCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon"></span><span class="visually-hidden">Anterior</span></button><button class="carousel-control-next" type="button" data-bs-target="#homeBannerCarousel" data-bs-slide="next"><span class="carousel-control-next-icon"></span><span class="visually-hidden">Próximo</span></button><?php endif;?></div></section>
 
-<?php if ($banners): ?>
-<section class="home-banners">
-    <div id="homeBannerCarousel" class="carousel slide" data-bs-ride="carousel">
-        <?php if (count($banners) > 1): ?>
-            <div class="carousel-indicators">
-                <?php foreach ($banners as $i => $banner): ?><button type="button" data-bs-target="#homeBannerCarousel" data-bs-slide-to="<?= $i ?>" class="<?= $i === 0 ? 'active' : '' ?>" aria-label="Banner <?= $i + 1 ?>"></button><?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-        <div class="carousel-inner">
-            <?php foreach ($banners as $i => $banner): $bannerHref = $banner['url_link'] ? publicTargetUrl((string)$banner['url_link']) : ''; ?>
-                <div class="carousel-item <?= $i === 0 ? 'active' : '' ?>">
-                    <div class="home-banner-slide position-relative">
-                        <img src="<?= e(mediaUrl($banner['imagem_caminho'])) ?>" class="d-block w-100 home-banner-image" alt="<?= e($banner['imagem_alt'] ?: $banner['titulo'] ?: 'Destaque') ?>">
-                        <?php if ($banner['titulo'] || $banner['subtitulo'] || $bannerHref): ?>
-                            <div class="home-banner-overlay"></div>
-                            <div class="carousel-caption home-banner-caption text-start">
-                                <?php if ($banner['titulo']): ?><h2 class="display-5 fw-bold"><?= e($banner['titulo']) ?></h2><?php endif; ?>
-                                <?php if ($banner['subtitulo']): ?><p class="lead col-lg-8"><?= e($banner['subtitulo']) ?></p><?php endif; ?>
-                                <?php if ($bannerHref): ?><a class="btn btn-light" href="<?= e($bannerHref) ?>" <?= (int)$banner['nova_aba'] === 1 ? 'target="_blank" rel="noopener"' : '' ?>><?= e($banner['texto_botao'] ?: 'Saiba mais') ?></a><?php endif; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
-        <?php if (count($banners) > 1): ?>
-            <button class="carousel-control-prev" type="button" data-bs-target="#homeBannerCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Anterior</span></button>
-            <button class="carousel-control-next" type="button" data-bs-target="#homeBannerCarousel" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Próximo</span></button>
-        <?php endif; ?>
-    </div>
-</section>
+<?php elseif($type==='apresentacao'): ?>
+<section class="hero py-5 border-bottom widget-section" data-widget="apresentacao"><div class="container py-4"><span class="text-uppercase small fw-semibold text-secondary"><?=e($siteFullName)?></span><h1 class="display-4 fw-bold mt-2"><?=e($widgetTitle?:$heroTitle)?></h1><p class="lead col-lg-7"><?=e($heroSubtitle)?></p></div></section>
+
+<?php elseif($type==='destaque' && $destaque): $cover=$destaque['imagem_capa_midia']?:$destaque['imagem_capa']; ?>
+<section class="container py-5 widget-section" data-widget="destaque"><?php if($widgetTitle):?><h2 class="h3 mb-4"><?=e($widgetTitle)?></h2><?php endif;?><div class="featured-story bg-dark text-white rounded-4 overflow-hidden"><div class="row g-0 align-items-stretch"><?php if($cover):?><div class="col-lg-6"><img class="featured-story-image" src="<?=e(mediaUrl($cover))?>" alt="<?=e($destaque['imagem_capa_alt']?:$destaque['titulo'])?>"></div><?php endif;?><div class="<?=$cover?'col-lg-6':'col-12'?> p-4 p-lg-5 d-flex flex-column justify-content-center"><div class="small text-uppercase opacity-75 mb-2"><?=e($destaque['comunidade_nome']?:'Paroquial')?></div><h2 class="display-6 fw-bold"><?=e($destaque['titulo'])?></h2><?php $destaqueResumo=trim((string)($destaque['resumo']??''))?:portalExcerpt((string)$destaque['conteudo']); if($destaqueResumo):?><p class="lead opacity-75"><?=e($destaqueResumo)?></p><?php endif;?><div><a class="btn btn-light" href="<?=e(contentUrl('noticia',(string)$destaque['slug']))?>">Leia mais</a></div></div></div></div></section>
+
+<?php elseif($type==='agenda'): ?>
+<section class="container py-5 widget-section" data-widget="agenda"><div class="d-flex justify-content-between align-items-center mb-4"><h2 class="h3 mb-0"><?=e($widgetTitle?:'Próximos cultos e eventos')?></h2><a class="btn btn-outline-primary btn-sm" href="<?=e(url('agenda.php'))?>">Ver agenda completa</a></div><div class="row g-3"><?php if(!$agenda):?><div class="col-12"><div class="alert alert-light border">Nenhum culto ou evento futuro publicado.</div></div><?php endif;?><?php foreach($agenda as $evento):?><div class="col-md-6 col-xl-4"><a class="agenda-home-item text-decoration-none text-dark d-block h-100" href="<?=e(contentUrl('evento',(string)$evento['slug']))?>"><div class="card h-100 border-0 shadow-sm"><div class="card-body p-4"><div class="d-flex gap-3"><div class="agenda-date-box text-center flex-shrink-0"><div class="small text-uppercase"><?=e(formatMonthShortBr($evento['data_inicio']))?></div><div class="fs-3 fw-bold lh-1"><?=e((new DateTime($evento['data_inicio']))->format('d'))?></div></div><div><div class="small text-secondary mb-1"><?=e(eventTypeLabel($evento['tipo']))?><?php if($evento['categoria_nome']):?> · <?=e($evento['categoria_nome'])?><?php endif;?> · <?=e(formatTimeBr($evento['data_inicio']))?><?php if((int)$evento['santa_ceia']===1):?> · Santa Ceia<?php endif;?></div><h3 class="h6 fw-bold mb-1"><?=e($evento['titulo'])?></h3><div class="small text-secondary"><?=e($evento['comunidade_nome']?:'Paroquial')?><?php if($evento['local']):?> · <?=e($evento['local'])?><?php endif;?></div></div></div></div></div></a></div><?php endforeach;?></div></section>
+
+<?php elseif($type==='noticias'): ?>
+<section class="container py-5 widget-section" data-widget="noticias"><div class="d-flex justify-content-between align-items-center mb-4"><h2 class="h3 mb-0"><?=e($widgetTitle?:'Últimas notícias')?></h2></div><div class="row g-4"><?php if(!$posts):?><div class="col-12"><div class="alert alert-light border">Ainda não há notícias publicadas.</div></div><?php endif;?><?php foreach($posts as $post):$cover=$post['imagem_capa_midia']?:$post['imagem_capa'];?><div class="col-md-6 col-lg-4"><article class="card h-100 border-0 shadow-sm overflow-hidden"><?php if($cover):?><img src="<?=e(mediaUrl($cover))?>" class="card-img-top news-card-image" alt="<?=e($post['imagem_capa_alt']?:$post['titulo'])?>"><?php endif;?><div class="card-body p-4"><div class="small text-secondary mb-2"><?=e($post['categoria_nome']?:'Notícia')?> · <?=e($post['comunidade_nome']?:'Paroquial')?></div><h3 class="h5"><a class="stretched-link text-decoration-none text-dark" href="<?=e(contentUrl('noticia',(string)$post['slug']))?>"><?=e($post['titulo'])?></a></h3><?php $postResumo=trim((string)($post['resumo']??''))?:portalExcerpt((string)$post['conteudo']); if($postResumo):?><p class="text-secondary mb-0"><?=e($postResumo)?></p><?php endif;?></div></article></div><?php endforeach;?></div></section>
+
+<?php elseif($type==='galerias' && $galerias): ?>
+<section class="container py-5 widget-section" data-widget="galerias"><div class="d-flex justify-content-between align-items-center mb-4"><h2 class="h3 mb-0"><?=e($widgetTitle?:'Galerias de fotos')?></h2><a class="btn btn-outline-primary btn-sm" href="<?=e(url('galerias.php'))?>">Ver galerias</a></div><div class="row g-4"><?php foreach($galerias as $g):?><div class="col-md-6 col-lg-4"><article class="card h-100 border-0 shadow-sm overflow-hidden"><?php if($g['capa_caminho']):?><img src="<?=e(mediaUrl($g['capa_caminho']))?>" class="card-img-top gallery-card-cover" alt="<?=e($g['capa_alt']?:$g['titulo'])?>"><?php endif;?><div class="card-body p-4"><div class="small text-secondary mb-2"><?=(int)$g['total_fotos']?> foto(s)</div><h3 class="h5"><a class="stretched-link text-decoration-none text-dark" href="<?=e(contentUrl('galeria',(string)$g['slug']))?>"><?=e($g['titulo'])?></a></h3><?php if($g['descricao']):?><p class="text-secondary mb-0"><?=e(mb_strimwidth(strip_tags((string)$g['descricao']),0,140,'…'))?></p><?php endif;?></div></article></div><?php endforeach;?></div></section>
+
+<?php elseif($type==='comunidades'): ?>
+<section class="container py-5 widget-section" data-widget="comunidades"><h2 class="h3 mb-4"><?=e($widgetTitle?:'Nossas comunidades')?></h2><div class="row g-3"><?php foreach($comunidades as $comunidade):?><div class="col-sm-6 col-lg"><div class="p-3 border rounded-3 bg-white h-100"><strong><?=e($comunidade['nome'])?></strong><div class="small text-secondary"><?=e($comunidade['cidade']??'')?></div></div></div><?php endforeach;?></div></section>
+
+<?php elseif($type==='html' && trim((string)$widget['conteudo'])!==''): ?>
+<section class="container py-5 widget-section widget-html" data-widget="html"><?php if($widgetTitle):?><h2 class="h3 mb-4"><?=e($widgetTitle)?></h2><?php endif;?><?= $widget['conteudo'] ?></section>
 <?php endif; ?>
-
-<section class="hero py-5 border-bottom"><div class="container py-4"><span class="text-uppercase small fw-semibold text-secondary"><?= e($siteFullName) ?></span><h1 class="display-4 fw-bold mt-2"><?= e($heroTitle) ?></h1><p class="lead col-lg-7"><?= e($heroSubtitle) ?></p></div></section>
-
-<?php if ($destaque): $cover = $destaque['imagem_capa_midia'] ?: $destaque['imagem_capa']; ?>
-<section class="container py-5"><div class="featured-story bg-dark text-white rounded-4 overflow-hidden"><div class="row g-0 align-items-stretch">
-<?php if ($cover): ?><div class="col-lg-6"><img class="featured-story-image" src="<?= e(mediaUrl($cover)) ?>" alt="<?= e($destaque['imagem_capa_alt'] ?: $destaque['titulo']) ?>"></div><?php endif; ?>
-<div class="<?= $cover ? 'col-lg-6' : 'col-12' ?> p-4 p-lg-5 d-flex flex-column justify-content-center"><div class="small text-uppercase opacity-75 mb-2"><?= e($destaque['comunidade_nome'] ?: 'Paroquial') ?></div><h2 class="display-6 fw-bold"><?= e($destaque['titulo']) ?></h2><?php if ($destaque['resumo']): ?><p class="lead opacity-75"><?= e($destaque['resumo']) ?></p><?php endif; ?><div><a class="btn btn-light" href="<?= e(contentUrl('noticia', (string)$destaque['slug'])) ?>">Leia mais</a></div></div>
-</div></div></section>
-<?php endif; ?>
-
-<section class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="h3 mb-0">Próximos cultos e eventos</h2>
-        <a class="btn btn-outline-primary btn-sm" href="<?= e(url('agenda.php')) ?>">Ver agenda completa</a>
-    </div>
-    <div class="row g-3">
-        <?php if (!$agenda): ?><div class="col-12"><div class="alert alert-light border">Nenhum culto ou evento futuro publicado.</div></div><?php endif; ?>
-        <?php foreach ($agenda as $evento): ?>
-            <div class="col-md-6 col-xl-4">
-                <a class="agenda-home-item text-decoration-none text-dark d-block h-100" href="<?= e(contentUrl('evento', (string)$evento['slug'])) ?>">
-                    <div class="card h-100 border-0 shadow-sm"><div class="card-body p-4"><div class="d-flex gap-3">
-                        <div class="agenda-date-box text-center flex-shrink-0"><div class="small text-uppercase"><?= e(formatMonthShortBr($evento['data_inicio'])) ?></div><div class="fs-3 fw-bold lh-1"><?= e((new DateTime($evento['data_inicio']))->format('d')) ?></div></div>
-                        <div><div class="small text-secondary mb-1"><?= e(eventTypeLabel($evento['tipo'])) ?> · <?= e(formatTimeBr($evento['data_inicio'])) ?><?php if ((int)$evento['santa_ceia'] === 1): ?> · Santa Ceia<?php endif; ?></div><h3 class="h6 fw-bold mb-1"><?= e($evento['titulo']) ?></h3><div class="small text-secondary"><?= e($evento['comunidade_nome'] ?: 'Paroquial') ?><?php if ($evento['local']): ?> · <?= e($evento['local']) ?><?php endif; ?></div></div>
-                    </div></div></div>
-                </a>
-            </div>
-        <?php endforeach; ?>
-    </div>
-</section>
-
-<section class="container py-5"><div class="d-flex justify-content-between align-items-center mb-4"><h2 class="h3 mb-0">Últimas notícias</h2></div><div class="row g-4">
-<?php if (!$posts): ?><div class="col-12"><div class="alert alert-light border">Ainda não há notícias publicadas.</div></div><?php endif; ?>
-<?php foreach ($posts as $post): $cover = $post['imagem_capa_midia'] ?: $post['imagem_capa']; ?>
-<div class="col-md-6 col-lg-4"><article class="card h-100 border-0 shadow-sm overflow-hidden"><?php if ($cover): ?><img src="<?= e(mediaUrl($cover)) ?>" class="card-img-top news-card-image" alt="<?= e($post['imagem_capa_alt'] ?: $post['titulo']) ?>"><?php endif; ?><div class="card-body p-4"><div class="small text-secondary mb-2"><?= e($post['categoria_nome'] ?: 'Notícia') ?> · <?= e($post['comunidade_nome'] ?: 'Paroquial') ?></div><h3 class="h5"><a class="stretched-link text-decoration-none text-dark" href="<?= e(contentUrl('noticia', (string)$post['slug'])) ?>"><?= e($post['titulo']) ?></a></h3><?php if ($post['resumo']): ?><p class="text-secondary mb-0"><?= e($post['resumo']) ?></p><?php endif; ?></div></article></div>
 <?php endforeach; ?>
-</div></section>
-
-<?php if ($galerias): ?>
-<section class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-4"><h2 class="h3 mb-0">Galerias recentes</h2><a class="btn btn-outline-primary btn-sm" href="<?= e(url('galerias.php')) ?>">Ver todas</a></div>
-    <div class="row g-4">
-        <?php foreach ($galerias as $g): ?>
-            <div class="col-md-6 col-lg-4"><article class="card h-100 border-0 shadow-sm overflow-hidden gallery-card">
-                <?php if ($g['capa_caminho']): ?><img src="<?= e(mediaUrl($g['capa_caminho'])) ?>" class="card-img-top gallery-card-cover" alt="<?= e($g['capa_alt'] ?: $g['titulo']) ?>"><?php endif; ?>
-                <div class="card-body p-4"><div class="small text-secondary mb-2"><?= (int)$g['total_fotos'] ?> foto(s)</div><h3 class="h5"><a class="stretched-link text-decoration-none text-dark" href="<?= e(contentUrl('galeria', (string)$g['slug'])) ?>"><?= e($g['titulo']) ?></a></h3><?php if ($g['descricao']): ?><p class="text-secondary mb-0"><?= e(mb_strimwidth(strip_tags((string)$g['descricao']), 0, 140, '…')) ?></p><?php endif; ?></div>
-            </article></div>
-        <?php endforeach; ?>
-    </div>
-</section>
-<?php endif; ?>
-
-<section class="container py-5"><h2 class="h3 mb-4">Nossas comunidades</h2><div class="row g-3"><?php foreach ($comunidades as $comunidade): ?><div class="col-sm-6 col-lg"><div class="p-3 border rounded-3 bg-white h-100"><strong><?= e($comunidade['nome']) ?></strong><div class="small text-secondary"><?= e($comunidade['cidade'] ?? '') ?></div></div></div><?php endforeach; ?></div></section>
-<?php require __DIR__ . '/theme/ieclb/footer.php'; ?>
+<?php require themeFile($pdo,'footer.php'); ?>

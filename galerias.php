@@ -14,7 +14,7 @@ $galerias = $pdo->query(
 
 $metaTitle = 'Galerias - ' . (siteConfig($pdo, 'seo_titulo', 'IECLB Parobé'));
 $metaDescription = 'Galerias de fotos da IECLB Parobé.';
-require __DIR__ . '/theme/ieclb/header.php';
+require themeFile($pdo, 'header.php');
 ?>
 <section class="container py-5">
     <div class="mb-4">
@@ -41,4 +41,4 @@ require __DIR__ . '/theme/ieclb/header.php';
         <?php endforeach; ?>
     </div>
 </section>
-<?php require __DIR__ . '/theme/ieclb/footer.php'; ?>
+<?php require themeFile($pdo, 'footer.php'); ?>

@@ -69,7 +69,7 @@ require __DIR__ . '/../_header.php';
   <form method="post" enctype="multipart/form-data">
     <?= Csrf::field() ?><input type="hidden" name="action" value="upload">
     <div class="row g-3 align-items-end">
-      <div class="col-lg-9"><label class="form-label">Enviar arquivos</label><input class="form-control" type="file" name="arquivos[]" multiple required accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"><div class="form-text">Imagens, PDF e documentos. Máximo <?= e(formatBytes(UPLOAD_MAX_SIZE)) ?> por arquivo.</div></div>
+      <div class="col-lg-9"><label class="form-label">Enviar arquivos</label><input class="form-control" type="file" name="arquivos[]" multiple required accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"><div class="form-text">Imagens, PDF e documentos. Máximo <?= e(formatBytes(mediaUploadMaxSize($pdo))) ?> por arquivo.</div></div>
       <div class="col-lg-3"><button class="btn btn-primary w-100">Enviar para biblioteca</button></div>
     </div>
   </form>

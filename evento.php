@@ -5,9 +5,10 @@ $siteLabel = siteConfig($pdo, 'seo_titulo', 'IECLB Parobé');
 
 $slug = routeSlug('evento');
 $stmt = $pdo->prepare(
-    "SELECT e.*, c.nome AS comunidade_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt
+    "SELECT e.*, c.nome AS comunidade_nome, ec.nome AS categoria_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt
      FROM eventos e
      LEFT JOIN comunidades c ON c.id = e.comunidade_id
+     LEFT JOIN evento_categorias ec ON ec.id = e.categoria_evento_id
      LEFT JOIN midias m ON m.id = e.imagem_capa_id
      WHERE e.slug = :slug
        AND e.status = 'publicado'
@@ -20,23 +21,27 @@ if (!$evento) {
     http_response_code(404);
     $metaTitle = 'Evento não encontrado - ' . $siteLabel;
     $metaDescription = 'O evento ou culto solicitado não está disponível.';
-    require __DIR__ . '/theme/ieclb/header.php';
+    $metaNoindex = true;
+    require themeFile($pdo, 'header.php');
     echo '<div class="container py-5"><h1 class="h2">Evento ou culto não encontrado</h1><p class="text-secondary">O conteúdo solicitado não está disponível.</p><a class="btn btn-primary" href="' . e(url('agenda.php')) . '">Ver agenda</a></div>';
-    require __DIR__ . '/theme/ieclb/footer.php';
+    require themeFile($pdo, 'footer.php');
     exit;
 }
 
-$metaTitle = $evento['titulo'] . ' - ' . $siteLabel;
-$metaDescription = $evento['resumo'] ?: trim(strip_tags(mb_substr((string)($evento['descricao'] ?? ''), 0, 160)));
+redirectCanonicalContent('evento', (string)$evento['slug']);
+$metaTitle = trim((string)($evento['seo_titulo'] ?? '')) ?: $evento['titulo'];
+$metaDescription = trim((string)($evento['seo_descricao'] ?? '')) ?: ($evento['resumo'] ?: trim(strip_tags(mb_substr((string)($evento['descricao'] ?? ''), 0, 160))));
+$metaNoindex = (int)($evento['seo_noindex'] ?? 0) === 1;
 $metaImage = $evento['imagem_capa_midia'] ? mediaUrl((string)$evento['imagem_capa_midia']) : '';
 $canonicalUrl = contentUrl('evento', (string)$evento['slug']);
 $metaOgType = 'article';
-require __DIR__ . '/theme/ieclb/header.php';
+require themeFile($pdo, 'header.php');
 ?>
 <article class="container py-5 content-reading">
     <header class="mb-4">
         <div class="d-flex flex-wrap gap-2 mb-3">
             <span class="badge <?= $evento['tipo'] === 'culto' ? 'text-bg-primary' : 'text-bg-info' ?>"><?= e(eventTypeLabel($evento['tipo'])) ?></span>
+            <?php if ($evento['categoria_nome']): ?><span class="badge text-bg-light border"><?= e($evento['categoria_nome']) ?></span><?php endif; ?>
             <?php if ((int)$evento['santa_ceia'] === 1): ?><span class="badge text-bg-light border">Com Santa Ceia</span><?php endif; ?>
         </div>
         <h1 class="display-5 fw-bold mb-3"><?= e($evento['titulo']) ?></h1>
@@ -59,6 +64,12 @@ require __DIR__ . '/theme/ieclb/header.php';
                     <div class="small text-secondary">Comunidade</div>
                     <div class="fw-semibold"><?= e($evento['comunidade_nome'] ?: 'Paroquial / Todas') ?></div>
                 </div>
+                <?php if ($evento['categoria_nome']): ?>
+                    <div class="col-sm-6">
+                        <div class="small text-secondary">Categoria</div>
+                        <div class="fw-semibold"><?= e($evento['categoria_nome']) ?></div>
+                    </div>
+                <?php endif; ?>
                 <?php if ($evento['local']): ?>
                     <div class="col-sm-6">
                         <div class="small text-secondary">Local</div>
@@ -79,4 +90,4 @@ require __DIR__ . '/theme/ieclb/header.php';
 
     <div class="mt-4"><a class="btn btn-outline-primary" href="<?= e(url('agenda.php')) ?>">Voltar para a agenda</a></div>
 </article>
-<?php require __DIR__ . '/theme/ieclb/footer.php'; ?>
+<?php require themeFile($pdo, 'footer.php'); ?>

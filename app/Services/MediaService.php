@@ -38,8 +38,9 @@ final class MediaService
             throw new RuntimeException('O arquivo enviado está vazio.');
         }
 
-        if ($size > UPLOAD_MAX_SIZE) {
-            throw new RuntimeException('O arquivo excede o limite de ' . formatBytes(UPLOAD_MAX_SIZE) . '.');
+        $maxSize = mediaUploadMaxSize($pdo);
+        if ($size > $maxSize) {
+            throw new RuntimeException('O arquivo excede o limite de ' . formatBytes($maxSize) . '.');
         }
 
         if (!class_exists('finfo')) {
@@ -53,10 +54,15 @@ final class MediaService
         if ($extension === null) {
             throw new RuntimeException('Tipo de arquivo não permitido: ' . ($mime ?: 'desconhecido') . '.');
         }
+        if (!str_starts_with($mime, 'image/') && !mediaDocumentsAllowed($pdo)) {
+            throw new RuntimeException('O envio de documentos está desativado nas configurações de mídia.');
+        }
 
-        $year = date('Y');
-        $month = date('m');
-        $relativeDir = 'uploads/' . $year . '/' . $month;
+        if (mediaOrganizeByDate($pdo)) {
+            $relativeDir = 'uploads/' . date('Y') . '/' . date('m');
+        } else {
+            $relativeDir = 'uploads';
+        }
         $absoluteDir = dirname(__DIR__, 2) . '/' . $relativeDir;
 
         if (!is_dir($absoluteDir) && !mkdir($absoluteDir, 0755, true) && !is_dir($absoluteDir)) {
@@ -143,9 +149,13 @@ final class MediaService
         $stmt = $pdo->prepare('DELETE FROM midias WHERE id = :id');
         $stmt->execute(['id' => $id]);
 
-        $absolutePath = dirname(__DIR__, 2) . '/' . ltrim((string)$media['caminho'], '/');
-        if (is_file($absolutePath)) {
-            @unlink($absolutePath);
+        $deletePhysical = true;
+        try { $deletePhysical = siteConfig($pdo, 'media_delete_file_on_delete', '1') === '1'; } catch (Throwable $e) {}
+        if ($deletePhysical) {
+            $absolutePath = dirname(__DIR__, 2) . '/' . ltrim((string)$media['caminho'], '/');
+            if (is_file($absolutePath)) {
+                @unlink($absolutePath);
+            }
         }
 
         return true;

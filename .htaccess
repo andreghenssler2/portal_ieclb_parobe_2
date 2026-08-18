@@ -1,3 +1,9 @@
+# BEGIN PORTAL_IECLB_ROTAS_V0100
+RewriteEngine On
+RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
+RewriteRule ^robots\.txt$ robots.php [L,QSA]
+# END PORTAL_IECLB_ROTAS_V0100
+
 # BEGIN PORTAL_IECLB_ROTAS_V080
 RewriteEngine On
 
@@ -51,3 +57,10 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^evento/[A-Za-z0-9-]+/?$ evento.php [L,NC]
 # END PORTAL_IECLB_ROTAS_V050
+
+# BEGIN PORTAL IECLB v0.12.0 - roteador de links permanentes
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^.+/?$ router.php [L,QSA]
+# END PORTAL IECLB v0.12.0 - roteador de links permanentes

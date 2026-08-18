@@ -1,7 +1,7 @@
-:root { --content-width: 760px; }
-body { background: #fff; color: #1f2937; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+:root { --content-width: 760px; --portal-primary:#0b5d4b; --portal-secondary:#6c757d; --portal-bg:#fff; --portal-text:#1f2937; --portal-footer-bg:#f8f9fa; --portal-footer-text:#495057; --portal-container:1140px; --portal-radius:16px; }
+body { background: var(--portal-bg); color: var(--portal-text); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 .hero { background: linear-gradient(180deg, #f7f8fa 0%, #ffffff 100%); }
-.card { border-radius: 1rem; }
+.card { border-radius: var(--portal-radius); }
 .content-reading { max-width: var(--content-width); }
 .article-body { font-size: 1.08rem; line-height: 1.8; }
 .article-body img { max-width: 100%; height: auto; border-radius: .75rem; }
@@ -78,3 +78,23 @@ body { background: #fff; color: #1f2937; font-family: system-ui, -apple-system, 
 .public-form .form-select { min-height: 48px; }
 .public-form textarea.form-control { min-height: 150px; }
 .public-form .form-check-input { width: 1.2rem; height: 1.2rem; }
+
+
+/* v0.11.0 - Aparência, temas e widgets */
+.container { --bs-gutter-x: 1.5rem; max-width: calc(var(--portal-container) + var(--bs-gutter-x)); }
+.portal-footer { background: var(--portal-footer-bg); color: var(--portal-footer-text); }
+.portal-footer .text-secondary, .portal-footer a { color: var(--portal-footer-text) !important; }
+.portal-header.sticky-top { z-index: 1030; }
+.site-brand-name { font-size: 1rem; }
+.widget-section { scroll-margin-top: 90px; }
+.widget-html > :last-child { margin-bottom: 0; }
+.theme-preview-strip { height: 12px; }
+.theme-preview-strip span { flex: 1 1 0; }
+.ring-active-theme { outline: 2px solid var(--bs-success); outline-offset: 2px; }
+.appearance-preview { --p:#0b5d4b;--s:#6c757d;--b:#fff;--t:#1f2937;--f:#f8f9fa;--ft:#495057; background:var(--b); color:var(--t); }
+.appearance-preview .preview-head { background:var(--p); color:white; }
+.appearance-preview .preview-foot { background:var(--f); color:var(--ft); }
+.appearance-preview .preview-title { height:20px; width:70%; border-radius:6px; background:var(--t); opacity:.85; }
+.appearance-preview .preview-line { height:8px; width:92%; border-radius:5px; background:var(--s); opacity:.35; }
+.appearance-preview .preview-line.short { width:65%; }
+.appearance-preview .preview-button { background:var(--p); color:white; }

@@ -9,6 +9,9 @@ $pagina = [
     'titulo' => '',
     'slug' => '',
     'resumo' => '',
+    'seo_titulo' => '',
+    'seo_descricao' => '',
+    'seo_noindex' => 0,
     'conteudo' => '',
     'imagem_capa_id' => '',
     'status' => 'rascunho',
@@ -29,21 +32,22 @@ if ($id) {
 }
 
 $midias = $pdo->query(
-    "SELECT id, caminho, titulo, alt_text, nome_original
+    "SELECT id, caminho, titulo, alt_text, nome_original, largura, altura
      FROM midias
      WHERE mime_type LIKE 'image/%'
-     ORDER BY id DESC
-     LIMIT 100"
+     ORDER BY id DESC"
 )->fetchAll();
+$imagemCapaAtual = !empty($pagina['imagem_capa_id']) ? MediaService::find($pdo, (int)$pagina['imagem_capa_id']) : null;
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    foreach (['titulo', 'slug', 'resumo', 'conteudo', 'imagem_capa_id', 'status', 'ordem', 'publicado_em'] as $field) {
+    foreach (['titulo', 'slug', 'resumo', 'seo_titulo', 'seo_descricao', 'conteudo', 'imagem_capa_id', 'status', 'ordem', 'publicado_em'] as $field) {
         if (array_key_exists($field, $_POST)) {
             $pagina[$field] = $_POST[$field];
         }
     }
     $pagina['exibir_menu'] = isset($_POST['exibir_menu']) ? 1 : 0;
+    $pagina['seo_noindex'] = isset($_POST['seo_noindex']) ? 1 : 0;
 
     if (!Csrf::validate($_POST['_token'] ?? null)) {
         $error = 'Token de segurança inválido.';
@@ -100,6 +104,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'resumo' => trim((string)($_POST['resumo'] ?? '')) ?: null,
                     'conteudo' => $conteudo,
                     'imagem_capa_id' => $imagemCapaId,
+                    'seo_titulo' => trim((string)($_POST['seo_titulo'] ?? '')) ?: null,
+                    'seo_descricao' => trim((string)($_POST['seo_descricao'] ?? '')) ?: null,
+                    'seo_noindex' => isset($_POST['seo_noindex']) ? 1 : 0,
                     'status' => $status,
                     'exibir_menu' => isset($_POST['exibir_menu']) ? 1 : 0,
                     'ordem' => (int)($_POST['ordem'] ?? 0),
@@ -116,6 +123,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             resumo = :resumo,
                             conteudo = :conteudo,
                             imagem_capa_id = :imagem_capa_id,
+                            seo_titulo = :seo_titulo,
+                            seo_descricao = :seo_descricao,
+                            seo_noindex = :seo_noindex,
                             status = :status,
                             exibir_menu = :exibir_menu,
                             ordem = :ordem,
@@ -125,9 +135,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $stmt = $pdo->prepare(
                         'INSERT INTO paginas
-                            (autor_id, titulo, slug, resumo, conteudo, imagem_capa_id, status, exibir_menu, ordem, publicado_em)
+                            (autor_id, titulo, slug, resumo, conteudo, imagem_capa_id, seo_titulo, seo_descricao, seo_noindex, status, exibir_menu, ordem, publicado_em)
                          VALUES
-                            (:autor_id, :titulo, :slug, :resumo, :conteudo, :imagem_capa_id, :status, :exibir_menu, :ordem, :publicado_em)'
+                            (:autor_id, :titulo, :slug, :resumo, :conteudo, :imagem_capa_id, :seo_titulo, :seo_descricao, :seo_noindex, :status, :exibir_menu, :ordem, :publicado_em)'
                     );
                 }
 
@@ -180,28 +190,32 @@ require __DIR__ . '/../_header.php';
 
             <div class="col-12">
                 <div class="border rounded-3 p-3 bg-light-subtle">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                         <div>
                             <label class="form-label fw-semibold mb-0">Imagem destacada</label>
-                            <div class="form-text mt-0">Envie uma nova imagem ou escolha uma já existente na biblioteca.</div>
+                            <div class="form-text mt-0">Faça upload ou escolha visualmente uma imagem da Biblioteca de Mídia.</div>
                         </div>
-                        <a class="btn btn-sm btn-outline-secondary" target="_blank" href="<?= e(url('admin/midias/index.php?tipo=imagens')) ?>">Abrir biblioteca</a>
+                        <button class="btn btn-sm btn-outline-primary" type="button" data-media-featured-open>Escolher da biblioteca</button>
                     </div>
-                    <div class="row g-3">
+                    <input type="hidden" name="imagem_capa_id" id="imagemCapaId" value="<?= e((string)($pagina['imagem_capa_id'] ?? '')) ?>">
+                    <div class="row g-3 align-items-start">
                         <div class="col-lg-5">
                             <input class="form-control" type="file" name="imagem_capa_upload" accept="image/jpeg,image/png,image/webp,image/gif">
-                            <div class="form-text">JPG, PNG, WEBP ou GIF. Máximo <?= e(formatBytes(UPLOAD_MAX_SIZE)) ?>.</div>
+                            <div class="form-text">JPG, PNG, WEBP ou GIF. Máximo <?= e(formatBytes(mediaUploadMaxSize($pdo))) ?>.</div>
                         </div>
                         <div class="col-lg-7">
-                            <select class="form-select" name="imagem_capa_id" id="imagemCapaSelect">
-                                <option value="">Sem imagem destacada</option>
-                                <?php foreach ($midias as $m): ?>
-                                    <option value="<?= (int)$m['id'] ?>" data-url="<?= e(mediaUrl($m['caminho'])) ?>" <?= (string)($pagina['imagem_capa_id'] ?? '') === (string)$m['id'] ? 'selected' : '' ?>><?= e($m['titulo'] ?: $m['nome_original']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                            <div id="imagemCapaPreview" class="featured-picker-preview">
+                                <?php if ($imagemCapaAtual && MediaService::isImage($imagemCapaAtual)): ?>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="<?= e(mediaUrl($imagemCapaAtual['caminho'])) ?>" alt="<?= e($imagemCapaAtual['alt_text'] ?: $imagemCapaAtual['titulo'] ?: $imagemCapaAtual['nome_original']) ?>" class="img-thumbnail featured-preview">
+                                        <div><div class="fw-semibold"><?= e($imagemCapaAtual['titulo'] ?: $imagemCapaAtual['nome_original']) ?></div><button type="button" class="btn btn-sm btn-link text-danger p-0 mt-1" data-media-featured-remove>Remover imagem</button></div>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="text-secondary small">Nenhuma imagem selecionada.</div>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
-                    <div id="imagemCapaPreview" class="mt-3"></div>
                 </div>
             </div>
 
@@ -209,6 +223,8 @@ require __DIR__ . '/../_header.php';
                 <label class="form-label">Conteúdo</label>
                 <textarea id="conteudo" class="form-control" name="conteudo" rows="16"><?= e((string)$pagina['conteudo']) ?></textarea>
             </div>
+
+            <div class="col-12"><div class="border rounded-3 p-3"><div class="fw-semibold mb-3">SEO do conteúdo</div><div class="row g-3"><div class="col-12"><label class="form-label">Título SEO</label><input class="form-control" name="seo_titulo" maxlength="180" value="<?= e((string)($pagina['seo_titulo'] ?? '')) ?>" placeholder="Se vazio, usa o título da página"></div><div class="col-12"><label class="form-label">Meta description</label><textarea class="form-control" name="seo_descricao" maxlength="320" rows="2"><?= e((string)($pagina['seo_descricao'] ?? '')) ?></textarea></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="seo_noindex" id="seoNoindex" <?= !empty($pagina['seo_noindex']) ? 'checked' : '' ?>><label class="form-check-label" for="seoNoindex">Não indexar esta página</label></div></div></div></div></div>
 
             <div class="col-md-3">
                 <label class="form-label">Status</label>
@@ -241,29 +257,41 @@ require __DIR__ . '/../_header.php';
     </div>
 </form>
 
+<?php require __DIR__ . '/../_editor_media_picker.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
+<script src="<?= e(url('public/js/editor-media-picker.js')) ?>"></script>
 <script>
+PortalMediaPicker.init({
+    modalId: 'portalMediaPickerModal',
+    uploadUrl: <?= json_encode(url('admin/midias/upload-editor.php'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>,
+    csrfToken: <?= json_encode(Csrf::token(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>
+});
+
 tinymce.init({
     selector:'#conteudo',
     height:520,
     menubar:false,
     plugins:'link lists table code image media',
-    toolbar:'undo redo | blocks | bold italic | bullist numlist | link image table | alignleft aligncenter alignright | code',
+    toolbar:'undo redo | blocks | bold italic | bullist numlist | link portalmedia table | alignleft aligncenter alignright | code',
     setup:function(editor){
+        editor.ui.registry.addButton('portalmedia', {
+            icon: 'image',
+            tooltip: 'Inserir imagens da Biblioteca de Mídia',
+            onAction: function () { PortalMediaPicker.openForEditor(editor); }
+        });
         editor.on('change keyup', function(){ editor.save(); });
     }
 });
+
 document.querySelector('form').addEventListener('submit', function(){
     if (typeof tinymce !== 'undefined') tinymce.triggerSave();
 });
-const select=document.getElementById('imagemCapaSelect');
-const preview=document.getElementById('imagemCapaPreview');
-function updatePreview(){
-    const option=select.options[select.selectedIndex];
-    const src=option?.dataset?.url || '';
-    preview.innerHTML=src ? `<img src="${src}" alt="Prévia" class="img-thumbnail featured-preview">` : '';
-}
-select.addEventListener('change',updatePreview);
-updatePreview();
+
+PortalMediaPicker.bindFeatured({
+    openButton: document.querySelector('[data-media-featured-open]'),
+    removeButtonSelector: '[data-media-featured-remove]',
+    input: document.getElementById('imagemCapaId'),
+    preview: document.getElementById('imagemCapaPreview')
+});
 </script>
 <?php require __DIR__ . '/../_footer.php'; ?>

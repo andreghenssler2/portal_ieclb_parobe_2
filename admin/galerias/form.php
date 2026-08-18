@@ -8,6 +8,9 @@ $galeria = [
     'titulo' => '',
     'slug' => '',
     'descricao' => '',
+    'seo_titulo' => '',
+    'seo_descricao' => '',
+    'seo_noindex' => 0,
     'imagem_capa_id' => '',
     'status' => 'rascunho',
     'publicado_em' => '',
@@ -46,6 +49,7 @@ if ($id > 0) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $galeria = array_merge($galeria, $_POST);
+    $galeria['seo_noindex'] = isset($_POST['seo_noindex']) ? 1 : 0;
     if (!Csrf::validate($_POST['_token'] ?? null)) {
         $error = 'Token de segurança inválido.';
     } else {
@@ -93,20 +97,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($id > 0) {
                 $stmt = $pdo->prepare(
                     'UPDATE galerias SET titulo=:titulo, slug=:slug, descricao=:descricao, imagem_capa_id=:capa,
+                     seo_titulo=:seo_titulo, seo_descricao=:seo_descricao, seo_noindex=:seo_noindex,
                      status=:status, publicado_em=:publicado_em WHERE id=:id'
                 );
                 $stmt->execute([
                     'titulo' => $titulo, 'slug' => $slug, 'descricao' => $descricao ?: null,
-                    'capa' => $capaId ?: null, 'status' => $status, 'publicado_em' => $publicadoEm, 'id' => $id,
+                    'capa' => $capaId ?: null, 'seo_titulo' => trim((string)($_POST['seo_titulo'] ?? '')) ?: null,
+                    'seo_descricao' => trim((string)($_POST['seo_descricao'] ?? '')) ?: null, 'seo_noindex' => isset($_POST['seo_noindex']) ? 1 : 0,
+                    'status' => $status, 'publicado_em' => $publicadoEm, 'id' => $id,
                 ]);
             } else {
                 $stmt = $pdo->prepare(
-                    'INSERT INTO galerias (autor_id,titulo,slug,descricao,imagem_capa_id,status,publicado_em)
-                     VALUES (:autor,:titulo,:slug,:descricao,:capa,:status,:publicado_em)'
+                    'INSERT INTO galerias (autor_id,titulo,slug,descricao,imagem_capa_id,seo_titulo,seo_descricao,seo_noindex,status,publicado_em)
+                     VALUES (:autor,:titulo,:slug,:descricao,:capa,:seo_titulo,:seo_descricao,:seo_noindex,:status,:publicado_em)'
                 );
                 $stmt->execute([
                     'autor' => (int)Auth::id(), 'titulo' => $titulo, 'slug' => $slug,
                     'descricao' => $descricao ?: null, 'capa' => $capaId ?: null,
+                    'seo_titulo' => trim((string)($_POST['seo_titulo'] ?? '')) ?: null,
+                    'seo_descricao' => trim((string)($_POST['seo_descricao'] ?? '')) ?: null,
+                    'seo_noindex' => isset($_POST['seo_noindex']) ? 1 : 0,
                     'status' => $status, 'publicado_em' => $publicadoEm,
                 ]);
                 $id = (int)$pdo->lastInsertId();
@@ -237,6 +247,8 @@ require __DIR__ . '/../_header.php';
                     </div>
                 </div>
             </div>
+
+            <div class="card border-0 shadow-sm mb-4"><div class="card-header bg-white fw-semibold">SEO do conteúdo</div><div class="card-body p-4"><div class="mb-3"><label class="form-label">Título SEO</label><input class="form-control" name="seo_titulo" maxlength="180" value="<?= e((string)($galeria['seo_titulo'] ?? '')) ?>"></div><div class="mb-3"><label class="form-label">Meta description</label><textarea class="form-control" name="seo_descricao" maxlength="320" rows="3"><?= e((string)($galeria['seo_descricao'] ?? '')) ?></textarea></div><div class="form-check"><input class="form-check-input" type="checkbox" name="seo_noindex" id="seoNoindex" <?= !empty($galeria['seo_noindex']) ? 'checked' : '' ?>><label class="form-check-label" for="seoNoindex">Não indexar esta galeria</label></div></div></div>
 
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white fw-semibold">Imagem de capa</div>

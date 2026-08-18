@@ -10,8 +10,12 @@ $evento = [
     'titulo' => '',
     'slug' => '',
     'resumo' => '',
+    'seo_titulo' => '',
+    'seo_descricao' => '',
+    'seo_noindex' => 0,
     'descricao' => '',
     'comunidade_id' => '',
+    'categoria_evento_id' => '',
     'local' => '',
     'endereco' => '',
     'data_inicio' => '',
@@ -33,6 +37,7 @@ if ($id) {
 }
 
 $comunidades = $pdo->query('SELECT id, nome FROM comunidades WHERE ativa = 1 ORDER BY ordem, nome')->fetchAll();
+$categoriasEvento = $pdo->query('SELECT id, nome FROM evento_categorias WHERE ativa = 1 ORDER BY ordem, nome')->fetchAll();
 $midias = $pdo->query(
     "SELECT id, caminho, titulo, alt_text, nome_original
      FROM midias
@@ -43,12 +48,13 @@ $midias = $pdo->query(
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    foreach (['tipo', 'titulo', 'slug', 'resumo', 'descricao', 'comunidade_id', 'local', 'endereco', 'data_inicio', 'data_fim', 'imagem_capa_id', 'status'] as $field) {
+    foreach (['tipo', 'titulo', 'slug', 'resumo', 'seo_titulo', 'seo_descricao', 'descricao', 'comunidade_id', 'categoria_evento_id', 'local', 'endereco', 'data_inicio', 'data_fim', 'imagem_capa_id', 'status'] as $field) {
         if (array_key_exists($field, $_POST)) {
             $evento[$field] = $_POST[$field];
         }
     }
     $evento['santa_ceia'] = isset($_POST['santa_ceia']) ? 1 : 0;
+    $evento['seo_noindex'] = isset($_POST['seo_noindex']) ? 1 : 0;
 
     if (!Csrf::validate($_POST['_token'] ?? null)) {
         $error = 'Token de segurança inválido.';
@@ -103,6 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $data = [
                     'autor_id' => Auth::id(),
                     'comunidade_id' => ($_POST['comunidade_id'] ?? '') !== '' ? (int)$_POST['comunidade_id'] : null,
+                    'categoria_evento_id' => ($_POST['categoria_evento_id'] ?? '') !== '' ? (int)$_POST['categoria_evento_id'] : null,
                     'tipo' => $tipo,
                     'titulo' => $titulo,
                     'slug' => uniqueSlug($pdo, 'eventos', $slugBase, $id),
@@ -114,6 +121,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'data_fim' => $dataFim,
                     'santa_ceia' => $tipo === 'culto' && isset($_POST['santa_ceia']) ? 1 : 0,
                     'imagem_capa_id' => $imagemCapaId,
+                    'seo_titulo' => trim((string)($_POST['seo_titulo'] ?? '')) ?: null,
+                    'seo_descricao' => trim((string)($_POST['seo_descricao'] ?? '')) ?: null,
+                    'seo_noindex' => isset($_POST['seo_noindex']) ? 1 : 0,
                     'status' => $status,
                 ];
 
@@ -123,6 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'UPDATE eventos SET
                             autor_id = :autor_id,
                             comunidade_id = :comunidade_id,
+                            categoria_evento_id = :categoria_evento_id,
                             tipo = :tipo,
                             titulo = :titulo,
                             slug = :slug,
@@ -134,15 +145,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             data_fim = :data_fim,
                             santa_ceia = :santa_ceia,
                             imagem_capa_id = :imagem_capa_id,
+                            seo_titulo = :seo_titulo,
+                            seo_descricao = :seo_descricao,
+                            seo_noindex = :seo_noindex,
                             status = :status
                          WHERE id = :id'
                     );
                 } else {
                     $stmt = $pdo->prepare(
                         'INSERT INTO eventos
-                            (autor_id, comunidade_id, tipo, titulo, slug, resumo, descricao, local, endereco, data_inicio, data_fim, santa_ceia, imagem_capa_id, status)
+                            (autor_id, comunidade_id, categoria_evento_id, tipo, titulo, slug, resumo, descricao, local, endereco, data_inicio, data_fim, santa_ceia, imagem_capa_id, seo_titulo, seo_descricao, seo_noindex, status)
                          VALUES
-                            (:autor_id, :comunidade_id, :tipo, :titulo, :slug, :resumo, :descricao, :local, :endereco, :data_inicio, :data_fim, :santa_ceia, :imagem_capa_id, :status)'
+                            (:autor_id, :comunidade_id, :categoria_evento_id, :tipo, :titulo, :slug, :resumo, :descricao, :local, :endereco, :data_inicio, :data_fim, :santa_ceia, :imagem_capa_id, :seo_titulo, :seo_descricao, :seo_noindex, :status)'
                     );
                 }
 
@@ -190,7 +204,7 @@ require __DIR__ . '/../_header.php';
                 <input class="form-control form-control-lg" name="titulo" value="<?= e((string)$evento['titulo']) ?>" required placeholder="Ex.: Culto com Santa Ceia">
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <label class="form-label">Comunidade</label>
                 <select class="form-select" name="comunidade_id">
                     <option value="">Paroquial / Todas</option>
@@ -199,7 +213,17 @@ require __DIR__ . '/../_header.php';
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
+                <label class="form-label">Categoria</label>
+                <select class="form-select" name="categoria_evento_id">
+                    <option value="">Sem categoria</option>
+                    <?php foreach ($categoriasEvento as $categoria): ?>
+                        <option value="<?= (int)$categoria['id'] ?>" <?= (string)($evento['categoria_evento_id'] ?? '') === (string)$categoria['id'] ? 'selected' : '' ?>><?= e($categoria['nome']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <div class="form-text"><a href="<?= e(url('admin/eventos/categorias.php')) ?>">Gerenciar categorias</a></div>
+            </div>
+            <div class="col-md-4">
                 <label class="form-label">Slug / URL</label>
                 <input class="form-control" name="slug" value="<?= e((string)$evento['slug']) ?>" placeholder="gerado-automaticamente">
             </div>
@@ -239,7 +263,7 @@ require __DIR__ . '/../_header.php';
                     <div class="row g-3">
                         <div class="col-lg-5">
                             <input class="form-control" type="file" name="imagem_capa_upload" accept="image/jpeg,image/png,image/webp,image/gif">
-                            <div class="form-text">JPG, PNG, WEBP ou GIF. Máximo <?= e(formatBytes(UPLOAD_MAX_SIZE)) ?>.</div>
+                            <div class="form-text">JPG, PNG, WEBP ou GIF. Máximo <?= e(formatBytes(mediaUploadMaxSize($pdo))) ?>.</div>
                         </div>
                         <div class="col-lg-7">
                             <select class="form-select" name="imagem_capa_id" id="imagemCapaSelect">
@@ -258,6 +282,8 @@ require __DIR__ . '/../_header.php';
                 <label class="form-label">Descrição</label>
                 <textarea id="descricao" class="form-control" name="descricao" rows="12"><?= e((string)($evento['descricao'] ?? '')) ?></textarea>
             </div>
+
+            <div class="col-12"><div class="border rounded-3 p-3"><div class="fw-semibold mb-3">SEO do conteúdo</div><div class="row g-3"><div class="col-12"><label class="form-label">Título SEO</label><input class="form-control" name="seo_titulo" maxlength="180" value="<?= e((string)($evento['seo_titulo'] ?? '')) ?>" placeholder="Se vazio, usa o título do evento"></div><div class="col-12"><label class="form-label">Meta description</label><textarea class="form-control" name="seo_descricao" maxlength="320" rows="2"><?= e((string)($evento['seo_descricao'] ?? '')) ?></textarea></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="seo_noindex" id="seoNoindex" <?= !empty($evento['seo_noindex']) ? 'checked' : '' ?>><label class="form-check-label" for="seoNoindex">Não indexar este evento/culto</label></div></div></div></div></div>
 
             <div class="col-md-4">
                 <label class="form-label">Status</label>

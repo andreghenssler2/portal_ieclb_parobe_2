@@ -22,6 +22,7 @@ if (!$galeria) {
     exit('Galeria não encontrada.');
 }
 
+redirectCanonicalContent('galeria', (string)$galeria['slug']);
 $stmt = $pdo->prepare(
     "SELECT gm.legenda, gm.ordem, m.id, m.caminho, m.titulo, m.alt_text, m.nome_original, m.largura, m.altura
      FROM galeria_midias gm
@@ -32,11 +33,12 @@ $stmt = $pdo->prepare(
 $stmt->execute(['id' => $galeria['id']]);
 $fotos = $stmt->fetchAll();
 
-$metaTitle = $galeria['titulo'] . ' - ' . siteConfig($pdo, 'seo_titulo', 'IECLB Parobé');
-$metaDescription = trim((string)$galeria['descricao']) ?: ('Galeria de fotos: ' . $galeria['titulo']);
+$metaTitle = trim((string)($galeria['seo_titulo'] ?? '')) ?: $galeria['titulo'];
+$metaDescription = trim((string)($galeria['seo_descricao'] ?? '')) ?: (trim((string)$galeria['descricao']) ?: ('Galeria de fotos: ' . $galeria['titulo']));
+$metaNoindex = (int)($galeria['seo_noindex'] ?? 0) === 1;
 $canonicalUrl = contentUrl('galeria', (string)$galeria['slug']);
 $metaImage = $galeria['capa_caminho'] ? mediaUrl((string)$galeria['capa_caminho']) : '';
-require __DIR__ . '/theme/ieclb/header.php';
+require themeFile($pdo, 'header.php');
 ?>
 <section class="container py-5">
     <div class="row justify-content-center">
@@ -103,4 +105,4 @@ document.addEventListener('keydown', function (event) {
 });
 </script>
 <?php endif; ?>
-<?php require __DIR__ . '/theme/ieclb/footer.php'; ?>
+<?php require themeFile($pdo, 'footer.php'); ?>

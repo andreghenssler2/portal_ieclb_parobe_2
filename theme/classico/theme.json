@@ -1,0 +1,13 @@
+{
+  "name": "Clássico Luterano",
+  "version": "1.0.0",
+  "description": "Visual sóbrio com tipografia serifada, navegação tradicional e destaque para leitura.",
+  "author": "Portal IECLB",
+  "colors": [
+    "#6b1f2a",
+    "#f7f1e8",
+    "#2f2a26",
+    "#c7a86b",
+    "#ffffff"
+  ]
+}

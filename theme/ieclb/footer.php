@@ -10,9 +10,18 @@ $socials = [
     'YouTube' => trim((string)($footerSettings['site_youtube'] ?? '')),
     'Facebook' => trim((string)($footerSettings['site_facebook'] ?? '')),
 ];
+$privacyPage = null;
+try {
+    $privacyId = (int)($footerSettings['privacy_page_id'] ?? 0);
+    if ($privacyId > 0 && (string)($footerSettings['privacy_footer_link'] ?? '1') === '1') {
+        $stmt = $footerPdo->prepare("SELECT titulo,slug FROM paginas WHERE id=:id AND status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) LIMIT 1");
+        $stmt->execute(['id'=>$privacyId]);
+        $privacyPage = $stmt->fetch() ?: null;
+    }
+} catch (Throwable $e) {}
 ?>
 </main>
-<footer class="border-top mt-5 py-4 bg-light">
+<footer class="portal-footer border-top mt-5 py-4">
     <div class="container">
         <div class="row g-3 align-items-start">
             <div class="col-lg-7">
@@ -27,6 +36,7 @@ $socials = [
                 <?php endif; ?>
             </div>
             <div class="col-lg-5 text-lg-end">
+                <?php if ($privacyPage): ?><a class="footer-social-link" href="<?= e(contentUrl('pagina',(string)$privacyPage['slug'])) ?>">Política de Privacidade</a><?php endif; ?>
                 <?php foreach ($socials as $label => $socialUrl): ?>
                     <?php if ($socialUrl): ?><a class="footer-social-link" href="<?= e($socialUrl) ?>" target="_blank" rel="noopener"><?= e($label) ?></a><?php endif; ?>
                 <?php endforeach; ?>

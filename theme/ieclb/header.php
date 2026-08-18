@@ -12,6 +12,21 @@ $resolvedTitle = trim((string)($metaTitle ?? '')) ?: $defaultTitle;
 $resolvedDescription = trim((string)($metaDescription ?? '')) ?: $defaultDescription;
 $resolvedKeywords = trim((string)($metaKeywords ?? '')) ?: $defaultKeywords;
 $resolvedCanonical = trim((string)($canonicalUrl ?? '')) ?: currentCanonicalUrl();
+$titleSeparator = trim((string)($siteSettings['seo_title_separator'] ?? '-')) ?: '-';
+$appendSiteName = (string)($siteSettings['seo_append_site_name'] ?? '1') === '1';
+if ($appendSiteName && $resolvedTitle !== $defaultTitle && mb_stripos($resolvedTitle, $defaultTitle) === false) {
+    $resolvedTitle .= ' ' . $titleSeparator . ' ' . $defaultTitle;
+}
+$globalIndex = (string)($siteSettings['seo_robots_index'] ?? '1') === '1' && (string)($siteSettings['privacy_allow_search_engines'] ?? '1') === '1';
+$globalFollow = (string)($siteSettings['seo_robots_follow'] ?? '1') === '1';
+$resolvedNoindex = !$globalIndex || !empty($metaNoindex);
+$robotsValue = ($resolvedNoindex ? 'noindex' : 'index') . ',' . ($globalFollow ? 'follow' : 'nofollow');
+$hasSpecificMeta = trim((string)($metaTitle ?? '')) !== '' && trim((string)($metaTitle ?? '')) !== $defaultTitle;
+$socialTitle = $hasSpecificMeta ? $resolvedTitle : (trim((string)($siteSettings['seo_social_title'] ?? '')) ?: $resolvedTitle);
+$socialDescription = $hasSpecificMeta ? $resolvedDescription : (trim((string)($siteSettings['seo_social_description'] ?? '')) ?: $resolvedDescription);
+$openGraphActive = (string)($siteSettings['seo_open_graph_ativo'] ?? '1') === '1';
+$twitterCardActive = (string)($siteSettings['seo_twitter_card_ativo'] ?? '1') === '1';
+$twitterSite = trim((string)($siteSettings['seo_twitter_site'] ?? ''));
 
 $logoMedia = null;
 $faviconMedia = null;
@@ -31,6 +46,18 @@ $resolvedImage = trim((string)($metaImage ?? ''));
 if ($resolvedImage === '' && $ogMedia) {
     $resolvedImage = mediaUrl((string)$ogMedia['caminho']);
 }
+
+$appearancePrimary = trim((string)($siteSettings['aparencia_cor_primaria'] ?? '#0b5d4b')) ?: '#0b5d4b';
+$appearanceSecondary = trim((string)($siteSettings['aparencia_cor_secundaria'] ?? '#6c757d')) ?: '#6c757d';
+$appearanceBg = trim((string)($siteSettings['aparencia_cor_fundo'] ?? '#ffffff')) ?: '#ffffff';
+$appearanceText = trim((string)($siteSettings['aparencia_cor_texto'] ?? '#1f2937')) ?: '#1f2937';
+$appearanceFooter = trim((string)($siteSettings['aparencia_cor_rodape'] ?? '#f8f9fa')) ?: '#f8f9fa';
+$appearanceFooterText = trim((string)($siteSettings['aparencia_cor_rodape_texto'] ?? '#495057')) ?: '#495057';
+$appearanceContainer = max(900, min(1600, (int)($siteSettings['aparencia_container_max'] ?? 1140)));
+$appearanceRadius = max(0, min(40, (int)($siteSettings['aparencia_bordas_arredondadas'] ?? 16)));
+$appearanceSticky = (string)($siteSettings['aparencia_cabecalho_sticky'] ?? '0') === '1';
+$showBrandWithLogo = (string)($siteSettings['aparencia_mostrar_nome_com_logo'] ?? '0') === '1';
+$activeThemeStyle = themeAssetUrl($themePdo, 'style.css');
 
 $menuPrincipal = publicMenu($themePdo, 'principal');
 
@@ -61,30 +88,40 @@ if (!$menuPrincipal) {
     <meta name="description" content="<?= e($resolvedDescription) ?>">
     <?php if ($resolvedKeywords !== ''): ?><meta name="keywords" content="<?= e($resolvedKeywords) ?>"><?php endif; ?>
     <link rel="canonical" href="<?= e($resolvedCanonical) ?>">
+    <meta name="robots" content="<?= e($robotsValue) ?>">
+    <?php if ((string)($siteSettings['seo_sitemap_ativo'] ?? '1') === '1'): ?><link rel="sitemap" type="application/xml" href="<?= e(url('sitemap.xml')) ?>"><?php endif; ?>
 
+    <?php if ($openGraphActive): ?>
     <meta property="og:locale" content="pt_BR">
     <meta property="og:type" content="<?= e((string)($metaOgType ?? 'website')) ?>">
-    <meta property="og:title" content="<?= e($resolvedTitle) ?>">
-    <meta property="og:description" content="<?= e($resolvedDescription) ?>">
+    <meta property="og:title" content="<?= e($socialTitle) ?>">
+    <meta property="og:description" content="<?= e($socialDescription) ?>">
     <meta property="og:url" content="<?= e($resolvedCanonical) ?>">
     <meta property="og:site_name" content="<?= e($siteName) ?>">
     <?php if ($resolvedImage !== ''): ?><meta property="og:image" content="<?= e($resolvedImage) ?>"><?php endif; ?>
+    <?php endif; ?>
 
+    <?php if ($twitterCardActive): ?>
     <meta name="twitter:card" content="<?= $resolvedImage !== '' ? 'summary_large_image' : 'summary' ?>">
-    <meta name="twitter:title" content="<?= e($resolvedTitle) ?>">
-    <meta name="twitter:description" content="<?= e($resolvedDescription) ?>">
+    <meta name="twitter:title" content="<?= e($socialTitle) ?>">
+    <meta name="twitter:description" content="<?= e($socialDescription) ?>">
+    <?php if ($twitterSite !== ''): ?><meta name="twitter:site" content="<?= e(str_starts_with($twitterSite, '@') ? $twitterSite : '@' . $twitterSite) ?>"><?php endif; ?>
     <?php if ($resolvedImage !== ''): ?><meta name="twitter:image" content="<?= e($resolvedImage) ?>"><?php endif; ?>
+    <?php endif; ?>
 
     <?php if ($faviconMedia): ?><link rel="icon" href="<?= e(mediaUrl((string)$faviconMedia['caminho'])) ?>"><?php endif; ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= e(url('public/css/site.css')) ?>">
+    <?php if ($activeThemeStyle): ?><link rel="stylesheet" href="<?= e($activeThemeStyle) ?>"><?php endif; ?>
+    <style>:root{--portal-primary:<?= e($appearancePrimary) ?>;--portal-secondary:<?= e($appearanceSecondary) ?>;--portal-bg:<?= e($appearanceBg) ?>;--portal-text:<?= e($appearanceText) ?>;--portal-footer-bg:<?= e($appearanceFooter) ?>;--portal-footer-text:<?= e($appearanceFooterText) ?>;--portal-container:<?= (int)$appearanceContainer ?>px;--portal-radius:<?= (int)$appearanceRadius ?>px}</style>
 </head>
 <body>
-<header class="border-bottom bg-white">
+<header class="border-bottom bg-white portal-header <?= $appearanceSticky ? 'sticky-top shadow-sm' : '' ?>">
     <nav class="navbar navbar-expand-lg container py-3">
         <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= e(url()) ?>">
             <?php if ($logoMedia): ?>
                 <img src="<?= e(mediaUrl((string)$logoMedia['caminho'])) ?>" class="site-logo" alt="<?= e($brandName) ?>">
+                <?php if ($showBrandWithLogo): ?><span class="site-brand-name"><?= e($brandName) ?></span><?php endif; ?>
             <?php else: ?>
                 <span><?= e($brandName) ?></span>
             <?php endif; ?>

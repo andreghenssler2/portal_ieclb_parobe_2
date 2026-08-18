@@ -6,7 +6,6 @@ $scriptName = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
 $adminMarker = '/admin/';
 $adminPos = strpos($scriptName, $adminMarker);
 $currentAdminPath = $adminPos !== false ? ltrim(substr($scriptName, $adminPos + strlen($adminMarker)), '/') : '';
-$settingsSection = (string)($_GET['secao'] ?? 'geral');
 
 $isPath = static fn(string $path): bool => $currentAdminPath === ltrim($path, '/');
 $startsPath = static fn(string $path): bool => str_starts_with($currentAdminPath, trim($path, '/') . '/');
@@ -17,13 +16,13 @@ $pagesOpen = $startsPath('paginas');
 $eventsOpen = $startsPath('eventos');
 $formsOpen = $startsPath('formularios');
 $usersOpen = $startsPath('usuarios') || $startsPath('perfis');
-$appearanceOpen = $startsPath('menus') || $startsPath('banners') || ($startsPath('configuracoes') && $settingsSection === 'aparencia');
-$seoOpen = $startsPath('configuracoes') && $settingsSection === 'seo';
-$configOpen = $startsPath('configuracoes') && !in_array($settingsSection, ['seo', 'aparencia'], true);
+$appearanceOpen = $startsPath('aparencia') || $startsPath('menus') || $startsPath('banners');
+$seoOpen = $startsPath('seo');
+$configOpen = $startsPath('configuracoes');
 $communitiesOpen = $startsPath('comunidades');
 $accountOpen = $isPath('minha-conta.php');
 
-$canAppearance = Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') || Auth::can('configuracoes.gerenciar');
+$canAppearance = Auth::can('aparencia.gerenciar') || Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') || Auth::can('configuracoes.gerenciar');
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -34,6 +33,8 @@ $canAppearance = Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= e(url('public/css/admin.css')) ?>">
+    <!-- Bootstrap JS precisa estar disponível antes dos scripts específicos das páginas. -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body class="admin-body">
 <nav class="navbar navbar-dark admin-topbar sticky-top">
@@ -119,7 +120,7 @@ $canAppearance = Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') 
                     <div class="collapse admin-nav-submenu <?= $eventsOpen ? 'show' : '' ?>" id="menuEventos">
                         <a class="<?= $isPath('eventos/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/eventos/index.php')) ?>">Todos os Eventos</a>
                         <a class="<?= $isPath('eventos/form.php') && !isset($_GET['id']) ? 'active' : '' ?>" href="<?= e(url('admin/eventos/form.php')) ?>">Adicionar Novo</a>
-                        <span class="admin-nav-disabled">Categorias <small>em breve</small></span>
+                        <a class="<?= $isPath('eventos/categorias.php') ? 'active' : '' ?>" href="<?= e(url('admin/eventos/categorias.php')) ?>">Categorias</a>
                     </div>
                 <?php endif; ?>
 
@@ -136,14 +137,14 @@ $canAppearance = Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') 
 
                 <div class="admin-nav-separator"></div>
 
-                <?php if (Auth::can('configuracoes.gerenciar')): ?>
+                <?php if (Auth::can('seo.gerenciar')): ?>
                     <button class="admin-nav-link admin-nav-toggle <?= $seoOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuSeo" aria-expanded="<?= $seoOpen ? 'true' : 'false' ?>">
                         <i class="bi bi-graph-up-arrow"></i><span>SEO</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
                     </button>
                     <div class="collapse admin-nav-submenu <?= $seoOpen ? 'show' : '' ?>" id="menuSeo">
-                        <a href="<?= e(url('admin/configuracoes/index.php?secao=seo#seo-geral')) ?>">Geral</a>
-                        <a href="<?= e(url('admin/configuracoes/index.php?secao=seo#seo-social')) ?>">Social</a>
-                        <span class="admin-nav-disabled">Sitemap <small>em breve</small></span>
+                        <a class="<?= $isPath('seo/geral.php') ? 'active' : '' ?>" href="<?= e(url('admin/seo/geral.php')) ?>">Geral</a>
+                        <a class="<?= $isPath('seo/social.php') ? 'active' : '' ?>" href="<?= e(url('admin/seo/social.php')) ?>">Social</a>
+                        <a class="<?= $isPath('seo/sitemap.php') ? 'active' : '' ?>" href="<?= e(url('admin/seo/sitemap.php')) ?>">Sitemap</a>
                     </div>
                 <?php endif; ?>
 
@@ -169,11 +170,11 @@ $canAppearance = Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') 
                         <i class="bi bi-palette"></i><span>Aparência</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
                     </button>
                     <div class="collapse admin-nav-submenu <?= $appearanceOpen ? 'show' : '' ?>" id="menuAparencia">
-                        <span class="admin-nav-disabled">Temas <small>em breve</small></span>
-                        <?php if (Auth::can('configuracoes.gerenciar')): ?>
-                            <a href="<?= e(url('admin/configuracoes/index.php?secao=aparencia#aparencia')) ?>">Personalizar</a>
+                        <?php if (Auth::can('aparencia.gerenciar')): ?>
+                            <a class="<?= $isPath('aparencia/temas.php') ? 'active' : '' ?>" href="<?= e(url('admin/aparencia/temas.php')) ?>">Temas</a>
+                            <a class="<?= $isPath('aparencia/personalizar.php') ? 'active' : '' ?>" href="<?= e(url('admin/aparencia/personalizar.php')) ?>">Personalizar</a>
+                            <a class="<?= $isPath('aparencia/widgets.php') ? 'active' : '' ?>" href="<?= e(url('admin/aparencia/widgets.php')) ?>">Widgets</a>
                         <?php endif; ?>
-                        <span class="admin-nav-disabled">Widgets <small>em breve</small></span>
                         <?php if (Auth::can('menus.gerenciar')): ?>
                             <a class="<?= $startsPath('menus') ? 'active' : '' ?>" href="<?= e(url('admin/menus/index.php')) ?>">Menus</a>
                         <?php endif; ?>
@@ -195,12 +196,12 @@ $canAppearance = Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') 
                         <i class="bi bi-gear"></i><span>Configurações</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
                     </button>
                     <div class="collapse admin-nav-submenu <?= $configOpen ? 'show' : '' ?>" id="menuConfiguracoes">
-                        <a href="<?= e(url('admin/configuracoes/index.php?secao=geral#config-geral')) ?>">Geral</a>
-                        <span class="admin-nav-disabled">Escrita <small>em breve</small></span>
-                        <a href="<?= e(url('admin/configuracoes/index.php?secao=geral#leitura')) ?>">Leitura</a>
-                        <span class="admin-nav-disabled">Mídia <small>em breve</small></span>
-                        <span class="admin-nav-disabled">Links Permanentes <small>em breve</small></span>
-                        <span class="admin-nav-disabled">Privacidade <small>em breve</small></span>
+                        <a class="<?= $isPath('configuracoes/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/index.php')) ?>">Geral</a>
+                        <a class="<?= $isPath('configuracoes/escrita.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/escrita.php')) ?>">Escrita</a>
+                        <a class="<?= $isPath('configuracoes/leitura.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/leitura.php')) ?>">Leitura</a>
+                        <a class="<?= $isPath('configuracoes/midia.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/midia.php')) ?>">Mídia</a>
+                        <a class="<?= $isPath('configuracoes/links-permanentes.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/links-permanentes.php')) ?>">Links Permanentes</a>
+                        <a class="<?= $isPath('configuracoes/privacidade.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/privacidade.php')) ?>">Privacidade</a>
                     </div>
                 <?php endif; ?>
             </nav>
@@ -212,7 +213,7 @@ $canAppearance = Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') 
                 <a class="admin-nav-link" href="<?= e(url()) ?>" target="_blank">
                     <i class="bi bi-box-arrow-up-right"></i><span>Ver portal</span>
                 </a>
-                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.9.0') ?></div>
+                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.12.0') ?></div>
             </div>
         </div>
     </aside>

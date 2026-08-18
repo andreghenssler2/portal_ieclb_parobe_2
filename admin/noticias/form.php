@@ -4,7 +4,10 @@ Auth::requireLogin();
 Auth::requirePermission('noticias.gerenciar');
 $pdo = Database::connection();
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
-$post = ['titulo'=>'','resumo'=>'','conteudo'=>'','comunidade_id'=>'','categoria_id'=>'','status'=>'rascunho','destaque'=>0,'publicado_em'=>'','imagem_capa_id'=>''];
+$defaultCategory = siteConfig($pdo, 'writing_default_category', '');
+$defaultStatus = siteConfig($pdo, 'writing_default_status', 'rascunho');
+if (!in_array($defaultStatus, ['rascunho','publicado'], true)) $defaultStatus = 'rascunho';
+$post = ['titulo'=>'','resumo'=>'','seo_titulo'=>'','seo_descricao'=>'','seo_noindex'=>0,'conteudo'=>'','comunidade_id'=>'','categoria_id'=>$defaultCategory,'status'=>$defaultStatus,'destaque'=>0,'publicado_em'=>'','imagem_capa_id'=>''];
 if ($id) {
     $stmt=$pdo->prepare('SELECT * FROM posts WHERE id=:id'); $stmt->execute(['id'=>$id]); $found=$stmt->fetch();
     if (!$found) { http_response_code(404); exit('Notícia não encontrada.'); }
@@ -12,13 +15,15 @@ if ($id) {
 }
 $comunidades=$pdo->query('SELECT id,nome FROM comunidades WHERE ativa=1 ORDER BY ordem,nome')->fetchAll();
 $categorias=$pdo->query('SELECT id,nome FROM categorias ORDER BY nome')->fetchAll();
-$midias=$pdo->query("SELECT id,caminho,titulo,alt_text,nome_original FROM midias WHERE mime_type LIKE 'image/%' ORDER BY id DESC LIMIT 80")->fetchAll();
+$midias=$pdo->query("SELECT id,caminho,titulo,alt_text,nome_original,largura,altura FROM midias WHERE mime_type LIKE 'image/%' ORDER BY id DESC")->fetchAll();
+$imagemCapaAtual = !empty($post['imagem_capa_id']) ? MediaService::find($pdo, (int)$post['imagem_capa_id']) : null;
 $error='';
 if ($_SERVER['REQUEST_METHOD']==='POST') {
-    foreach (['titulo','resumo','conteudo','comunidade_id','categoria_id','status','publicado_em','imagem_capa_id'] as $field) {
+    foreach (['titulo','resumo','seo_titulo','seo_descricao','conteudo','comunidade_id','categoria_id','status','publicado_em','imagem_capa_id'] as $field) {
         if (array_key_exists($field,$_POST)) $post[$field]=$_POST[$field];
     }
     $post['destaque']=isset($_POST['destaque']) ? 1 : 0;
+    $post['seo_noindex']=isset($_POST['seo_noindex']) ? 1 : 0;
 
     if (!Csrf::validate($_POST['_token'] ?? null)) { $error='Token de segurança inválido.'; }
     else {
@@ -62,15 +67,18 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
                     'resumo'=>trim((string)($_POST['resumo'] ?? '')) ?: null,
                     'conteudo'=>$conteudo,
                     'imagem_capa_id'=>$imagemCapaId,
+                    'seo_titulo'=>trim((string)($_POST['seo_titulo'] ?? '')) ?: null,
+                    'seo_descricao'=>trim((string)($_POST['seo_descricao'] ?? '')) ?: null,
+                    'seo_noindex'=>isset($_POST['seo_noindex']) ? 1 : 0,
                     'status'=>$status,
                     'destaque'=>isset($_POST['destaque']) ? 1 : 0,
                     'publicado_em'=>$publicadoEm,
                 ];
                 if ($id) {
                     $data['id']=$id;
-                    $stmt=$pdo->prepare('UPDATE posts SET autor_id=:autor_id,comunidade_id=:comunidade_id,categoria_id=:categoria_id,titulo=:titulo,slug=:slug,resumo=:resumo,conteudo=:conteudo,imagem_capa_id=:imagem_capa_id,status=:status,destaque=:destaque,publicado_em=:publicado_em WHERE id=:id');
+                    $stmt=$pdo->prepare('UPDATE posts SET autor_id=:autor_id,comunidade_id=:comunidade_id,categoria_id=:categoria_id,titulo=:titulo,slug=:slug,resumo=:resumo,conteudo=:conteudo,imagem_capa_id=:imagem_capa_id,seo_titulo=:seo_titulo,seo_descricao=:seo_descricao,seo_noindex=:seo_noindex,status=:status,destaque=:destaque,publicado_em=:publicado_em WHERE id=:id');
                 } else {
-                    $stmt=$pdo->prepare('INSERT INTO posts (autor_id,comunidade_id,categoria_id,titulo,slug,resumo,conteudo,imagem_capa_id,status,destaque,publicado_em) VALUES (:autor_id,:comunidade_id,:categoria_id,:titulo,:slug,:resumo,:conteudo,:imagem_capa_id,:status,:destaque,:publicado_em)');
+                    $stmt=$pdo->prepare('INSERT INTO posts (autor_id,comunidade_id,categoria_id,titulo,slug,resumo,conteudo,imagem_capa_id,seo_titulo,seo_descricao,seo_noindex,status,destaque,publicado_em) VALUES (:autor_id,:comunidade_id,:categoria_id,:titulo,:slug,:resumo,:conteudo,:imagem_capa_id,:seo_titulo,:seo_descricao,:seo_noindex,:status,:destaque,:publicado_em)');
                 }
                 $stmt->execute($data);
                 $savedId = $id ?: (int)$pdo->lastInsertId();
@@ -96,35 +104,56 @@ require __DIR__ . '/../_header.php';
 <div class="col-md-6"><label class="form-label">Categoria</label><select class="form-select" name="categoria_id"><option value="">Sem categoria</option><?php foreach($categorias as $c): ?><option value="<?= (int)$c['id'] ?>" <?= (string)$post['categoria_id']===(string)$c['id']?'selected':'' ?>><?= e($c['nome']) ?></option><?php endforeach; ?></select></div>
 <div class="col-12"><label class="form-label">Resumo</label><textarea class="form-control" name="resumo" rows="3"><?= e((string)($post['resumo'] ?? '')) ?></textarea></div>
 
-<div class="col-12"><div class="border rounded-3 p-3 bg-light-subtle"><div class="d-flex justify-content-between align-items-center mb-3"><div><label class="form-label fw-semibold mb-0">Imagem destacada</label><div class="form-text mt-0">Envie uma nova imagem ou escolha uma já existente na biblioteca.</div></div><a class="btn btn-sm btn-outline-secondary" target="_blank" href="<?= e(url('admin/midias/index.php?tipo=imagens')) ?>">Abrir biblioteca</a></div>
-<div class="row g-3"><div class="col-lg-5"><input class="form-control" type="file" name="imagem_capa_upload" accept="image/jpeg,image/png,image/webp,image/gif"><div class="form-text">JPG, PNG, WEBP ou GIF. Máximo <?= e(formatBytes(UPLOAD_MAX_SIZE)) ?>.</div></div>
-<div class="col-lg-7"><select class="form-select" name="imagem_capa_id" id="imagemCapaSelect"><option value="">Sem imagem destacada</option><?php foreach($midias as $m): ?><option value="<?= (int)$m['id'] ?>" data-url="<?= e(mediaUrl($m['caminho'])) ?>" <?= (string)($post['imagem_capa_id'] ?? '')===(string)$m['id']?'selected':'' ?>><?= e($m['titulo'] ?: $m['nome_original']) ?></option><?php endforeach; ?></select></div></div>
-<div id="imagemCapaPreview" class="mt-3"></div></div></div>
+<div class="col-12"><div class="border rounded-3 p-3 bg-light-subtle">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"><div><label class="form-label fw-semibold mb-0">Imagem destacada</label><div class="form-text mt-0">Faça upload ou escolha visualmente uma imagem da Biblioteca de Mídia.</div></div><button class="btn btn-sm btn-outline-primary" type="button" data-media-featured-open>Escolher da biblioteca</button></div>
+<input type="hidden" name="imagem_capa_id" id="imagemCapaId" value="<?= e((string)($post['imagem_capa_id'] ?? '')) ?>">
+<div class="row g-3 align-items-start"><div class="col-lg-5"><input class="form-control" type="file" name="imagem_capa_upload" accept="image/jpeg,image/png,image/webp,image/gif"><div class="form-text">JPG, PNG, WEBP ou GIF. Máximo <?= e(formatBytes(mediaUploadMaxSize($pdo))) ?>.</div></div>
+<div class="col-lg-7"><div id="imagemCapaPreview" class="featured-picker-preview"><?php if ($imagemCapaAtual && MediaService::isImage($imagemCapaAtual)): ?><div class="d-flex align-items-center gap-3"><img src="<?= e(mediaUrl($imagemCapaAtual['caminho'])) ?>" alt="<?= e($imagemCapaAtual['alt_text'] ?: $imagemCapaAtual['titulo'] ?: $imagemCapaAtual['nome_original']) ?>" class="img-thumbnail featured-preview"><div><div class="fw-semibold"><?= e($imagemCapaAtual['titulo'] ?: $imagemCapaAtual['nome_original']) ?></div><button type="button" class="btn btn-sm btn-link text-danger p-0 mt-1" data-media-featured-remove>Remover imagem</button></div></div><?php else: ?><div class="text-secondary small">Nenhuma imagem selecionada.</div><?php endif; ?></div></div></div>
+</div></div>
 
 <div class="col-12"><label class="form-label">Conteúdo</label><textarea id="conteudo" class="form-control" name="conteudo" rows="14"><?= e((string)$post['conteudo']) ?></textarea></div>
+<div class="col-12"><div class="border rounded-3 p-3"><div class="fw-semibold mb-3">SEO do conteúdo</div><div class="row g-3"><div class="col-12"><label class="form-label">Título SEO</label><input class="form-control" name="seo_titulo" maxlength="180" value="<?= e((string)($post['seo_titulo'] ?? '')) ?>" placeholder="Se vazio, usa o título da notícia"></div><div class="col-12"><label class="form-label">Meta description</label><textarea class="form-control" name="seo_descricao" maxlength="320" rows="2" placeholder="Se vazia, usa o resumo"><?= e((string)($post['seo_descricao'] ?? '')) ?></textarea></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="seo_noindex" id="seoNoindex" <?= !empty($post['seo_noindex']) ? 'checked' : '' ?>><label class="form-check-label" for="seoNoindex">Não permitir que esta notícia seja indexada pelos buscadores</label></div></div></div></div></div>
 <div class="col-md-4"><label class="form-label">Status</label><select class="form-select" name="status"><?php foreach(['rascunho'=>'Rascunho','agendado'=>'Agendado','publicado'=>'Publicado','arquivado'=>'Arquivado'] as $v=>$l): ?><option value="<?= e($v) ?>" <?= $post['status']===$v?'selected':'' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
 <div class="col-md-4"><label class="form-label">Publicar em</label><input type="datetime-local" class="form-control" name="publicado_em" value="<?= $post['publicado_em'] ? e((new DateTime((string)$post['publicado_em']))->format('Y-m-d\TH:i')) : '' ?>"></div>
 <div class="col-md-4 d-flex align-items-end"><div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="destaque" id="destaque" <?= $post['destaque']?'checked':'' ?>><label class="form-check-label" for="destaque">Destacar na página inicial</label></div></div>
 </div>
 <div class="mt-4 d-flex gap-2"><button class="btn btn-primary">Salvar</button><a class="btn btn-outline-secondary" href="<?= e(url('admin/noticias/index.php')) ?>">Cancelar</a><?php if ($id && !empty($post['slug'])): ?><a class="btn btn-outline-primary" target="_blank" href="<?= e(contentUrl('noticia', (string)$post['slug'])) ?>">Visualizar</a><?php endif; ?></div>
 </div></form>
+<?php require __DIR__ . '/../_editor_media_picker.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
+<script src="<?= e(url('public/js/editor-media-picker.js')) ?>"></script>
 <script>
+PortalMediaPicker.init({
+    modalId: 'portalMediaPickerModal',
+    uploadUrl: <?= json_encode(url('admin/midias/upload-editor.php'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>,
+    csrfToken: <?= json_encode(Csrf::token(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>
+});
+
 tinymce.init({
     selector:'#conteudo',
     height:480,
     menubar:false,
     plugins:'link lists table code image media',
-    toolbar:'undo redo | blocks | bold italic | bullist numlist | link image table | alignleft aligncenter alignright | code',
+    toolbar:'undo redo | blocks | bold italic | bullist numlist | link portalmedia table | alignleft aligncenter alignright | code',
     setup:function(editor){
+        editor.ui.registry.addButton('portalmedia', {
+            icon: 'image',
+            tooltip: 'Inserir imagens da Biblioteca de Mídia',
+            onAction: function () { PortalMediaPicker.openForEditor(editor); }
+        });
         editor.on('change keyup', function(){ editor.save(); });
     }
 });
+
 document.querySelector('form').addEventListener('submit', function(){
     if (typeof tinymce !== 'undefined') tinymce.triggerSave();
 });
-const select=document.getElementById('imagemCapaSelect'); const preview=document.getElementById('imagemCapaPreview');
-function updatePreview(){ const o=select.options[select.selectedIndex]; const src=o?.dataset?.url || ''; preview.innerHTML=src?`<img src="${src}" alt="Prévia" class="img-thumbnail featured-preview">`:''; }
-select.addEventListener('change',updatePreview); updatePreview();
+
+PortalMediaPicker.bindFeatured({
+    openButton: document.querySelector('[data-media-featured-open]'),
+    removeButtonSelector: '[data-media-featured-remove]',
+    input: document.getElementById('imagemCapaId'),
+    preview: document.getElementById('imagemCapaPreview')
+});
 </script>
 <?php require __DIR__ . '/../_footer.php'; ?>

@@ -1,0 +1,17 @@
+<?php
+require_once __DIR__.'/../../bootstrap.php'; Auth::requirePermission('configuracoes.gerenciar'); $pdo=Database::connection();$error='';
+$defaults=['permalink_noticia'=>'noticia','permalink_pagina'=>'pagina','permalink_evento'=>'evento','permalink_galeria'=>'galeria','permalink_formulario'=>'formulario'];$s=array_merge($defaults,siteConfigAll($pdo));
+if($_SERVER['REQUEST_METHOD']==='POST'){
+ if(!Csrf::validate($_POST['_token']??null))$error='Token de segurança inválido.'; else try{
+  $reserved=['admin','theme','public','uploads','sitemap.xml','robots.txt'];
+  foreach($defaults as $k=>$def){$v=trim(strtolower((string)($_POST[$k]??$def)));if($k==='permalink_pagina' && $v==='__root__'){}else{if(!preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/',$v))throw new RuntimeException('Prefixo inválido em '.str_replace('permalink_','',$k).'.');if(in_array($v,$reserved,true))throw new RuntimeException('O prefixo "'.$v.'" é reservado.');}$s[$k]=$v;}
+  $prefixes=array_filter([$s['permalink_noticia'],$s['permalink_evento'],$s['permalink_galeria'],$s['permalink_formulario'],$s['permalink_pagina']==='__root__'?null:$s['permalink_pagina']]);if(count($prefixes)!==count(array_unique($prefixes)))throw new RuntimeException('Os prefixos precisam ser diferentes entre si.');
+  foreach($defaults as $k=>$_)saveSiteConfig($pdo,$k,$s[$k],'texto');logAction($pdo,'configuracoes.permalinks','configuracoes');Session::flash('success','Links permanentes atualizados. URLs antigas serão redirecionadas para o novo formato.');header('Location: '.url('admin/configuracoes/links-permanentes.php'));exit;
+ }catch(Throwable $e){$error=$e->getMessage();}
+}
+$pageTitle='Links permanentes';require __DIR__.'/../_header.php';?>
+<h1 class="h3 mb-1">Links Permanentes</h1><p class="text-secondary mb-4">Defina os prefixos usados nas URLs públicas. A slug do conteúdo continua sendo gerada ao salvar.</p><?php if($error):?><div class="alert alert-danger"><?=e($error)?></div><?php endif;?><form method="post" class="card border-0 shadow-sm"><div class="card-body p-4"><?=Csrf::field()?>
+<?php foreach(['permalink_noticia'=>['Notícias','minha-noticia'],'permalink_evento'=>['Eventos','culto-especial'],'permalink_galeria'=>['Galerias','fotos-do-culto'],'permalink_formulario'=>['Formulários','contato']] as $k=>[$label,$slug]):?><div class="row align-items-center mb-3"><label class="col-md-3 col-form-label"><?=e($label)?></label><div class="col-md-5"><input class="form-control" name="<?=e($k)?>" value="<?=e($s[$k])?>" required></div><div class="col-md-4 small text-secondary">/<?=e($s[$k])?>/<?=e($slug)?></div></div><?php endforeach;?>
+<div class="row align-items-center mb-3"><label class="col-md-3 col-form-label">Páginas</label><div class="col-md-5"><select class="form-select" name="permalink_pagina"><option value="pagina" <?=$s['permalink_pagina']==='pagina'?'selected':''?>>/pagina/{slug}</option><option value="__root__" <?=$s['permalink_pagina']==='__root__'?'selected':''?>>/{slug} (na raiz)</option></select></div><div class="col-md-4 small text-secondary">Ex.: <?=e($s['permalink_pagina']==='__root__'?'/quem-somos':'/pagina/quem-somos')?></div></div>
+<div class="alert alert-warning"><strong>Atenção:</strong> usando páginas na raiz, slugs como <code>admin</code>, <code>agenda</code>, <code>galerias</code> e <code>comunidades</code> podem colidir com rotas do portal. As rotas internas têm prioridade.</div>
+<button class="btn btn-primary">Salvar links permanentes</button></div></form><?php require __DIR__.'/../_footer.php';?>
