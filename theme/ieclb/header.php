@@ -32,6 +32,7 @@ try {
         <div id="menu" class="collapse navbar-collapse">
             <ul class="navbar-nav ms-auto gap-lg-2">
                 <li class="nav-item"><a class="nav-link" href="<?= e(url()) ?>">Início</a></li>
+                <li class="nav-item"><a class="nav-link" href="<?= e(url('agenda.php')) ?>">Agenda</a></li>
                 <li class="nav-item"><a class="nav-link" href="<?= e(url('comunidades.php')) ?>">Comunidades</a></li>
                 <?php foreach ($menuPaginas as $menuPagina): ?>
                     <li class="nav-item"><a class="nav-link" href="<?= e(url('pagina.php?slug=' . urlencode($menuPagina['slug']))) ?>"><?= e($menuPagina['titulo']) ?></a></li>

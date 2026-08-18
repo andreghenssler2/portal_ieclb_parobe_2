@@ -26,7 +26,7 @@ function slugify(string $text): string
 
 function uniqueSlug(PDO $pdo, string $table, string $title, ?int $ignoreId = null): string
 {
-    $allowed = ['posts', 'paginas', 'comunidades', 'categorias'];
+    $allowed = ['posts', 'paginas', 'comunidades', 'categorias', 'eventos'];
     if (!in_array($table, $allowed, true)) {
         throw new InvalidArgumentException('Tabela inválida para slug.');
     }
@@ -59,6 +59,42 @@ function formatDateBr(?string $date): string
         return '';
     }
     return (new DateTime($date))->format('d/m/Y H:i');
+}
+
+function formatDateOnlyBr(?string $date): string
+{
+    if (!$date) {
+        return '';
+    }
+    return (new DateTime($date))->format('d/m/Y');
+}
+
+function formatTimeBr(?string $date): string
+{
+    if (!$date) {
+        return '';
+    }
+    return (new DateTime($date))->format('H:i');
+}
+
+function formatMonthShortBr(?string $date): string
+{
+    if (!$date) {
+        return '';
+    }
+
+    $months = [
+        1 => 'jan', 2 => 'fev', 3 => 'mar', 4 => 'abr',
+        5 => 'mai', 6 => 'jun', 7 => 'jul', 8 => 'ago',
+        9 => 'set', 10 => 'out', 11 => 'nov', 12 => 'dez',
+    ];
+    $month = (int)(new DateTime($date))->format('n');
+    return $months[$month] ?? '';
+}
+
+function eventTypeLabel(?string $type): string
+{
+    return $type === 'culto' ? 'Culto' : 'Evento';
 }
 
 function formatBytes(int $bytes): string

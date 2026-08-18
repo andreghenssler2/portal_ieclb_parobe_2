@@ -21,8 +21,11 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
 
     if (!Csrf::validate($_POST['_token'] ?? null)) { $error='Token de segurança inválido.'; }
     else {
-        $titulo=trim((string)($_POST['titulo'] ?? '')); $conteudo=trim((string)($_POST['conteudo'] ?? ''));
-        if ($titulo==='' || $conteudo==='') { $error='Título e conteúdo são obrigatórios.'; }
+        $titulo=trim((string)($_POST['titulo'] ?? ''));
+        $conteudo=trim((string)($_POST['conteudo'] ?? ''));
+        $conteudoTexto = html_entity_decode(strip_tags($conteudo), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $conteudoTexto = trim(str_replace("\u{00A0}", ' ', $conteudoTexto));
+        if ($titulo==='' || $conteudoTexto==='') { $error='Título e conteúdo são obrigatórios.'; }
         else {
             try {
                 $imagemCapaId = ($_POST['imagem_capa_id'] ?? '') !== '' ? (int)$_POST['imagem_capa_id'] : null;
@@ -97,7 +100,7 @@ require __DIR__ . '/../_header.php';
 <div class="col-lg-7"><select class="form-select" name="imagem_capa_id" id="imagemCapaSelect"><option value="">Sem imagem destacada</option><?php foreach($midias as $m): ?><option value="<?= (int)$m['id'] ?>" data-url="<?= e(mediaUrl($m['caminho'])) ?>" <?= (string)($post['imagem_capa_id'] ?? '')===(string)$m['id']?'selected':'' ?>><?= e($m['titulo'] ?: $m['nome_original']) ?></option><?php endforeach; ?></select></div></div>
 <div id="imagemCapaPreview" class="mt-3"></div></div></div>
 
-<div class="col-12"><label class="form-label">Conteúdo</label><textarea id="conteudo" class="form-control" name="conteudo" rows="14" required><?= e((string)$post['conteudo']) ?></textarea></div>
+<div class="col-12"><label class="form-label">Conteúdo</label><textarea id="conteudo" class="form-control" name="conteudo" rows="14"><?= e((string)$post['conteudo']) ?></textarea></div>
 <div class="col-md-4"><label class="form-label">Status</label><select class="form-select" name="status"><?php foreach(['rascunho'=>'Rascunho','agendado'=>'Agendado','publicado'=>'Publicado','arquivado'=>'Arquivado'] as $v=>$l): ?><option value="<?= e($v) ?>" <?= $post['status']===$v?'selected':'' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
 <div class="col-md-4"><label class="form-label">Publicar em</label><input type="datetime-local" class="form-control" name="publicado_em" value="<?= $post['publicado_em'] ? e((new DateTime((string)$post['publicado_em']))->format('Y-m-d\TH:i')) : '' ?>"></div>
 <div class="col-md-4 d-flex align-items-end"><div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="destaque" id="destaque" <?= $post['destaque']?'checked':'' ?>><label class="form-check-label" for="destaque">Destacar na página inicial</label></div></div>
@@ -106,7 +109,19 @@ require __DIR__ . '/../_header.php';
 </div></form>
 <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
 <script>
-tinymce.init({selector:'#conteudo',height:480,menubar:false,plugins:'link lists table code image media',toolbar:'undo redo | blocks | bold italic | bullist numlist | link image table | alignleft aligncenter alignright | code'});
+tinymce.init({
+    selector:'#conteudo',
+    height:480,
+    menubar:false,
+    plugins:'link lists table code image media',
+    toolbar:'undo redo | blocks | bold italic | bullist numlist | link image table | alignleft aligncenter alignright | code',
+    setup:function(editor){
+        editor.on('change keyup', function(){ editor.save(); });
+    }
+});
+document.querySelector('form').addEventListener('submit', function(){
+    if (typeof tinymce !== 'undefined') tinymce.triggerSave();
+});
 const select=document.getElementById('imagemCapaSelect'); const preview=document.getElementById('imagemCapaPreview');
 function updatePreview(){ const o=select.options[select.selectedIndex]; const src=o?.dataset?.url || ''; preview.innerHTML=src?`<img src="${src}" alt="Prévia" class="img-thumbnail featured-preview">`:''; }
 select.addEventListener('change',updatePreview); updatePreview();

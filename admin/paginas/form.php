@@ -49,8 +49,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $titulo = trim((string)($_POST['titulo'] ?? ''));
         $conteudo = trim((string)($_POST['conteudo'] ?? ''));
+        $conteudoTexto = html_entity_decode(strip_tags($conteudo), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $conteudoTexto = trim(str_replace("\u{00A0}", ' ', $conteudoTexto));
 
-        if ($titulo === '' || $conteudo === '') {
+        if ($titulo === '' || $conteudoTexto === '') {
             $error = 'Título e conteúdo são obrigatórios.';
         } else {
             try {
@@ -204,7 +206,7 @@ require __DIR__ . '/../_header.php';
 
             <div class="col-12">
                 <label class="form-label">Conteúdo</label>
-                <textarea id="conteudo" class="form-control" name="conteudo" rows="16" required><?= e((string)$pagina['conteudo']) ?></textarea>
+                <textarea id="conteudo" class="form-control" name="conteudo" rows="16"><?= e((string)$pagina['conteudo']) ?></textarea>
             </div>
 
             <div class="col-md-3">
@@ -245,7 +247,13 @@ tinymce.init({
     height:520,
     menubar:false,
     plugins:'link lists table code image media',
-    toolbar:'undo redo | blocks | bold italic | bullist numlist | link image table | alignleft aligncenter alignright | code'
+    toolbar:'undo redo | blocks | bold italic | bullist numlist | link image table | alignleft aligncenter alignright | code',
+    setup:function(editor){
+        editor.on('change keyup', function(){ editor.save(); });
+    }
+});
+document.querySelector('form').addEventListener('submit', function(){
+    if (typeof tinymce !== 'undefined') tinymce.triggerSave();
 });
 const select=document.getElementById('imagemCapaSelect');
 const preview=document.getElementById('imagemCapaPreview');
