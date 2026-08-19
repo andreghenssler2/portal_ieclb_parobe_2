@@ -37,4 +37,36 @@ final class Session
         unset($_SESSION['_flash'][$key]);
         return $message;
     }
+
+    public static function touchAdminActivity(): void
+    {
+        if (isset($_SESSION['auth_user']['id'])) {
+            $_SESSION['_admin_last_activity'] = time();
+        }
+    }
+
+    /**
+     * Encerra apenas a autenticação administrativa quando o tempo de inatividade expira.
+     * Retorna true quando houve expiração.
+     */
+    public static function enforceIdleTimeout(int $minutes): bool
+    {
+        if (!isset($_SESSION['auth_user']['id'])) {
+            return false;
+        }
+
+        $minutes = max(5, min(1440, $minutes));
+        $now = time();
+        $last = (int)($_SESSION['_admin_last_activity'] ?? $now);
+
+        if (($now - $last) > ($minutes * 60)) {
+            unset($_SESSION['auth_user'], $_SESSION['_admin_last_activity']);
+            self::regenerate();
+            self::flash('error', 'Sua sessão expirou por inatividade. Entre novamente.');
+            return true;
+        }
+
+        $_SESSION['_admin_last_activity'] = $now;
+        return false;
+    }
 }

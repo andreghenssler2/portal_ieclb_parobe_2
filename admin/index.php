@@ -7,6 +7,7 @@ $cards = [];
 $ultimasNoticias = [];
 $proximosEventos = [];
 $comentariosPendentes = [];
+$securityAlerts = [];
 
 if (Auth::can('noticias.gerenciar')) {
     $cards[] = ['Notícias publicadas', (int)$pdo->query("SELECT COUNT(*) FROM posts WHERE status = 'publicado'")->fetchColumn()];
@@ -72,6 +73,21 @@ if (Auth::can('formularios.gerenciar')) {
 if (Auth::can('usuarios.gerenciar')) {
     $cards[] = ['Usuários ativos', (int)$pdo->query("SELECT COUNT(*) FROM usuarios WHERE ativo = 1")->fetchColumn()];
 }
+if (Auth::can('auditoria.visualizar')) {
+    try {
+        $cards[] = ['Alertas de segurança · 24h', (int)$pdo->query("SELECT COUNT(*) FROM logs WHERE COALESCE(nivel,'info') IN ('warning','critical') AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)")->fetchColumn()];
+        $securityAlerts = $pdo->query(
+            "SELECT l.id,l.acao,l.detalhes,l.ip,l.nivel,l.created_at,u.nome AS usuario_nome
+             FROM logs l
+             LEFT JOIN usuarios u ON u.id=l.usuario_id
+             WHERE COALESCE(l.nivel,'info') IN ('warning','critical')
+             ORDER BY l.id DESC
+             LIMIT 5"
+        )->fetchAll();
+    } catch (Throwable $e) {
+        // Migração v0.20.0 ainda não executada.
+    }
+}
 
 $pageTitle = 'Dashboard';
 require __DIR__ . '/_header.php';
@@ -83,6 +99,7 @@ require __DIR__ . '/_header.php';
     </div>
     <div class="d-flex flex-wrap gap-2">
         <?php if (Auth::can('formularios.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/formularios/index.php')) ?>">Formulários</a><?php endif; ?>
+        <?php if (Auth::can('auditoria.visualizar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/auditoria/index.php')) ?>">Auditoria</a><?php endif; ?>
         <?php if (Auth::can('configuracoes.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/configuracoes/index.php')) ?>">Configurações</a><?php endif; ?>
         <?php if (Auth::can('menus.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/menus/index.php')) ?>">Menus</a><?php endif; ?>
         <?php if (Auth::can('banners.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/banners/form.php')) ?>">Novo banner</a><?php endif; ?>
@@ -177,4 +194,26 @@ require __DIR__ . '/_header.php';
     </div>
 </div>
 <?php endif; ?>
+<?php if (Auth::can('auditoria.visualizar') && $securityAlerts): ?>
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">Alertas recentes de segurança</span>
+        <a class="small text-decoration-none" href="<?= e(url('admin/auditoria/index.php?nivel=warning')) ?>">Abrir auditoria</a>
+    </div>
+    <div class="list-group list-group-flush">
+        <?php foreach($securityAlerts as $alert): ?>
+            <a class="list-group-item list-group-item-action" href="<?= e(url('admin/auditoria/index.php?q=' . rawurlencode((string)$alert['acao']))) ?>">
+                <div class="d-flex justify-content-between gap-3">
+                    <div>
+                        <div class="fw-semibold"><span class="badge <?= ($alert['nivel']??'warning')==='critical'?'text-bg-danger':'text-bg-warning' ?> me-2"><?= e((string)($alert['nivel']??'warning')) ?></span><?= e((string)$alert['acao']) ?></div>
+                        <div class="small text-secondary"><?= e(portalExcerpt((string)($alert['detalhes'] ?? ''), 140)) ?><?= !empty($alert['ip']) ? ' · IP ' . e((string)$alert['ip']) : '' ?></div>
+                    </div>
+                    <small class="text-nowrap text-secondary"><?= e(formatDateBr((string)$alert['created_at'])) ?></small>
+                </div>
+            </a>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php require __DIR__ . '/_footer.php'; ?>

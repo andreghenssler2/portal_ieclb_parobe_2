@@ -21,6 +21,17 @@ try {
     if (in_array($portalTimezone, DateTimeZone::listIdentifiers(), true)) {
         date_default_timezone_set($portalTimezone);
     }
+
+    // v0.20.0: expiração por inatividade e limpeza periódica dos registros de auditoria.
+    if (Auth::check()) {
+        $sessionTimeout = (int)siteConfig($bootstrapPdo, 'security_session_timeout_minutes', '60');
+        Session::enforceIdleTimeout($sessionTimeout);
+
+        if (Auth::check()) {
+            $retentionDays = (int)siteConfig($bootstrapPdo, 'security_audit_retention_days', '180');
+            cleanupAuditLogs($bootstrapPdo, $retentionDays);
+        }
+    }
 } catch (Throwable $e) {
     // Mantém o portal funcionando durante instalação/migração.
 }

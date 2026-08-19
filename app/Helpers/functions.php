@@ -312,23 +312,82 @@ function mediaUrl(?string $path): string
     return url(ltrim($path, '/'));
 }
 
-function logAction(PDO $pdo, string $acao, ?string $entidade = null, ?int $entidadeId = null, ?string $detalhes = null): void
+function logAction(PDO $pdo, string $acao, ?string $entidade = null, ?int $entidadeId = null, ?string $detalhes = null, string $nivel = 'info'): void
 {
     try {
-        $stmt = $pdo->prepare(
-            'INSERT INTO logs (usuario_id, acao, entidade, entidade_id, detalhes, ip)
-             VALUES (:usuario_id, :acao, :entidade, :entidade_id, :detalhes, :ip)'
-        );
-        $stmt->execute([
-            'usuario_id' => Auth::id(),
-            'acao' => mb_substr($acao, 0, 120),
-            'entidade' => $entidade !== null ? mb_substr($entidade, 0, 100) : null,
-            'entidade_id' => $entidadeId,
-            'detalhes' => $detalhes,
-            'ip' => isset($_SERVER['REMOTE_ADDR']) ? mb_substr((string)$_SERVER['REMOTE_ADDR'], 0, 45) : null,
-        ]);
+        $nivel = in_array($nivel, ['info', 'warning', 'critical'], true) ? $nivel : 'info';
+        $method = isset($_SERVER['REQUEST_METHOD']) ? mb_substr((string)$_SERVER['REQUEST_METHOD'], 0, 10) : 'CLI';
+        $route = isset($_SERVER['REQUEST_URI']) ? mb_substr((string)parse_url((string)$_SERVER['REQUEST_URI'], PHP_URL_PATH), 0, 255) : null;
+        $userAgent = isset($_SERVER['HTTP_USER_AGENT']) ? mb_substr((string)$_SERVER['HTTP_USER_AGENT'], 0, 255) : null;
+        $requestId = $_SERVER['HTTP_X_REQUEST_ID'] ?? ($GLOBALS['__audit_request_id'] ?? null);
+        if (!$requestId) {
+            try {
+                $requestId = bin2hex(random_bytes(8));
+            } catch (Throwable $ignored) {
+                $requestId = uniqid('req', true);
+            }
+            $GLOBALS['__audit_request_id'] = $requestId;
+        }
+
+        try {
+            $stmt = $pdo->prepare(
+                'INSERT INTO logs (usuario_id, acao, entidade, entidade_id, detalhes, ip, nivel, metodo, rota, user_agent, request_id)
+                 VALUES (:usuario_id, :acao, :entidade, :entidade_id, :detalhes, :ip, :nivel, :metodo, :rota, :user_agent, :request_id)'
+            );
+            $stmt->execute([
+                'usuario_id' => Auth::id(),
+                'acao' => mb_substr($acao, 0, 120),
+                'entidade' => $entidade !== null ? mb_substr($entidade, 0, 100) : null,
+                'entidade_id' => $entidadeId,
+                'detalhes' => $detalhes,
+                'ip' => isset($_SERVER['REMOTE_ADDR']) ? mb_substr((string)$_SERVER['REMOTE_ADDR'], 0, 45) : null,
+                'nivel' => $nivel,
+                'metodo' => $method,
+                'rota' => $route,
+                'user_agent' => $userAgent,
+                'request_id' => mb_substr((string)$requestId, 0, 64),
+            ]);
+        } catch (Throwable $newSchemaError) {
+            $stmt = $pdo->prepare(
+                'INSERT INTO logs (usuario_id, acao, entidade, entidade_id, detalhes, ip)
+                 VALUES (:usuario_id, :acao, :entidade, :entidade_id, :detalhes, :ip)'
+            );
+            $stmt->execute([
+                'usuario_id' => Auth::id(),
+                'acao' => mb_substr($acao, 0, 120),
+                'entidade' => $entidade !== null ? mb_substr($entidade, 0, 100) : null,
+                'entidade_id' => $entidadeId,
+                'detalhes' => $detalhes,
+                'ip' => isset($_SERVER['REMOTE_ADDR']) ? mb_substr((string)$_SERVER['REMOTE_ADDR'], 0, 45) : null,
+            ]);
+        }
     } catch (Throwable $e) {
-        // O log não deve interromper a operação principal.
+        // O log nunca deve interromper a operação principal.
+    }
+}
+
+/**
+ * Remove registros antigos de auditoria e tentativas de login uma vez por sessão/dia.
+ */
+function cleanupAuditLogs(PDO $pdo, int $retentionDays = 180): void
+{
+    $retentionDays = max(30, min(3650, $retentionDays));
+    $today = date('Y-m-d');
+    if (($_SESSION['_audit_cleanup_date'] ?? null) === $today) {
+        return;
+    }
+
+    try {
+        $pdo->exec('DELETE FROM logs WHERE created_at < DATE_SUB(NOW(), INTERVAL ' . $retentionDays . ' DAY)');
+        try {
+            $attemptDays = max(30, min($retentionDays, 365));
+            $pdo->exec('DELETE FROM login_tentativas WHERE created_at < DATE_SUB(NOW(), INTERVAL ' . $attemptDays . ' DAY)');
+        } catch (Throwable $ignored) {
+            // Tabela criada apenas na v0.20.0.
+        }
+        $_SESSION['_audit_cleanup_date'] = $today;
+    } catch (Throwable $e) {
+        // Limpeza de histórico não pode interromper o portal.
     }
 }
 

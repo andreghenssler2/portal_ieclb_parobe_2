@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: ' . url('admin/index.php'));
         exit;
     } else {
-        $error = 'E-mail ou senha inválidos.';
+        $error = Auth::lastError() ?: 'E-mail ou senha inválidos.';
     }
 }
 ?>

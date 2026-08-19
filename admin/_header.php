@@ -20,6 +20,7 @@ $usersOpen = $startsPath('usuarios') || $startsPath('perfis');
 $appearanceOpen = $startsPath('aparencia') || $startsPath('menus') || $startsPath('banners');
 $seoOpen = $startsPath('seo');
 $configOpen = $startsPath('configuracoes');
+$auditOpen = $startsPath('auditoria');
 $communitiesOpen = $startsPath('comunidades');
 $accountOpen = $isPath('minha-conta.php');
 
@@ -207,18 +208,29 @@ if (Auth::can('comentarios.gerenciar')) {
                     </a>
                 <?php endif; ?>
 
-                <?php if (Auth::can('configuracoes.gerenciar')): ?>
+                <?php if (Auth::can('auditoria.visualizar')): ?>
+                    <a class="admin-nav-link <?= $auditOpen ? 'active' : '' ?>" href="<?= e(url('admin/auditoria/index.php')) ?>">
+                        <i class="bi bi-clipboard2-pulse"></i><span>Auditoria</span>
+                    </a>
+                <?php endif; ?>
+
+                <?php if (Auth::can('configuracoes.gerenciar') || Auth::can('seguranca.gerenciar')): ?>
                     <button class="admin-nav-link admin-nav-toggle <?= $configOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuConfiguracoes" aria-expanded="<?= $configOpen ? 'true' : 'false' ?>">
                         <i class="bi bi-gear"></i><span>Configurações</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
                     </button>
                     <div class="collapse admin-nav-submenu <?= $configOpen ? 'show' : '' ?>" id="menuConfiguracoes">
-                        <a class="<?= $isPath('configuracoes/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/index.php')) ?>">Geral</a>
-                        <a class="<?= $isPath('configuracoes/escrita.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/escrita.php')) ?>">Escrita</a>
-                        <a class="<?= $isPath('configuracoes/discussao.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/discussao.php')) ?>">Discussão</a>
-                        <a class="<?= $isPath('configuracoes/leitura.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/leitura.php')) ?>">Leitura</a>
-                        <a class="<?= $isPath('configuracoes/midia.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/midia.php')) ?>">Mídia</a>
-                        <a class="<?= $isPath('configuracoes/links-permanentes.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/links-permanentes.php')) ?>">Links Permanentes</a>
-                        <a class="<?= $isPath('configuracoes/privacidade.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/privacidade.php')) ?>">Privacidade</a>
+                        <?php if (Auth::can('configuracoes.gerenciar')): ?>
+                            <a class="<?= $isPath('configuracoes/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/index.php')) ?>">Geral</a>
+                            <a class="<?= $isPath('configuracoes/escrita.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/escrita.php')) ?>">Escrita</a>
+                            <a class="<?= $isPath('configuracoes/discussao.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/discussao.php')) ?>">Discussão</a>
+                            <a class="<?= $isPath('configuracoes/leitura.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/leitura.php')) ?>">Leitura</a>
+                            <a class="<?= $isPath('configuracoes/midia.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/midia.php')) ?>">Mídia</a>
+                            <a class="<?= $isPath('configuracoes/links-permanentes.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/links-permanentes.php')) ?>">Links Permanentes</a>
+                            <a class="<?= $isPath('configuracoes/privacidade.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/privacidade.php')) ?>">Privacidade</a>
+                        <?php endif; ?>
+                        <?php if (Auth::can('seguranca.gerenciar')): ?>
+                            <a class="<?= $isPath('configuracoes/seguranca.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/seguranca.php')) ?>">Segurança</a>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
             </nav>
@@ -230,7 +242,7 @@ if (Auth::can('comentarios.gerenciar')) {
                 <a class="admin-nav-link" href="<?= e(url()) ?>" target="_blank">
                     <i class="bi bi-box-arrow-up-right"></i><span>Ver portal</span>
                 </a>
-                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.19.0') ?></div>
+                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.20.0') ?></div>
             </div>
         </div>
     </aside>
