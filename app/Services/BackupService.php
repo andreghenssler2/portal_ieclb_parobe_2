@@ -29,15 +29,28 @@ final class BackupService
         $filename = sprintf('db-%s-%s-%s.sql%s', $stamp, $reason, $suffix, $gzip ? '.gz' : '');
         $path = $this->backupDir . DIRECTORY_SEPARATOR . $filename;
 
+        $this->createDatabaseSnapshot($path, $gzip);
+        clearstatcache(true, $path);
+        return $this->fileInfo($filename);
+    }
+
+    /**
+     * Gera um dump do banco em um caminho controlado pelo chamador.
+     * Usado pelo backup completo da v0.22.0.
+     */
+    public function createDatabaseSnapshot(string $path, bool $gzip = false): array
+    {
+        $directory = dirname($path);
+        if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
+            throw new RuntimeException('Não foi possível criar a pasta temporária do backup.');
+        }
+
         $writer = $this->openWriter($path, $gzip);
         try {
             $this->write($writer, "SET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS=0;\n\n");
-
-            $tables = $this->databaseTables();
-            foreach ($tables as $table) {
+            foreach ($this->databaseTables() as $table) {
                 $this->dumpTable($writer, $table);
             }
-
             $this->write($writer, "SET FOREIGN_KEY_CHECKS=1;\n");
         } catch (Throwable $e) {
             $this->closeWriter($writer);
@@ -47,7 +60,13 @@ final class BackupService
         $this->closeWriter($writer);
 
         clearstatcache(true, $path);
-        return $this->fileInfo($filename);
+        $size = filesize($path);
+        return [
+            'path' => $path,
+            'size' => $size === false ? 0 : (int)$size,
+            'sha256' => hash_file('sha256', $path) ?: '',
+            'gzip' => $gzip,
+        ];
     }
 
     public function listDatabaseBackups(): array
@@ -94,6 +113,20 @@ final class BackupService
     public function restoreDatabaseBackup(string $filename, bool $createSafetyBackup = true): array
     {
         $path = $this->backupPath($filename);
+        $result = $this->restoreDatabaseFromPath($path, $createSafetyBackup);
+        $result['arquivo'] = $filename;
+        return $result;
+    }
+
+    /** Restaura um SQL/.sql.gz a partir de um caminho local validado pelo chamador. */
+    public function restoreDatabaseFromPath(string $path, bool $createSafetyBackup = true): array
+    {
+        if (!is_file($path)) {
+            throw new RuntimeException('Arquivo SQL do backup não encontrado.');
+        }
+        if (!preg_match('/\.sql(?:\.gz)?$/i', $path)) {
+            throw new RuntimeException('Formato de backup SQL inválido.');
+        }
         if ($createSafetyBackup) {
             $this->createDatabaseBackup('pre-restore');
         }
@@ -113,7 +146,7 @@ final class BackupService
             try { $this->pdo->exec('SET FOREIGN_KEY_CHECKS=1'); } catch (Throwable $ignored) {}
         }
 
-        return ['arquivo' => $filename, 'comandos' => $executed];
+        return ['comandos' => $executed];
     }
 
     public function pruneDatabaseBackups(int $keep): int

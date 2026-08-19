@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
+require_once __DIR__ . '/../../app/Services/CategoryService.php';
 Auth::requireLogin();
 Auth::requirePermission('noticias.gerenciar');
 $pdo = Database::connection();
@@ -20,7 +21,7 @@ if ($id) {
     $post=$found;
 }
 $comunidades=$pdo->query('SELECT id,nome FROM comunidades WHERE ativa=1 ORDER BY ordem,nome')->fetchAll();
-$categorias=$pdo->query('SELECT id,nome FROM categorias ORDER BY nome')->fetchAll();
+$categorias=CategoryService::tree($pdo);
 $tags=$pdo->query('SELECT id,nome,slug FROM tags ORDER BY nome')->fetchAll();
 $selectedTags=[];
 if ($id) { $st=$pdo->prepare('SELECT tag_id FROM post_tags WHERE post_id=:id'); $st->execute(['id'=>$id]); $selectedTags=array_map('intval',$st->fetchAll(PDO::FETCH_COLUMN)); }
@@ -133,7 +134,7 @@ require __DIR__ . '/../_header.php';
 <div class="row g-3">
 <div class="col-12"><label class="form-label">Título</label><input class="form-control form-control-lg" name="titulo" value="<?= e((string)$post['titulo']) ?>" required></div>
 <div class="col-md-6"><label class="form-label">Comunidade</label><select class="form-select" name="comunidade_id"><option value="">Paroquial / Todas</option><?php foreach($comunidades as $c): ?><option value="<?= (int)$c['id'] ?>" <?= (string)$post['comunidade_id']===(string)$c['id']?'selected':'' ?>><?= e($c['nome']) ?></option><?php endforeach; ?></select></div>
-<div class="col-md-6"><label class="form-label">Categoria</label><select class="form-select" name="categoria_id"><option value="">Sem categoria</option><?php foreach($categorias as $c): ?><option value="<?= (int)$c['id'] ?>" <?= (string)$post['categoria_id']===(string)$c['id']?'selected':'' ?>><?= e($c['nome']) ?></option><?php endforeach; ?></select></div>
+<div class="col-md-6"><label class="form-label">Categoria</label><select class="form-select" name="categoria_id"><option value="">Sem categoria</option><?php foreach($categorias as $c): ?><option value="<?= (int)$c['id'] ?>" <?= (string)$post['categoria_id']===(string)$c['id']?'selected':'' ?>><?= e(CategoryService::optionLabel($c)) ?></option><?php endforeach; ?></select></div>
 <div class="col-12"><label class="form-label">Resumo</label><textarea class="form-control" name="resumo" rows="3"><?= e((string)($post['resumo'] ?? '')) ?></textarea></div>
 <div class="col-12"><label class="form-label">Tags</label><div class="border rounded-3 p-3"><div class="d-flex flex-wrap gap-2 mb-3"><input type="search" id="tagSearch" class="form-control form-control-sm" style="max-width:320px" placeholder="Buscar tag..."><a class="btn btn-sm btn-outline-secondary" target="_blank" href="<?= e(url('admin/tags/index.php')) ?>">Gerenciar tags</a></div><div id="tagChoices" class="d-flex flex-wrap gap-2"><?php foreach($tags as $tag): ?><label class="tag-choice" data-tag-name="<?= e(mb_strtolower((string)$tag['nome'])) ?>"><input class="form-check-input me-1" type="checkbox" name="tags[]" value="<?= (int)$tag['id'] ?>" <?= in_array((int)$tag['id'],$selectedTags,true)?'checked':'' ?>><?= e($tag['nome']) ?></label><?php endforeach; ?><?php if(!$tags): ?><span class="text-secondary small">Nenhuma tag cadastrada.</span><?php endif; ?></div><div class="form-text mt-2">Uma notícia pode ter várias tags.</div></div></div>
 

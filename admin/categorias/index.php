@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
+require_once __DIR__ . '/../../app/Services/CategoryService.php';
+
 Auth::requirePermission('noticias.gerenciar');
 $pdo = Database::connection();
 $error = '';
@@ -28,7 +30,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $pdo->prepare('DELETE FROM categorias WHERE id = :id');
                     $stmt->execute(['id' => $id]);
                     logAction($pdo, 'categoria.excluir', 'categorias', $id, (string)$categoria['nome']);
-                    Session::flash('success', 'Categoria excluída. As notícias vinculadas ficaram sem categoria.');
+                    Session::flash(
+                        'success',
+                        'Categoria excluída. As notícias vinculadas ficaram sem categoria e as subcategorias passaram para o nível principal.'
+                    );
                     header('Location: ' . url('admin/categorias/index.php'));
                     exit;
                 } catch (Throwable $e) {
@@ -40,37 +45,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nome = trim((string)($_POST['nome'] ?? ''));
             $slugInformada = trim((string)($_POST['slug'] ?? ''));
             $descricao = trim((string)($_POST['descricao'] ?? ''));
+            $parentRaw = trim((string)($_POST['parent_id'] ?? ''));
+            $parentId = $parentRaw !== '' ? (int)$parentRaw : null;
 
             if ($nome === '') {
                 $error = 'Informe o nome da categoria.';
             } else {
                 try {
+                    $parentId = CategoryService::validateParent($pdo, $parentId, $id > 0 ? $id : null);
                     $slugBase = $slugInformada !== '' ? $slugInformada : $nome;
                     $slug = uniqueSlug($pdo, 'categorias', $slugBase, $id > 0 ? $id : null);
 
                     if ($id > 0) {
                         $stmt = $pdo->prepare(
                             'UPDATE categorias
-                             SET nome = :nome, slug = :slug, descricao = :descricao
+                             SET nome = :nome,
+                                 slug = :slug,
+                                 descricao = :descricao,
+                                 parent_id = :parent_id
                              WHERE id = :id'
                         );
                         $stmt->execute([
                             'nome' => $nome,
                             'slug' => $slug,
                             'descricao' => $descricao !== '' ? $descricao : null,
+                            'parent_id' => $parentId,
                             'id' => $id,
                         ]);
                         logAction($pdo, 'categoria.editar', 'categorias', $id, $nome);
                         Session::flash('success', 'Categoria atualizada com sucesso.');
                     } else {
                         $stmt = $pdo->prepare(
-                            'INSERT INTO categorias (nome, slug, descricao)
-                             VALUES (:nome, :slug, :descricao)'
+                            'INSERT INTO categorias (nome, slug, descricao, parent_id)
+                             VALUES (:nome, :slug, :descricao, :parent_id)'
                         );
                         $stmt->execute([
                             'nome' => $nome,
                             'slug' => $slug,
                             'descricao' => $descricao !== '' ? $descricao : null,
+                            'parent_id' => $parentId,
                         ]);
                         $id = (int)$pdo->lastInsertId();
                         logAction($pdo, 'categoria.criar', 'categorias', $id, $nome);
@@ -88,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if ($editId > 0) {
-    $stmt = $pdo->prepare('SELECT id, nome, slug, descricao FROM categorias WHERE id = :id LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id, nome, slug, descricao, parent_id FROM categorias WHERE id = :id LIMIT 1');
     $stmt->execute(['id' => $editId]);
     $edit = $stmt->fetch() ?: null;
     if (!$edit && $error === '') {
@@ -96,13 +109,23 @@ if ($editId > 0) {
     }
 }
 
-$categorias = $pdo->query(
-    "SELECT c.id, c.nome, c.slug, c.descricao, c.created_at, COUNT(p.id) AS total_posts
+$categorias = CategoryService::tree($pdo);
+$countRows = $pdo->query(
+    "SELECT c.id, COUNT(p.id) AS total_posts
      FROM categorias c
      LEFT JOIN posts p ON p.categoria_id = c.id AND p.status <> 'lixeira'
-     GROUP BY c.id, c.nome, c.slug, c.descricao, c.created_at
-     ORDER BY c.nome ASC"
+     GROUP BY c.id"
 )->fetchAll();
+$totalPosts = [];
+foreach ($countRows as $row) {
+    $totalPosts[(int)$row['id']] = (int)$row['total_posts'];
+}
+
+$blockedParentIds = [];
+if ($editId > 0) {
+    $blockedParentIds = CategoryService::descendantIds($pdo, $editId);
+    $blockedParentIds[] = $editId;
+}
 
 $pageTitle = 'Categorias de Posts';
 require __DIR__ . '/../_header.php';
@@ -110,7 +133,7 @@ require __DIR__ . '/../_header.php';
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
     <div>
         <h1 class="h3 mb-1">Categorias de Posts</h1>
-        <p class="text-secondary mb-0">Organize as notícias publicadas no portal.</p>
+        <p class="text-secondary mb-0">Organize as notícias em categorias e subcategorias.</p>
     </div>
     <?php if ($edit): ?>
         <a class="btn btn-outline-secondary" href="<?= e(url('admin/categorias/index.php')) ?>">Cancelar edição</a>
@@ -132,15 +155,32 @@ require __DIR__ . '/../_header.php';
                     <label class="form-label">Nome</label>
                     <input class="form-control" name="nome" value="<?= e($edit['nome'] ?? '') ?>" maxlength="100" required>
                 </div>
+
                 <div class="mb-3">
                     <label class="form-label">Slug</label>
                     <input class="form-control" name="slug" value="<?= e($edit['slug'] ?? '') ?>" maxlength="120" placeholder="gerada-automaticamente">
                     <div class="form-text">Se deixar vazio, será gerada a partir do nome.</div>
                 </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Categoria ascendente</label>
+                    <select class="form-select" name="parent_id">
+                        <option value="">Nenhuma</option>
+                        <?php foreach ($categorias as $categoria): ?>
+                            <?php if (in_array((int)$categoria['id'], $blockedParentIds, true)) continue; ?>
+                            <option value="<?= (int)$categoria['id'] ?>" <?= (string)($edit['parent_id'] ?? '') === (string)$categoria['id'] ? 'selected' : '' ?>>
+                                <?= e(CategoryService::optionLabel($categoria)) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="form-text">Escolha outra categoria para criar uma subcategoria. Ex.: Eventos → Eventos 1.</div>
+                </div>
+
                 <div class="mb-3">
                     <label class="form-label">Descrição</label>
                     <textarea class="form-control" name="descricao" rows="4" maxlength="255"><?= e($edit['descricao'] ?? '') ?></textarea>
                 </div>
+
                 <button class="btn btn-primary w-100"><?= $edit ? 'Salvar alterações' : 'Adicionar categoria' ?></button>
             </div>
         </form>
@@ -162,17 +202,24 @@ require __DIR__ . '/../_header.php';
                     <?php if (!$categorias): ?>
                         <tr><td colspan="4" class="text-secondary">Nenhuma categoria cadastrada.</td></tr>
                     <?php endif; ?>
+
                     <?php foreach ($categorias as $categoria): ?>
+                        <?php $depth = max(0, (int)($categoria['depth'] ?? 0)); ?>
                         <tr>
                             <td>
-                                <div class="fw-semibold"><?= e($categoria['nome']) ?></div>
-                                <?php if ($categoria['descricao']): ?><div class="small text-secondary"><?= e($categoria['descricao']) ?></div><?php endif; ?>
+                                <div class="fw-semibold" style="padding-left: <?= $depth * 22 ?>px">
+                                    <?php if ($depth > 0): ?><span class="text-secondary me-1">↳</span><?php endif; ?>
+                                    <?= e($categoria['nome']) ?>
+                                </div>
+                                <?php if ($categoria['descricao']): ?>
+                                    <div class="small text-secondary" style="padding-left: <?= $depth * 22 ?>px"><?= e($categoria['descricao']) ?></div>
+                                <?php endif; ?>
                             </td>
                             <td><code><?= e($categoria['slug']) ?></code></td>
-                            <td class="text-center"><?= (int)$categoria['total_posts'] ?></td>
+                            <td class="text-center"><?= (int)($totalPosts[(int)$categoria['id']] ?? 0) ?></td>
                             <td class="text-end text-nowrap">
                                 <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('admin/categorias/index.php?editar=' . (int)$categoria['id'])) ?>">Editar</a>
-                                <form method="post" class="d-inline" onsubmit="return confirm('Excluir esta categoria? As notícias vinculadas ficarão sem categoria.');">
+                                <form method="post" class="d-inline" onsubmit="return confirm('Excluir esta categoria? As notícias vinculadas ficarão sem categoria e suas subcategorias passarão ao nível principal.');">
                                     <?= Csrf::field() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?= (int)$categoria['id'] ?>">
