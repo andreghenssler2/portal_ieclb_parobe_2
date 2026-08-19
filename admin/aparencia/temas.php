@@ -53,7 +53,7 @@ require __DIR__ . '/../_header.php';
                         <button class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Ativar tema</button>
                     </form>
                 <?php else: ?>
-                    <a class="btn btn-outline-primary mt-3" href="<?= e(url('admin/aparencia/personalizar.php')) ?>">Personalizar</a>
+                    <div class="d-flex flex-wrap gap-2 mt-3"><a class="btn btn-outline-primary" href="<?= e(url('admin/aparencia/personalizar.php')) ?>">Personalizar</a><?php if (Auth::can('tema_editor.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/aparencia/editor-temas.php')) ?>"><i class="bi bi-code-slash me-1"></i>Editor de Temas</a><?php endif; ?></div>
                 <?php endif; ?>
             </div>
         </div>

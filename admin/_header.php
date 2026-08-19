@@ -23,7 +23,7 @@ $configOpen = $startsPath('configuracoes');
 $communitiesOpen = $startsPath('comunidades');
 $accountOpen = $isPath('minha-conta.php');
 
-$canAppearance = Auth::can('aparencia.gerenciar') || Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') || Auth::can('configuracoes.gerenciar');
+$canAppearance = Auth::can('aparencia.gerenciar') || Auth::can('tema_editor.gerenciar') || Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') || Auth::can('configuracoes.gerenciar');
 $pendingComments = 0;
 if (Auth::can('comentarios.gerenciar')) {
     try { $pendingComments = (int)Database::connection()->query("SELECT COUNT(*) FROM comentarios co INNER JOIN posts p ON p.id=co.post_id WHERE co.status='pendente' AND p.status <> 'lixeira'")->fetchColumn(); } catch (Throwable $e) {}
@@ -195,7 +195,9 @@ if (Auth::can('comentarios.gerenciar')) {
                         <?php if (Auth::can('banners.gerenciar')): ?>
                             <a class="<?= $startsPath('banners') ? 'active' : '' ?>" href="<?= e(url('admin/banners/index.php')) ?>">Banners</a>
                         <?php endif; ?>
-                        <span class="admin-nav-disabled">Editor de Temas <small>em breve</small></span>
+                        <?php if (Auth::can('tema_editor.gerenciar')): ?>
+                            <a class="<?= $isPath('aparencia/editor-temas.php') ? 'active' : '' ?>" href="<?= e(url('admin/aparencia/editor-temas.php')) ?>">Editor de Temas</a>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
 
@@ -228,7 +230,7 @@ if (Auth::can('comentarios.gerenciar')) {
                 <a class="admin-nav-link" href="<?= e(url()) ?>" target="_blank">
                     <i class="bi bi-box-arrow-up-right"></i><span>Ver portal</span>
                 </a>
-                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.16.0') ?></div>
+                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.19.0') ?></div>
             </div>
         </div>
     </aside>
