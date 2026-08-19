@@ -8,6 +8,7 @@ $ultimasNoticias = [];
 $proximosEventos = [];
 $comentariosPendentes = [];
 $securityAlerts = [];
+$maintenance = maintenanceSettings($pdo);
 
 if (Auth::can('noticias.gerenciar')) {
     $cards[] = ['Notícias publicadas', (int)$pdo->query("SELECT COUNT(*) FROM posts WHERE status = 'publicado'")->fetchColumn()];
@@ -98,6 +99,8 @@ require __DIR__ . '/_header.php';
         <p class="text-secondary mb-0">Bem-vindo, <?= e(Auth::user()['nome'] ?? '') ?>.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
+        <?php if (Auth::can('backups.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/ferramentas/backups.php')) ?>">Backups</a><?php endif; ?>
+        <?php if (Auth::can('manutencao.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/ferramentas/manutencao.php')) ?>">Manutenção</a><?php endif; ?>
         <?php if (Auth::can('formularios.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/formularios/index.php')) ?>">Formulários</a><?php endif; ?>
         <?php if (Auth::can('auditoria.visualizar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/auditoria/index.php')) ?>">Auditoria</a><?php endif; ?>
         <?php if (Auth::can('configuracoes.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/configuracoes/index.php')) ?>">Configurações</a><?php endif; ?>
@@ -110,6 +113,13 @@ require __DIR__ . '/_header.php';
         <?php if (Auth::can('noticias.gerenciar')): ?><a class="btn btn-primary" href="<?= e(url('admin/noticias/form.php')) ?>">Nova notícia</a><?php endif; ?>
     </div>
 </div>
+
+<?php if ($maintenance['enabled']): ?>
+<div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div><i class="bi bi-cone-striped me-2"></i><strong>Modo manutenção está ativo.</strong> O portal público está respondendo com HTTP 503 para visitantes.</div>
+    <?php if (Auth::can('manutencao.gerenciar')): ?><a class="btn btn-sm btn-warning" href="<?= e(url('admin/ferramentas/manutencao.php')) ?>">Gerenciar manutenção</a><?php endif; ?>
+</div>
+<?php endif; ?>
 
 <?php if ($cards): ?>
 <div class="row g-3 mb-4">

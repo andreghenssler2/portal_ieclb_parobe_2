@@ -32,6 +32,9 @@ try {
             cleanupAuditLogs($bootstrapPdo, $retentionDays);
         }
     }
+
+    // v0.21.0: bloqueia apenas a área pública quando o modo manutenção estiver ativo.
+    enforceMaintenanceMode($bootstrapPdo);
 } catch (Throwable $e) {
     // Mantém o portal funcionando durante instalação/migração.
 }

@@ -690,3 +690,91 @@ function homeWidgets(PDO $pdo): array
         return $row + ['id'=>0,'conteudo'=>'','ativo'=>1,'config'=>[]];
     }, $defaults);
 }
+
+/**
+ * Configurações do modo manutenção.
+ * @return array{enabled:bool,title:string,message:string,expected_end:string,allow_admins:bool,allowed_ips:array<int,string>}
+ */
+function maintenanceSettings(PDO $pdo): array
+{
+    $rawIps = preg_split('/[\s,;]+/', siteConfig($pdo, 'maintenance_allowed_ips', '')) ?: [];
+    $ips = [];
+    foreach ($rawIps as $ip) {
+        $ip = trim($ip);
+        if ($ip !== '' && filter_var($ip, FILTER_VALIDATE_IP)) {
+            $ips[] = $ip;
+        }
+    }
+    return [
+        'enabled' => siteConfig($pdo, 'maintenance_enabled', '0') === '1',
+        'title' => trim(siteConfig($pdo, 'maintenance_title', 'Portal temporariamente em manutenção')) ?: 'Portal temporariamente em manutenção',
+        'message' => trim(siteConfig($pdo, 'maintenance_message', 'Estamos realizando melhorias. Tente novamente em alguns instantes.')) ?: 'Estamos realizando melhorias. Tente novamente em alguns instantes.',
+        'expected_end' => trim(siteConfig($pdo, 'maintenance_expected_end', '')),
+        'allow_admins' => siteConfig($pdo, 'maintenance_allow_admins', '1') === '1',
+        'allowed_ips' => array_values(array_unique($ips)),
+    ];
+}
+
+function shouldBypassMaintenance(PDO $pdo): bool
+{
+    if (PHP_SAPI === 'cli') {
+        return true;
+    }
+
+    $path = currentRelativePath();
+    if ($path === '/admin' || str_starts_with($path, '/admin/')) {
+        return true;
+    }
+    if (preg_match('#^/(?:atualizar|install|cron)[^/]*#i', $path)) {
+        return true;
+    }
+
+    $settings = maintenanceSettings($pdo);
+    if ($settings['allow_admins'] && Auth::check() && Auth::isAdmin()) {
+        return true;
+    }
+
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    return $ip !== '' && in_array($ip, $settings['allowed_ips'], true);
+}
+
+/** Interrompe a resposta pública com HTTP 503 quando o modo manutenção estiver ativo. */
+function enforceMaintenanceMode(PDO $pdo): void
+{
+    $settings = maintenanceSettings($pdo);
+    if (!$settings['enabled'] || shouldBypassMaintenance($pdo)) {
+        return;
+    }
+
+    $retryAfter = 3600;
+    if ($settings['expected_end'] !== '') {
+        try {
+            $end = new DateTimeImmutable($settings['expected_end']);
+            $retryAfter = max(60, min(86400, $end->getTimestamp() - time()));
+        } catch (Throwable $e) {
+            $retryAfter = 3600;
+        }
+    }
+
+    http_response_code(503);
+    header('Retry-After: ' . $retryAfter);
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('X-Robots-Tag: noindex, nofollow', true);
+    header('Content-Type: text/html; charset=UTF-8');
+
+    $siteName = siteConfig($pdo, 'site_name', defined('APP_NAME') ? (string)APP_NAME : 'Portal IECLB Parobé');
+    $expected = '';
+    if ($settings['expected_end'] !== '') {
+        try {
+            $expected = (new DateTimeImmutable($settings['expected_end']))->format('d/m/Y H:i');
+        } catch (Throwable $e) {}
+    }
+
+    echo '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+    echo '<meta name="robots" content="noindex,nofollow"><title>' . e($settings['title']) . ' - ' . e($siteName) . '</title>';
+    echo '<style>body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f6f7;color:#202124;display:grid;min-height:100vh;place-items:center;padding:24px;box-sizing:border-box}.box{max-width:680px;background:#fff;border-radius:18px;padding:42px;box-shadow:0 18px 50px rgba(0,0,0,.08);text-align:center}.mark{width:66px;height:66px;margin:0 auto 22px;border-radius:18px;display:grid;place-items:center;background:#eef3f0;font-size:32px}h1{font-size:clamp(28px,5vw,42px);margin:0 0 14px}p{font-size:18px;line-height:1.65;color:#5f6368}.expected{margin-top:22px;font-size:14px;color:#6b7280}.admin{margin-top:28px}.admin a{color:#355f4b;text-decoration:none;font-weight:600}</style></head><body><main class="box">';
+    echo '<div class="mark">🛠️</div><h1>' . e($settings['title']) . '</h1><p>' . nl2br(e($settings['message'])) . '</p>';
+    if ($expected !== '') echo '<div class="expected">Previsão de retorno: <strong>' . e($expected) . '</strong></div>';
+    echo '<div class="admin"><a href="' . e(url('admin/login.php')) . '">Acesso administrativo</a></div></main></body></html>';
+    exit;
+}

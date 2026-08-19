@@ -21,6 +21,7 @@ $appearanceOpen = $startsPath('aparencia') || $startsPath('menus') || $startsPat
 $seoOpen = $startsPath('seo');
 $configOpen = $startsPath('configuracoes');
 $auditOpen = $startsPath('auditoria');
+$toolsOpen = $startsPath('ferramentas');
 $communitiesOpen = $startsPath('comunidades');
 $accountOpen = $isPath('minha-conta.php');
 
@@ -214,6 +215,21 @@ if (Auth::can('comentarios.gerenciar')) {
                     </a>
                 <?php endif; ?>
 
+                <?php if (Auth::can('backups.gerenciar') || Auth::can('manutencao.gerenciar')): ?>
+                    <button class="admin-nav-link admin-nav-toggle <?= $toolsOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuFerramentas" aria-expanded="<?= $toolsOpen ? 'true' : 'false' ?>">
+                        <i class="bi bi-tools"></i><span>Ferramentas</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
+                    </button>
+                    <div class="collapse admin-nav-submenu <?= $toolsOpen ? 'show' : '' ?>" id="menuFerramentas">
+                        <?php if (Auth::can('backups.gerenciar')): ?>
+                            <a class="<?= $isPath('ferramentas/backups.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/backups.php')) ?>">Backups</a>
+                        <?php endif; ?>
+                        <?php if (Auth::can('manutencao.gerenciar')): ?>
+                            <a class="<?= $isPath('ferramentas/manutencao.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/manutencao.php')) ?>">Manutenção</a>
+                            <a class="<?= $isPath('ferramentas/limpeza.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/limpeza.php')) ?>">Limpeza</a>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
                 <?php if (Auth::can('configuracoes.gerenciar') || Auth::can('seguranca.gerenciar')): ?>
                     <button class="admin-nav-link admin-nav-toggle <?= $configOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuConfiguracoes" aria-expanded="<?= $configOpen ? 'true' : 'false' ?>">
                         <i class="bi bi-gear"></i><span>Configurações</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
@@ -242,7 +258,7 @@ if (Auth::can('comentarios.gerenciar')) {
                 <a class="admin-nav-link" href="<?= e(url()) ?>" target="_blank">
                     <i class="bi bi-box-arrow-up-right"></i><span>Ver portal</span>
                 </a>
-                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.20.0') ?></div>
+                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.21.0') ?></div>
             </div>
         </div>
     </aside>
