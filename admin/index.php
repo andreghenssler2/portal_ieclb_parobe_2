@@ -6,11 +6,20 @@ $pdo = Database::connection();
 $cards = [];
 $ultimasNoticias = [];
 $proximosEventos = [];
+$comentariosPendentes = [];
 
 if (Auth::can('noticias.gerenciar')) {
     $cards[] = ['Notícias publicadas', (int)$pdo->query("SELECT COUNT(*) FROM posts WHERE status = 'publicado'")->fetchColumn()];
     $cards[] = ['Rascunhos', (int)$pdo->query("SELECT COUNT(*) FROM posts WHERE status = 'rascunho'")->fetchColumn()];
-    $ultimasNoticias = $pdo->query("SELECT id, titulo, status, publicado_em, created_at FROM posts ORDER BY id DESC LIMIT 5")->fetchAll();
+    $ultimasNoticias = $pdo->query("SELECT id, titulo, status, publicado_em, created_at FROM posts WHERE status <> 'lixeira' ORDER BY id DESC LIMIT 5")->fetchAll();
+}
+if (Auth::can('comentarios.gerenciar')) {
+    try {
+        $cards[] = ['Comentários pendentes', (int)$pdo->query("SELECT COUNT(*) FROM comentarios WHERE status='pendente'")->fetchColumn()];
+        $comentariosPendentes = $pdo->query("SELECT co.id,co.autor_nome,co.conteudo,co.created_at,p.titulo AS post_titulo FROM comentarios co INNER JOIN posts p ON p.id=co.post_id WHERE co.status='pendente' AND p.status <> 'lixeira' ORDER BY co.created_at DESC LIMIT 5")->fetchAll();
+    } catch (Throwable $e) {
+        // Atualização v0.15.0 ainda não executada.
+    }
 }
 if (Auth::can('paginas.gerenciar')) {
     $cards[] = ['Páginas', (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status = 'publicado'")->fetchColumn()];
@@ -80,6 +89,7 @@ require __DIR__ . '/_header.php';
         <?php if (Auth::can('galerias.gerenciar')): ?><a class="btn btn-outline-primary" href="<?= e(url('admin/galerias/form.php')) ?>">Nova galeria</a><?php endif; ?>
         <?php if (Auth::can('eventos.gerenciar')): ?><a class="btn btn-outline-primary" href="<?= e(url('admin/eventos/form.php')) ?>">Novo evento/culto</a><?php endif; ?>
         <?php if (Auth::can('paginas.gerenciar')): ?><a class="btn btn-outline-primary" href="<?= e(url('admin/paginas/form.php')) ?>">Nova página</a><?php endif; ?>
+        <?php if (Auth::can('comentarios.gerenciar')): ?><a class="btn btn-outline-primary" href="<?= e(url('admin/comentarios/index.php')) ?>">Moderar comentários</a><?php endif; ?>
         <?php if (Auth::can('noticias.gerenciar')): ?><a class="btn btn-primary" href="<?= e(url('admin/noticias/form.php')) ?>">Nova notícia</a><?php endif; ?>
     </div>
 </div>
@@ -154,4 +164,17 @@ require __DIR__ . '/_header.php';
     </div>
     <?php endif; ?>
 </div>
+
+<?php if (Auth::can('comentarios.gerenciar') && $comentariosPendentes): ?>
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center"><span class="fw-semibold">Comentários aguardando moderação</span><a class="small text-decoration-none" href="<?= e(url('admin/comentarios/index.php')) ?>">Ver todos</a></div>
+    <div class="list-group list-group-flush">
+        <?php foreach($comentariosPendentes as $comentario): ?>
+            <a class="list-group-item list-group-item-action" href="<?= e(url('admin/comentarios/index.php?status=pendente')) ?>">
+                <div class="d-flex justify-content-between gap-3"><div><div class="fw-semibold"><?= e($comentario['autor_nome']) ?> <span class="fw-normal text-secondary">em <?= e($comentario['post_titulo']) ?></span></div><div class="small text-secondary"><?= e(portalExcerpt($comentario['conteudo'], 140)) ?></div></div><small class="text-nowrap text-secondary"><?= e(formatDateBr($comentario['created_at'])) ?></small></div>
+            </a>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
 <?php require __DIR__ . '/_footer.php'; ?>

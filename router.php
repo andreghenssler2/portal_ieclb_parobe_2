@@ -14,6 +14,7 @@ if (count($segments) === 1) {
         'agenda' => 'agenda.php',
         'galerias' => 'galerias.php',
         'comunidades' => 'comunidades.php',
+        'busca' => 'busca.php',
     ];
     if (isset($static[$alias])) {
         require __DIR__ . '/' . $static[$alias];
@@ -23,6 +24,16 @@ if (count($segments) === 1) {
         require __DIR__ . '/pagina.php';
         exit;
     }
+}
+
+if (count($segments) === 2 && strtolower(rawurldecode((string)$segments[0])) === 'tag') {
+    require __DIR__ . '/tag.php';
+    exit;
+}
+
+if (count($segments) === 2 && strtolower(rawurldecode((string)$segments[0])) === 'categoria') {
+    require __DIR__ . '/categoria.php';
+    exit;
 }
 
 if (count($segments) === 2) {

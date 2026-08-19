@@ -120,6 +120,60 @@ function redirectCanonicalContent(string $type, string $slug): void
     }
 }
 
+
+
+
+/** URL pública de uma categoria de notícias. */
+function categoryUrl(string $slug): string
+{
+    $slug = strtolower(trim($slug));
+    if ($slug === '' || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug)) {
+        throw new InvalidArgumentException('Slug de categoria inválida.');
+    }
+    return url('categoria/' . rawurlencode($slug));
+}
+
+/** Obtém a slug da categoria diretamente de /categoria/{slug}. */
+function routeCategorySlug(): string
+{
+    $segments = array_values(array_filter(explode('/', trim(currentRelativePath(), '/')), static fn($v) => $v !== ''));
+    if (count($segments) !== 2 || strtolower((string)$segments[0]) !== 'categoria') {
+        return '';
+    }
+    $slug = strtolower(rawurldecode((string)$segments[1]));
+    return preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug) ? $slug : '';
+}
+
+function rssFeedUrl(string $type = 'posts', ?string $slug = null): string
+{
+    if ($type === 'posts') return url('feed.xml');
+    if ($type === 'eventos') return url('eventos.feed.xml');
+    if ($type === 'categoria' && $slug) return url('categoria/' . rawurlencode($slug) . '/feed.xml');
+    if ($type === 'tag' && $slug) return url('tag/' . rawurlencode($slug) . '/feed.xml');
+    throw new InvalidArgumentException('Feed inválido.');
+}
+
+/** URL pública de uma tag de notícias. */
+function tagUrl(string $slug): string
+{
+    $slug = strtolower(trim($slug));
+    if ($slug === '' || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug)) {
+        throw new InvalidArgumentException('Slug de tag inválida.');
+    }
+    return url('tag/' . rawurlencode($slug));
+}
+
+/** Obtém a slug da tag diretamente de /tag/{slug}. */
+function routeTagSlug(): string
+{
+    $segments = array_values(array_filter(explode('/', trim(currentRelativePath(), '/')), static fn($v) => $v !== ''));
+    if (count($segments) !== 2 || strtolower((string)$segments[0]) !== 'tag') {
+        return '';
+    }
+    $slug = strtolower(rawurldecode((string)$segments[1]));
+    return preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug) ? $slug : '';
+}
+
 function slugify(string $text): string
 {
     $text = trim($text);
@@ -134,7 +188,7 @@ function slugify(string $text): string
 
 function uniqueSlug(PDO $pdo, string $table, string $title, ?int $ignoreId = null): string
 {
-    $allowed = ['posts', 'paginas', 'comunidades', 'categorias', 'eventos', 'menus', 'galerias', 'formularios'];
+    $allowed = ['posts', 'paginas', 'comunidades', 'categorias', 'tags', 'eventos', 'menus', 'galerias', 'formularios'];
     if (!in_array($table, $allowed, true)) {
         throw new InvalidArgumentException('Tabela inválida para slug.');
     }

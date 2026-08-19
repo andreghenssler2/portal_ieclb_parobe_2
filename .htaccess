@@ -1,3 +1,18 @@
+# BEGIN PORTAL IECLB v0.18.0 - feeds RSS e categorias
+RewriteEngine On
+RewriteRule ^(?:feed|rss)\.xml$ feed.php [L,QSA]
+RewriteRule ^eventos\.feed\.xml$ feed.php [L,QSA]
+RewriteRule ^(?:categoria|tag)/[a-z0-9-]+/feed\.xml$ feed.php [L,QSA]
+RewriteRule ^categorias?\.sitemaps?\.xml$ sitemap.php [L,QSA]
+# END PORTAL IECLB v0.18.0 - feeds RSS e categorias
+
+# BEGIN PORTAL IECLB v0.17.0 - sitemap index e sub-sitemaps
+RewriteEngine On
+RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
+RewriteRule ^(?:geral|posts?|paginas?|eventos?|galerias?|tags?|formularios?)\.sitemaps?\.xml$ sitemap.php [L,QSA]
+RewriteRule ^robots\.txt$ robots.php [L,QSA]
+# END PORTAL IECLB v0.17.0 - sitemap index e sub-sitemaps
+
 # BEGIN PORTAL_IECLB_ROTAS_V0100
 RewriteEngine On
 RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]

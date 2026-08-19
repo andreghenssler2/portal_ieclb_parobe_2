@@ -10,9 +10,10 @@ $currentAdminPath = $adminPos !== false ? ltrim(substr($scriptName, $adminPos + 
 $isPath = static fn(string $path): bool => $currentAdminPath === ltrim($path, '/');
 $startsPath = static fn(string $path): bool => str_starts_with($currentAdminPath, trim($path, '/') . '/');
 
-$postOpen = $startsPath('noticias') || $startsPath('categorias');
+$revisionType = (string)($_GET['tipo'] ?? '');
+$postOpen = $startsPath('noticias') || $startsPath('categorias') || $startsPath('tags') || $startsPath('comentarios') || ($startsPath('revisoes') && $revisionType === 'post');
 $mediaOpen = $startsPath('midias') || $startsPath('galerias');
-$pagesOpen = $startsPath('paginas');
+$pagesOpen = $startsPath('paginas') || ($startsPath('revisoes') && $revisionType === 'pagina');
 $eventsOpen = $startsPath('eventos');
 $formsOpen = $startsPath('formularios');
 $usersOpen = $startsPath('usuarios') || $startsPath('perfis');
@@ -23,6 +24,10 @@ $communitiesOpen = $startsPath('comunidades');
 $accountOpen = $isPath('minha-conta.php');
 
 $canAppearance = Auth::can('aparencia.gerenciar') || Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') || Auth::can('configuracoes.gerenciar');
+$pendingComments = 0;
+if (Auth::can('comentarios.gerenciar')) {
+    try { $pendingComments = (int)Database::connection()->query("SELECT COUNT(*) FROM comentarios co INNER JOIN posts p ON p.id=co.post_id WHERE co.status='pendente' AND p.status <> 'lixeira'")->fetchColumn(); } catch (Throwable $e) {}
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -77,14 +82,21 @@ $canAppearance = Auth::can('aparencia.gerenciar') || Auth::can('menus.gerenciar'
                     <i class="bi bi-speedometer2"></i><span>Dashboard</span>
                 </a>
 
-                <?php if (Auth::can('noticias.gerenciar')): ?>
+                <?php if (Auth::can('noticias.gerenciar') || Auth::can('comentarios.gerenciar')): ?>
                     <button class="admin-nav-link admin-nav-toggle <?= $postOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuPosts" aria-expanded="<?= $postOpen ? 'true' : 'false' ?>">
                         <i class="bi bi-file-earmark-text"></i><span>Posts / Notícias</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
                     </button>
                     <div class="collapse admin-nav-submenu <?= $postOpen ? 'show' : '' ?>" id="menuPosts">
-                        <a class="<?= $isPath('noticias/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/noticias/index.php')) ?>">Todos os Posts</a>
-                        <a class="<?= $isPath('noticias/form.php') && !isset($_GET['id']) ? 'active' : '' ?>" href="<?= e(url('admin/noticias/form.php')) ?>">Adicionar Novo</a>
-                        <a class="<?= $startsPath('categorias') ? 'active' : '' ?>" href="<?= e(url('admin/categorias/index.php')) ?>">Categorias</a>
+                        <?php if (Auth::can('noticias.gerenciar')): ?>
+                            <a class="<?= $isPath('noticias/index.php') && (($_GET['status'] ?? '') !== 'lixeira') ? 'active' : '' ?>" href="<?= e(url('admin/noticias/index.php')) ?>">Todos os Posts</a>
+                            <a class="<?= $isPath('noticias/index.php') && (($_GET['status'] ?? '') === 'lixeira') ? 'active' : '' ?>" href="<?= e(url('admin/noticias/index.php?status=lixeira')) ?>">Lixeira</a>
+                            <a class="<?= $isPath('noticias/form.php') && !isset($_GET['id']) ? 'active' : '' ?>" href="<?= e(url('admin/noticias/form.php')) ?>">Adicionar Novo</a>
+                            <a class="<?= $startsPath('categorias') ? 'active' : '' ?>" href="<?= e(url('admin/categorias/index.php')) ?>">Categorias</a>
+                            <a class="<?= $startsPath('tags') ? 'active' : '' ?>" href="<?= e(url('admin/tags/index.php')) ?>">Tags</a>
+                        <?php endif; ?>
+                        <?php if (Auth::can('comentarios.gerenciar')): ?>
+                            <a class="<?= $startsPath('comentarios') ? 'active' : '' ?>" href="<?= e(url('admin/comentarios/index.php')) ?>">Comentários<?php if($pendingComments>0): ?><span class="badge text-bg-warning ms-auto"><?= (int)$pendingComments ?></span><?php endif; ?></a>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
 
@@ -108,7 +120,8 @@ $canAppearance = Auth::can('aparencia.gerenciar') || Auth::can('menus.gerenciar'
                         <i class="bi bi-files"></i><span>Páginas</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
                     </button>
                     <div class="collapse admin-nav-submenu <?= $pagesOpen ? 'show' : '' ?>" id="menuPaginas">
-                        <a class="<?= $isPath('paginas/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/paginas/index.php')) ?>">Todas as Páginas</a>
+                        <a class="<?= $isPath('paginas/index.php') && (($_GET['status'] ?? '') !== 'lixeira') ? 'active' : '' ?>" href="<?= e(url('admin/paginas/index.php')) ?>">Todas as Páginas</a>
+                        <a class="<?= $isPath('paginas/index.php') && (($_GET['status'] ?? '') === 'lixeira') ? 'active' : '' ?>" href="<?= e(url('admin/paginas/index.php?status=lixeira')) ?>">Lixeira</a>
                         <a class="<?= $isPath('paginas/form.php') && !isset($_GET['id']) ? 'active' : '' ?>" href="<?= e(url('admin/paginas/form.php')) ?>">Adicionar Nova</a>
                     </div>
                 <?php endif; ?>
@@ -145,6 +158,7 @@ $canAppearance = Auth::can('aparencia.gerenciar') || Auth::can('menus.gerenciar'
                         <a class="<?= $isPath('seo/geral.php') ? 'active' : '' ?>" href="<?= e(url('admin/seo/geral.php')) ?>">Geral</a>
                         <a class="<?= $isPath('seo/social.php') ? 'active' : '' ?>" href="<?= e(url('admin/seo/social.php')) ?>">Social</a>
                         <a class="<?= $isPath('seo/sitemap.php') ? 'active' : '' ?>" href="<?= e(url('admin/seo/sitemap.php')) ?>">Sitemap</a>
+                        <a class="<?= $isPath('seo/feeds.php') ? 'active' : '' ?>" href="<?= e(url('admin/seo/feeds.php')) ?>">Feeds RSS</a>
                     </div>
                 <?php endif; ?>
 
@@ -198,6 +212,7 @@ $canAppearance = Auth::can('aparencia.gerenciar') || Auth::can('menus.gerenciar'
                     <div class="collapse admin-nav-submenu <?= $configOpen ? 'show' : '' ?>" id="menuConfiguracoes">
                         <a class="<?= $isPath('configuracoes/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/index.php')) ?>">Geral</a>
                         <a class="<?= $isPath('configuracoes/escrita.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/escrita.php')) ?>">Escrita</a>
+                        <a class="<?= $isPath('configuracoes/discussao.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/discussao.php')) ?>">Discussão</a>
                         <a class="<?= $isPath('configuracoes/leitura.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/leitura.php')) ?>">Leitura</a>
                         <a class="<?= $isPath('configuracoes/midia.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/midia.php')) ?>">Mídia</a>
                         <a class="<?= $isPath('configuracoes/links-permanentes.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/links-permanentes.php')) ?>">Links Permanentes</a>
@@ -213,7 +228,7 @@ $canAppearance = Auth::can('aparencia.gerenciar') || Auth::can('menus.gerenciar'
                 <a class="admin-nav-link" href="<?= e(url()) ?>" target="_blank">
                     <i class="bi bi-box-arrow-up-right"></i><span>Ver portal</span>
                 </a>
-                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.12.0') ?></div>
+                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.16.0') ?></div>
             </div>
         </div>
     </aside>

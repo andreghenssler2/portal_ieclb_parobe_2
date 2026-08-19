@@ -98,3 +98,19 @@ body { background: var(--portal-bg); color: var(--portal-text); font-family: sys
 .appearance-preview .preview-line { height:8px; width:92%; border-radius:5px; background:var(--s); opacity:.35; }
 .appearance-preview .preview-line.short { width:65%; }
 .appearance-preview .preview-button { background:var(--p); color:white; }
+
+/* v0.14.0 - Tags e busca */
+.tag-choice { display:inline-flex; align-items:center; padding:.45rem .7rem; border:1px solid var(--bs-border-color); border-radius:999px; background:#fff; cursor:pointer; transition:.15s ease; }
+.tag-choice:has(input:checked) { border-color:var(--portal-primary); background:color-mix(in srgb, var(--portal-primary) 10%, white); }
+.article-tags .badge { font-size:.9rem; padding:.5rem .7rem; }
+.portal-search-form { min-width:190px; }
+.search-page { max-width:900px; }
+.search-results .list-group-item { background:transparent; }
+@media (max-width: 991.98px) { .portal-search-form { margin:.75rem 0; max-width:420px; } }
+
+/* v0.15.0 - Comentários */
+.comments-section { scroll-margin-top: 90px; }
+.comment-public { background: color-mix(in srgb, var(--portal-bg) 94%, var(--portal-primary) 6%); }
+.comment-public-text { line-height: 1.7; overflow-wrap: anywhere; }
+.comment-form textarea { min-height: 150px; }
+.comment-honeypot { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }

@@ -90,6 +90,11 @@ if (!$menuPrincipal) {
     <link rel="canonical" href="<?= e($resolvedCanonical) ?>">
     <meta name="robots" content="<?= e($robotsValue) ?>">
     <?php if ((string)($siteSettings['seo_sitemap_ativo'] ?? '1') === '1'): ?><link rel="sitemap" type="application/xml" href="<?= e(url('sitemap.xml')) ?>"><?php endif; ?>
+    <?php if ((string)($siteSettings['seo_feed_ativo'] ?? '1') === '1'): ?>
+    <link rel="alternate" type="application/rss+xml" title="<?= e($siteName . ' - Notícias') ?>" href="<?= e(rssFeedUrl('posts')) ?>">
+    <?php if ((string)($siteSettings['seo_feed_eventos'] ?? '1') === '1'): ?><link rel="alternate" type="application/rss+xml" title="<?= e($siteName . ' - Eventos e Cultos') ?>" href="<?= e(rssFeedUrl('eventos')) ?>"><?php endif; ?>
+    <?php if (!empty($alternateFeedUrl)): ?><link rel="alternate" type="application/rss+xml" title="<?= e((string)($alternateFeedTitle ?? 'RSS')) ?>" href="<?= e((string)$alternateFeedUrl) ?>"><?php endif; ?>
+    <?php endif; ?>
 
     <?php if ($openGraphActive): ?>
     <meta property="og:locale" content="pt_BR">
@@ -153,6 +158,7 @@ if (!$menuPrincipal) {
                         <li class="nav-item"><a class="nav-link" href="<?= e(contentUrl('pagina', (string)$menuPagina['slug'])) ?>"><?= e($menuPagina['titulo']) ?></a></li>
                     <?php endforeach; ?>
                 <?php endif; ?>
+                <li class="nav-item ms-lg-2"><form class="portal-search-form d-flex" action="<?= e(url('busca')) ?>" method="get" role="search"><div class="input-group input-group-sm"><input class="form-control" type="search" name="q" placeholder="Buscar..." aria-label="Buscar" minlength="2" required><button class="btn btn-outline-secondary" type="submit" aria-label="Buscar"><span aria-hidden="true">⌕</span></button></div></form></li>
                 <li class="nav-item"><a class="nav-link admin-link" href="<?= e(url('admin/login.php')) ?>">Área administrativa</a></li>
             </ul>
         </div>

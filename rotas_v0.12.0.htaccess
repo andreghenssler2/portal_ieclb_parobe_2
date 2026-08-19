@@ -1,6 +1,0 @@
-# BEGIN PORTAL IECLB v0.12.0 - roteador de links permanentes
-RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^.+/?$ router.php [L,QSA]
-# END PORTAL IECLB v0.12.0 - roteador de links permanentes

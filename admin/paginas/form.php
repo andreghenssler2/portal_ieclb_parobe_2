@@ -28,6 +28,11 @@ if ($id) {
         http_response_code(404);
         exit('Página não encontrada.');
     }
+    if (($found['status'] ?? '') === 'lixeira') {
+        Session::flash('error', 'Restaure a página da Lixeira antes de editá-la.');
+        header('Location: ' . url('admin/paginas/index.php?status=lixeira'));
+        exit;
+    }
     $pagina = $found;
 }
 
@@ -38,6 +43,8 @@ $midias = $pdo->query(
      ORDER BY id DESC"
 )->fetchAll();
 $imagemCapaAtual = !empty($pagina['imagem_capa_id']) ? MediaService::find($pdo, (int)$pagina['imagem_capa_id']) : null;
+$revisionCount = 0;
+if ($id) { try { $revisionCount = RevisionService::count($pdo, 'pagina', $id); } catch (Throwable $ignored) { $revisionCount = 0; } }
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -141,8 +148,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     );
                 }
 
-                $stmt->execute($data);
-                $savedId = $id ?: (int)$pdo->lastInsertId();
+                $pdo->beginTransaction();
+                try {
+                    if ($id) {
+                        RevisionService::create($pdo, 'pagina', $id, Auth::id());
+                    }
+                    $stmt->execute($data);
+                    $savedId = $id ?: (int)$pdo->lastInsertId();
+                    $pdo->commit();
+                } catch (Throwable $txe) {
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+                    throw $txe;
+                }
                 logAction($pdo, $id ? 'pagina.editar' : 'pagina.criar', 'paginas', $savedId, $titulo);
                 Session::flash('success', $id ? 'Página atualizada.' : 'Página criada.');
                 header('Location: ' . url('admin/paginas/index.php'));
@@ -162,9 +181,12 @@ require __DIR__ . '/../_header.php';
         <h1 class="h3 mb-1"><?= e($pageTitle) ?></h1>
         <p class="text-secondary mb-0">Crie páginas institucionais com URL própria.</p>
     </div>
-    <?php if ($id && $pagina['status'] === 'publicado'): ?>
-        <a class="btn btn-outline-primary" target="_blank" href="<?= e(contentUrl('pagina', (string)$pagina['slug'])) ?>">Visualizar</a>
-    <?php endif; ?>
+    <div class="d-flex flex-wrap gap-2">
+        <?php if ($id): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/revisoes/index.php?tipo=pagina&id=' . $id)) ?>"><i class="bi bi-clock-history me-1"></i>Revisões (<?= (int)$revisionCount ?>)</a><?php endif; ?>
+        <?php if ($id && $pagina['status'] === 'publicado'): ?>
+            <a class="btn btn-outline-primary" target="_blank" href="<?= e(contentUrl('pagina', (string)$pagina['slug'])) ?>">Visualizar</a>
+        <?php endif; ?>
+    </div>
 </div>
 
 <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>

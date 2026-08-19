@@ -99,7 +99,7 @@ if ($editId > 0) {
 $categorias = $pdo->query(
     "SELECT c.id, c.nome, c.slug, c.descricao, c.created_at, COUNT(p.id) AS total_posts
      FROM categorias c
-     LEFT JOIN posts p ON p.categoria_id = c.id
+     LEFT JOIN posts p ON p.categoria_id = c.id AND p.status <> 'lixeira'
      GROUP BY c.id, c.nome, c.slug, c.descricao, c.created_at
      ORDER BY c.nome ASC"
 )->fetchAll();
