@@ -6,6 +6,3 @@
 !/public/uploads/.gitkeep
 *.log
 .DS_Store
-/lib/*
-!/lib/.htaccess
-/vendor/

@@ -3,11 +3,6 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/config/config.php';
-
-$composerAutoload = __DIR__ . '/lib/autoload.php';
-if (is_file($composerAutoload)) {
-    require_once $composerAutoload;
-}
 require_once __DIR__ . '/mod/db/Database.php';
 require_once __DIR__ . '/mod/auth/Session.php';
 require_once __DIR__ . '/mod/security/Csrf.php';
@@ -21,7 +16,6 @@ require_once __DIR__ . '/app/Services/NewsletterService.php';
 require_once __DIR__ . '/app/Services/WordPressImportService.php';
 require_once __DIR__ . '/app/Services/HomeService.php';
 require_once __DIR__ . '/app/Services/DocumentService.php';
-require_once __DIR__ . '/app/Services/LeadershipService.php';
 
 Session::start();
 

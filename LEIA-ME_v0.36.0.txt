@@ -1,0 +1,18 @@
+Portal IECLB Parobé v0.36.0 - Equipe / Pastores & Lideranças
+
+REQUISITO
+Portal v0.35.0 instalado.
+
+INSTALAÇÃO
+1. Extraia este ZIP na raiz do Portal.
+2. Execute:
+   php atualizar_v0.36.0.php
+3. Atualize o painel com Ctrl+F5.
+
+ROTAS
+/liderancas
+/lideranca/{slug}
+/liderancas.sitemaps.xml
+
+A foto é reutilizada da Biblioteca de Mídia.
+Os contatos só aparecem no site quando o administrador habilita sua exibição.

@@ -1,0 +1,31 @@
+Portal IECLB Parobé v0.36.1
+PHPMailer gerenciado pelo Composer em /lib
+
+REQUISITO
+- Portal v0.36.0 ou superior
+- PHP 8.2+
+- Composer disponível no terminal
+
+INSTALAÇÃO RECOMENDADA
+1. Extraia este ZIP na raiz do Portal.
+2. Execute:
+   php atualizar_v0.36.1.php
+
+O atualizador tenta executar automaticamente:
+   composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+Se o Composer não estiver disponível para execução pelo PHP, rode manualmente:
+   composer install --no-dev --optimize-autoloader
+   php atualizar_v0.36.1.php
+
+ESTRUTURA
+/lib/autoload.php
+/lib/composer/
+/lib/phpmailer/phpmailer/
+
+O antigo /vendor/phpmailer/phpmailer deixa de ser utilizado.
+Depois de validar o PHPMailer em /lib, o atualizador faz backup e remove a cópia antiga.
+
+COMPOSER.LOCK
+Na primeira instalação, o Composer criará composer.lock na raiz do Portal.
+Como a dependência está fixada em 7.1.1, a instalação fica determinística.

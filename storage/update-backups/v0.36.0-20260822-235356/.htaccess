@@ -1,8 +1,3 @@
-# BEGIN PORTAL IECLB v0.36.0 - liderancas
-RewriteEngine On
-RewriteRule ^liderancas?\.sitemaps?\.xml$ sitemap.php [L,QSA]
-# END PORTAL IECLB v0.36.0 - liderancas
-
 # BEGIN PORTAL IECLB v0.35.0 - documentos
 RewriteEngine On
 RewriteRule ^documentos?\.sitemaps?\.xml$ sitemap.php [L,QSA]

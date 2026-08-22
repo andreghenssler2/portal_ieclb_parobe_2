@@ -220,7 +220,7 @@ final class CacheService
         $contentHints = [
             'post', 'noticia', 'pagina', 'evento', 'categoria', 'tag', 'midia', 'galeria',
             'comunidade', 'grupo', 'menu', 'banner', 'widget', 'home', 'tema', 'configur',
-            'wordpress', 'newsletter', 'formulario', 'lideranca', 'documento', 'lideranca'
+            'wordpress', 'newsletter', 'formulario', 'documento'
         ];
         $haystack = $action . ' ' . $entity;
         foreach ($contentHints as $hint) {

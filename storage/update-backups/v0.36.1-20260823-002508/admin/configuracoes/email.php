@@ -149,7 +149,7 @@ require __DIR__ . '/../_header.php';
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
         <h1 class="h3 mb-1">E-mail</h1>
-        <p class="text-secondary mb-0">Envio centralizado com PHPMailer <?= e(MailService::libraryVersion()) ?> · gerenciado pelo Composer em <code>/lib</code>.</p>
+        <p class="text-secondary mb-0">Envio centralizado com PHPMailer <?= e(MailService::libraryVersion()) ?>.</p>
     </div>
     <span class="badge text-bg-<?= $configIssue === null ? 'success' : 'warning' ?> fs-6"><?= e(MailService::transportLabel($pdo)) ?></span>
 </div>

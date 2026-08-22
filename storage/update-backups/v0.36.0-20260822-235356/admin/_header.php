@@ -24,7 +24,6 @@ $auditOpen = $startsPath('auditoria');
 $toolsOpen = $startsPath('ferramentas');
 $communitiesOpen = $startsPath('comunidades');
 $groupsOpen = $startsPath('grupos');
-$leadershipOpen = $startsPath('liderancas');
 $documentsOpen = $startsPath('documentos');
 $newsletterOpen = $startsPath('newsletter');
 $accountOpen = $isPath('minha-conta.php');
@@ -243,17 +242,7 @@ if (Auth::can('comentarios.gerenciar')) {
                 <?php endif; ?>
 
                 
-                
-                <?php if (Auth::can('liderancas.gerenciar')): ?>
-                    <button class="admin-nav-link admin-nav-toggle <?= $leadershipOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuLiderancas" aria-expanded="<?= $leadershipOpen ? 'true' : 'false' ?>">
-                        <i class="bi bi-people"></i><span>Equipe / Lideranças</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
-                    </button>
-                    <div class="collapse admin-nav-submenu <?= $leadershipOpen ? 'show' : '' ?>" id="menuLiderancas">
-                        <a class="<?= $isPath('liderancas/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/liderancas/index.php')) ?>">Todas as Pessoas</a>
-                        <a class="<?= $isPath('liderancas/form.php') && !isset($_GET['id']) ? 'active' : '' ?>" href="<?= e(url('admin/liderancas/form.php')) ?>">Adicionar Nova</a>
-                    </div>
-                <?php endif; ?>
-<?php if (Auth::can('documentos.gerenciar')): ?>
+                <?php if (Auth::can('documentos.gerenciar')): ?>
                     <button class="admin-nav-link admin-nav-toggle <?= $documentsOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuDocumentos" aria-expanded="<?= $documentsOpen ? 'true' : 'false' ?>">
                         <i class="bi bi-file-earmark-arrow-down"></i><span>Documentos</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
                     </button>

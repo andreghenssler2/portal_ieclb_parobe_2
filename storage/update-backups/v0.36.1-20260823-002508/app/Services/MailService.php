@@ -26,12 +26,14 @@ final class MailService
 
     public static function libraryInstalled(): bool
     {
-        try {
-            self::loadLibrary();
-            return class_exists('PHPMailer\PHPMailer\PHPMailer', false);
-        } catch (Throwable $e) {
-            return false;
+        if (class_exists('PHPMailer\\PHPMailer\\PHPMailer', false)) {
+            return true;
         }
+
+        $base = self::libraryPath();
+        return is_file($base . '/Exception.php')
+            && is_file($base . '/PHPMailer.php')
+            && is_file($base . '/SMTP.php');
     }
 
     public static function libraryVersion(): string
@@ -49,7 +51,7 @@ final class MailService
     public static function configurationIssue(PDO $pdo, array $options = []): ?string
     {
         if (!self::libraryInstalled()) {
-            return 'PHPMailer não está instalado pelo Composer. Execute: composer install --no-dev --optimize-autoloader';
+            return 'PHPMailer não está instalado. Execute: php atualizar_phpmailer_v0.26.0.php';
         }
 
         $from = trim((string)($options['from_email'] ?? siteConfig($pdo, 'mail_from_email', siteConfig($pdo, 'site_email', ''))));
@@ -344,42 +346,34 @@ final class MailService
 
     private static function loadLibrary(): void
     {
-        if (class_exists('PHPMailer\PHPMailer\PHPMailer', false)) {
-            self::validateLibraryVersion();
+        if (class_exists('PHPMailer\\PHPMailer\\PHPMailer', false)) {
             return;
         }
 
-        $autoload = self::composerAutoloadPath();
-        if (!is_file($autoload)) {
-            throw new RuntimeException(
-                'PHPMailer não está instalado pelo Composer. Execute: composer install --no-dev --optimize-autoloader'
-            );
+        $base = self::libraryPath();
+        $files = [$base . '/Exception.php', $base . '/PHPMailer.php', $base . '/SMTP.php'];
+        foreach ($files as $file) {
+            if (!is_file($file)) {
+                throw new RuntimeException(
+                    'PHPMailer não está instalado. Extraia a correção e execute: php atualizar_phpmailer_v0.26.0.php'
+                );
+            }
+            require_once $file;
         }
 
-        require_once $autoload;
-
-        if (!class_exists('PHPMailer\PHPMailer\PHPMailer', true)) {
-            throw new RuntimeException(
-                'O autoload do Composer foi encontrado, mas o PHPMailer não pôde ser carregado.'
-            );
+        if (!class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
+            throw new RuntimeException('PHPMailer foi encontrado, mas não pôde ser carregado.');
         }
 
-        self::validateLibraryVersion();
-    }
-
-    private static function validateLibraryVersion(): void
-    {
         $version = (string)\PHPMailer\PHPMailer\PHPMailer::VERSION;
-        if (version_compare($version, self::PHPMAILER_VERSION, '<')) {
-            throw new RuntimeException(
-                'PHPMailer ' . $version . ' é antigo. Execute composer update phpmailer/phpmailer.'
-            );
+        if (version_compare($version, '7.1.1', '<')) {
+            throw new RuntimeException('PHPMailer ' . $version . ' é antigo. Instale a versão 7.1.1 ou superior.');
         }
     }
 
-    private static function composerAutoloadPath(): string
+    private static function libraryPath(): string
     {
-        return dirname(__DIR__, 2) . '/lib/autoload.php';
+        return dirname(__DIR__, 2) . '/vendor/phpmailer/phpmailer/src';
     }
 
     private static function smtpPassword(PDO $pdo): string

@@ -186,9 +186,6 @@ $aliases = [
     'tag.sitemaps.xml' => 'tags.sitemaps.xml',
     'tag.sitemap.xml' => 'tags.sitemaps.xml',
     'tags.sitemap.xml' => 'tags.sitemaps.xml',
-    'lideranca.sitemaps.xml' => 'liderancas.sitemaps.xml',
-    'lideranca.sitemap.xml' => 'liderancas.sitemaps.xml',
-    'liderancas.sitemap.xml' => 'liderancas.sitemaps.xml',
     'documento.sitemaps.xml' => 'documentos.sitemaps.xml',
     'documento.sitemap.xml' => 'documentos.sitemaps.xml',
     'documentos.sitemap.xml' => 'documentos.sitemaps.xml',
@@ -235,10 +232,6 @@ $groups = [
     'tags.sitemaps.xml' => [
         'enabled' => ($settings['seo_sitemap_tags'] ?? '1') === '1' && ($settings['seo_sitemap_posts'] ?? '1') === '1',
         'lastmod' => sitemapMaxDate($pdo, "SELECT MAX(COALESCE(p.updated_at,p.publicado_em,p.created_at)) FROM tags t INNER JOIN post_tags pt ON pt.tag_id=t.id INNER JOIN posts p ON p.id=pt.post_id WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0"),
-    ],
-    'liderancas.sitemaps.xml' => [
-        'enabled' => ($settings['seo_sitemap_liderancas'] ?? '1') === '1',
-        'lastmod' => sitemapMaxDate($pdo, "SELECT MAX(updated_at) FROM liderancas WHERE ativo=1 AND seo_noindex=0"),
     ],
     'documentos.sitemaps.xml' => [
         'enabled' => ($settings['seo_sitemap_documentos'] ?? '1') === '1',
@@ -294,7 +287,6 @@ try {
         sitemapEmitUrl(url('grupos'), null, 'monthly', '0.7', [], $includeImages);
         sitemapEmitUrl(url('galerias'), null, 'weekly', '0.7', [], $includeImages);
         sitemapEmitUrl(url('documentos'), null, 'weekly', '0.7', [], $includeImages);
-        sitemapEmitUrl(url('liderancas'), null, 'monthly', '0.7', [], $includeImages);
     }
 
     if ($requestFile === 'posts.sitemaps.xml') {
@@ -402,17 +394,6 @@ try {
         }
     }
 
-    if ($requestFile === 'liderancas.sitemaps.xml') {
-        $sql = "SELECT l.slug,l.updated_at lm,m.caminho foto
-                FROM liderancas l
-                LEFT JOIN midias m ON m.id=l.foto_id
-                WHERE l.ativo=1 AND l.seo_noindex=0
-                ORDER BY l.ordem ASC,l.nome ASC";
-        foreach ($pdo->query($sql)->fetchAll() as $row) {
-            $images = !empty($row['foto']) ? [mediaUrl((string)$row['foto'])] : [];
-            sitemapEmitUrl(contentUrl('lideranca', (string)$row['slug']), sitemapDate((string)$row['lm']), 'monthly', '0.6', $images, $includeImages);
-        }
-    }
     if ($requestFile === 'documentos.sitemaps.xml') {
         $sql = "SELECT slug,COALESCE(updated_at,publicado_em,created_at) lm
                 FROM documentos

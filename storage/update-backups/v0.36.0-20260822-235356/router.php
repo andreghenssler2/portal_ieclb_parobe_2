@@ -18,7 +18,6 @@ if (count($segments) === 1) {
         'busca' => 'busca.php',
         'newsletter' => 'newsletter.php',
         'documentos' => 'documentos.php',
-        'liderancas' => 'liderancas.php',
     ];
     if (isset($static[$alias])) {
         require __DIR__ . '/' . $static[$alias];
@@ -58,7 +57,7 @@ if (count($segments) === 2 && strtolower(rawurldecode((string)$segments[0])) ===
 if (count($segments) === 2) {
     $prefix = strtolower(rawurldecode((string)$segments[0]));
     $routes = [];
-    foreach (['noticia','pagina','evento','galeria','formulario','comunidade','grupo', 'documento', 'lideranca'] as $type) {
+    foreach (['noticia','pagina','evento','galeria','formulario','comunidade','grupo', 'documento'] as $type) {
         $configured = permalinkPrefix($type, $pdo);
         if ($configured !== '') $routes[$configured] = $type . '.php';
         // Prefixos históricos continuam reconhecidos para redirecionamento canônico.

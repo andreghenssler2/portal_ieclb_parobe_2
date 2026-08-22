@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Csrf::validate($_POST['_token'] ?? null)) {
         Session::flash('error', 'Token de segurança inválido.');
     } else {
-        foreach (['seo_sitemap_ativo','seo_sitemap_geral','seo_sitemap_posts','seo_sitemap_paginas','seo_sitemap_eventos','seo_sitemap_galerias','seo_sitemap_comunidades','seo_sitemap_grupos','seo_sitemap_tags','seo_sitemap_categorias','seo_sitemap_documentos','seo_sitemap_formularios','seo_sitemap_imagens','seo_sitemap_liderancas'] as $key) {
+        foreach (['seo_sitemap_ativo','seo_sitemap_geral','seo_sitemap_posts','seo_sitemap_paginas','seo_sitemap_eventos','seo_sitemap_galerias','seo_sitemap_comunidades','seo_sitemap_grupos','seo_sitemap_tags','seo_sitemap_categorias','seo_sitemap_documentos','seo_sitemap_formularios','seo_sitemap_imagens',,'seo_sitemap_liderancas'] as $key) {
             $settings[$key] = isset($_POST[$key]) ? '1' : '0';
             saveSiteConfig($pdo, $key, $settings[$key], 'booleano');
         }
