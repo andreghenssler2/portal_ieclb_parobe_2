@@ -590,11 +590,16 @@ final class WordPressImportService
             return $existing ? 'updated' : 'created';
         }
         if ($existing && $mode === 'new' && $this->recordExists($table, (int)$existing['local_id'])) {
-            // v0.27.2: o modo "apenas novos" também funciona como reparo não
-            // destrutivo de capas e URLs de mídia que ainda apontam para o
-            // WordPress antigo. Os demais campos do conteúdo não são alterados.
+            // v0.28.4: além das mídias, o modo "apenas novos" também repara as
+            // relações de categorias/tags dos posts já importados. Isso permite
+            // corrigir a home sem duplicar notícias.
             $repair = [];
             $repairCols = $this->columns($table);
+            $taxonomyRepaired = false;
+            if ($wpType === 'post') {
+                $this->syncPostTaxonomies((int)$existing['local_id'], $item);
+                $taxonomyRepaired = true;
+            }
             $featuredWp = (int)($item['featured_media'] ?? 0);
             if ($featuredWp > 0) {
                 $this->applyFeaturedMedia($repair, $repairCols, $featuredWp, 'update', $userId, $options);
@@ -613,7 +618,7 @@ final class WordPressImportService
                 $this->updateAdaptive($table, (int)$existing['local_id'], $repair);
                 return 'updated';
             }
-            return 'skipped';
+            return $taxonomyRepaired ? 'updated' : 'skipped';
         }
 
         $cols = $this->columns($table);
@@ -1650,8 +1655,18 @@ final class WordPressImportService
 
     private function syncPostTaxonomies(int $postId, array $item): void
     {
-        $this->syncPivot($postId, 'category', is_array($item['categories'] ?? null) ? $item['categories'] : [], ['post_categorias', 'posts_categorias'], ['categoria_id', 'category_id']);
-        $this->syncPivot($postId, 'tag', is_array($item['tags'] ?? null) ? $item['tags'] : [], ['post_tags', 'posts_tags'], ['tag_id']);
+        $categories = is_array($item['categories'] ?? null) ? $item['categories'] : [];
+        $tags = is_array($item['tags'] ?? null) ? $item['tags'] : [];
+
+        // Relação estável usada pela Home a partir da v0.28.4. Mantemos também
+        // a tabela legada, quando existir, para compatibilidade com outras telas.
+        $this->syncPivot($postId, 'category', $categories, ['home_post_categorias'], ['categoria_id', 'category_id']);
+        $this->syncPivot($postId, 'category', $categories, [
+            'post_categorias','posts_categorias','post_categoria','posts_categoria',
+            'categoria_posts','categorias_posts','categoria_post','categorias_post',
+            'post_categories','posts_categories'
+        ], ['categoria_id','categorias_id','category_id','categories_id']);
+        $this->syncPivot($postId, 'tag', $tags, ['post_tags', 'posts_tags'], ['tag_id']);
     }
 
     private function syncPivot(int $postId, string $wpType, array $wpIds, array $tableCandidates, array $targetCandidates): void

@@ -79,6 +79,8 @@ $form = [
     'show_date' => $editing ? (bool)($editConfig['show_date'] ?? false) : true,
     'show_excerpt' => $editing ? (bool)($editConfig['show_excerpt'] ?? false) : false,
     'autoplay' => $editing ? (bool)($editConfig['autoplay'] ?? false) : false,
+    'date_position' => (string)($editConfig['date_position'] ?? 'after'),
+    'background' => (string)($editConfig['background'] ?? 'white'),
 ];
 
 $pageTitle = 'Página Inicial';
@@ -112,7 +114,11 @@ require __DIR__ . '/../_header.php';
                 <?php else: ?>
                     <div class="list-group list-group-flush" id="homeSectionList">
                     <?php foreach ($sections as $section): ?>
-                        <?php $cfg = $service->config($section); ?>
+                        <?php
+                        $cfg = $service->config($section);
+                        $sectionItemsFound = count($service->itemsForSection($section));
+                        $sectionHasNoItems = (int)$section['ativo'] === 1 && $sectionItemsFound === 0;
+                        ?>
                         <div class="list-group-item py-3 home-section-row" data-id="<?= (int)$section['id'] ?>">
                             <div class="d-flex align-items-start gap-3">
                                 <button type="button" class="btn btn-sm btn-light border home-drag-handle" title="Arrastar"><i class="bi bi-grip-vertical"></i></button>
@@ -124,9 +130,13 @@ require __DIR__ . '/../_header.php';
                                     </div>
                                     <div class="small text-secondary">
                                         Fonte: <?= e(match ((string)$section['origem']) { 'eventos' => 'Eventos', 'paginas' => 'Páginas', default => 'Posts / Notícias' }) ?>
-                                        · <?= (int)$section['limite'] ?> item(ns)
+                                        · limite <?= (int)$section['limite'] ?>
                                         <?php if (!empty($section['categoria_id'])): ?> · categoria #<?= (int)$section['categoria_id'] ?><?php endif; ?>
+                                        · <span class="<?= $sectionHasNoItems ? 'text-danger fw-semibold' : 'text-success' ?>"><?= $sectionItemsFound ?> encontrado(s)</span>
                                     </div>
+                                    <?php if ($sectionHasNoItems): ?>
+                                        <div class="small text-danger mt-1"><i class="bi bi-exclamation-triangle me-1"></i>A seção está ativa, mas nenhum conteúdo corresponde ao filtro.</div>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="d-flex gap-1">
                                     <a class="btn btn-sm btn-outline-primary" href="<?= e(url('admin/aparencia/home.php?editar=' . (int)$section['id'])) ?>" title="Editar"><i class="bi bi-pencil"></i></a>
@@ -199,6 +209,22 @@ require __DIR__ . '/../_header.php';
                         <div class="col-md-7">
                             <label class="form-label">Destino do link</label>
                             <input class="form-control" name="link_url" value="<?= e($form['link_url']) ?>" placeholder="/noticias.php">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Posição da data</label>
+                            <select class="form-select" name="date_position">
+                                <option value="after" <?= $form['date_position']==='after'?'selected':'' ?>>Abaixo do título</option>
+                                <option value="before" <?= $form['date_position']==='before'?'selected':'' ?>>Acima do título</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Fundo da seção</label>
+                            <select class="form-select" name="background">
+                                <option value="white" <?= $form['background']==='white'?'selected':'' ?>>Branco</option>
+                                <option value="soft" <?= $form['background']==='soft'?'selected':'' ?>>Cinza claro</option>
+                            </select>
                         </div>
                     </div>
                     <div class="border rounded p-3 mb-3 bg-body-tertiary">

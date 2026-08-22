@@ -7,6 +7,7 @@ final class HomeService
     private PDO $pdo;
     private array $columnCache = [];
     private array $tableCache = [];
+    private ?array $categoryRelationCache = null;
 
     public function __construct(PDO $pdo)
     {
@@ -73,10 +74,21 @@ final class HomeService
         $category = $category > 0 ? $category : null;
         $active = !empty($data['ativo']) ? 1 : 0;
 
+        $datePosition = (string)($data['date_position'] ?? 'after');
+        if (!in_array($datePosition, ['before', 'after'], true)) {
+            $datePosition = 'after';
+        }
+        $background = (string)($data['background'] ?? 'white');
+        if (!in_array($background, ['white', 'soft'], true)) {
+            $background = 'white';
+        }
+
         $config = [
             'show_date' => !empty($data['show_date']),
             'show_excerpt' => !empty($data['show_excerpt']),
             'autoplay' => !empty($data['autoplay']),
+            'date_position' => $datePosition,
+            'background' => $background,
         ];
 
         $payload = [
@@ -294,36 +306,133 @@ final class HomeService
         }
 
         $joins = '';
+        $distinct = '';
         if ($categoryId && $table === 'posts') {
-            $direct = $this->findColumn($cols, ['categoria_id','category_id']);
-            if ($direct) {
-                $where[] = '`' . $direct . '`=:categoria';
-                $params['categoria'] = $categoryId;
-            } else {
-                foreach (['post_categorias','posts_categorias'] as $pivot) {
-                    if (!$this->tableExists($pivot)) continue;
-                    $pcols = $this->columns($pivot);
-                    $postCol = $this->findColumn($pcols, ['post_id','posts_id']);
-                    $catCol = $this->findColumn($pcols, ['categoria_id','category_id']);
-                    if ($postCol && $catCol) {
-                        $joins = ' INNER JOIN `' . $pivot . '` hc ON hc.`' . $postCol . '`=`' . $table . '`.`id`';
-                        $where[] = 'hc.`' . $catCol . '`=:categoria';
-                        $params['categoria'] = $categoryId;
-                        break;
-                    }
+            // v0.28.4: filtra pela união de TODAS as formas de relacionamento
+            // disponíveis. Isto é importante porque o Portal pode guardar uma
+            // categoria principal no próprio post e as demais em tabela pivô.
+            $categoryIds = $this->categoryTreeIds($categoryId);
+            if (!$categoryIds) $categoryIds = [$categoryId];
+            $categoryIds = array_values(array_unique(array_filter(array_map('intval', $categoryIds), static fn(int $id): bool => $id > 0)));
+            $in = implode(',', $categoryIds);
+            $categoryWhere = [];
+
+            $direct = $this->findColumn($cols, ['categoria_id','category_id','categoria_principal_id','primary_category_id']);
+            if ($direct && $in !== '') {
+                $categoryWhere[] = '`' . $table . '`.`' . $direct . '` IN (' . $in . ')';
+            }
+
+            foreach ($this->postCategoryRelations() as $index => $relation) {
+                if ($in === '') break;
+                $alias = 'hcr' . $index;
+                $categoryWhere[] = 'EXISTS (SELECT 1 FROM `' . $relation['table'] . '` ' . $alias
+                    . ' WHERE ' . $alias . '.`' . $relation['post_col'] . '`=`' . $table . '`.`id`'
+                    . ' AND ' . $alias . '.`' . $relation['category_col'] . '` IN (' . $in . '))';
+            }
+
+            // Alguns esquemas antigos armazenam IDs em CSV/JSON no próprio post.
+            // A comparação usa delimitadores para não confundir 1 com 11.
+            foreach (['categorias','categories','categoria_ids','category_ids','categorias_json','categories_json'] as $listCol) {
+                if (!isset($cols[$listCol])) continue;
+                foreach ($categoryIds as $cid) {
+                    $categoryWhere[] = "CONCAT(',',REPLACE(REPLACE(REPLACE(COALESCE(`$table`.`$listCol`,''),'[',''),']',''),' ',''),',') LIKE '%," . (int)$cid . ",%'";
                 }
             }
+
+            // Se uma categoria foi escolhida e o esquema não possui nenhuma
+            // forma conhecida de associação, não exibe notícias aleatórias.
+            $where[] = $categoryWhere ? '(' . implode(' OR ', $categoryWhere) . ')' : '1=0';
         }
 
         $orderCol = $table === 'eventos'
             ? $this->findColumn($cols, ['inicio','data_inicio','starts_at','start_date','data','created_at','id'])
             : $this->findColumn($cols, ['publicado_em','data_publicacao','publication_date','data','created_at','id']);
-        $sql = 'SELECT `' . $table . '`.* FROM `' . $table . '`' . $joins;
+        $sql = 'SELECT ' . $distinct . '`' . $table . '`.* FROM `' . $table . '`' . $joins;
         if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
         $sql .= ' ORDER BY `' . $table . '`.`' . ($orderCol ?: 'id') . '` DESC, `' . $table . '`.`id` DESC LIMIT ' . (int)$limit;
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll() ?: [];
+    }
+
+
+    /**
+     * Descobre tabelas que relacionam posts e categorias, incluindo nomes
+     * usados por versões antigas e instalações personalizadas do Portal.
+     * A tabela home_post_categorias da v0.28.4 sempre tem prioridade.
+     */
+    private function postCategoryRelations(): array
+    {
+        if ($this->categoryRelationCache !== null) return $this->categoryRelationCache;
+
+        $postCandidates = ['post_id','posts_id','noticia_id','noticias_id','conteudo_id','content_id'];
+        $categoryCandidates = ['categoria_id','categorias_id','category_id','categories_id'];
+        $preferred = [
+            'home_post_categorias','post_categorias','posts_categorias','post_categoria','posts_categoria',
+            'categoria_posts','categorias_posts','categoria_post','categorias_post','post_categories','posts_categories'
+        ];
+
+        $tables = [];
+        try {
+            $stmt = $this->pdo->query('SELECT table_name,column_name FROM information_schema.columns WHERE table_schema=DATABASE() ORDER BY table_name,ordinal_position');
+            foreach ($stmt->fetchAll() ?: [] as $row) {
+                $table = (string)($row['table_name'] ?? $row['TABLE_NAME'] ?? '');
+                $column = (string)($row['column_name'] ?? $row['COLUMN_NAME'] ?? '');
+                if ($table !== '' && $column !== '') $tables[$table][] = $column;
+            }
+        } catch (Throwable $e) {
+            $tables = [];
+        }
+
+        $ordered = [];
+        foreach ($preferred as $name) if (isset($tables[$name])) $ordered[] = $name;
+        foreach (array_keys($tables) as $name) {
+            if (in_array($name, $ordered, true)) continue;
+            $key = strtolower($name);
+            if ((str_contains($key, 'post') || str_contains($key, 'noticia')) && (str_contains($key, 'categor') || str_contains($key, 'category'))) {
+                $ordered[] = $name;
+            }
+        }
+
+        $relations = [];
+        foreach ($ordered as $table) {
+            if (in_array($table, ['posts','categorias','home_secoes'], true)) continue;
+            $cols = array_fill_keys($tables[$table] ?? [], true);
+            $postCol = $this->findColumn($cols, $postCandidates);
+            $categoryCol = $this->findColumn($cols, $categoryCandidates);
+            if (!$postCol || !$categoryCol) continue;
+            $relations[] = ['table'=>$table,'post_col'=>$postCol,'category_col'=>$categoryCol];
+        }
+
+        return $this->categoryRelationCache = $relations;
+    }
+
+    private function categoryTreeIds(int $rootId): array
+    {
+        if ($rootId <= 0 || !$this->tableExists('categorias')) return [];
+        $cols = $this->columns('categorias');
+        $parentCol = $this->findColumn($cols, ['pai_id','parent_id','categoria_pai_id','categoria_pai','pai','parent','ascendente_id','ascendente']);
+        if (!$parentCol) return [$rootId];
+
+        $rows = $this->pdo->query('SELECT `id`, `' . $parentCol . '` AS parent_id FROM `categorias`')->fetchAll() ?: [];
+        $children = [];
+        foreach ($rows as $row) {
+            $parent = (int)($row['parent_id'] ?? 0);
+            if ($parent <= 0) continue;
+            $children[$parent][] = (int)$row['id'];
+        }
+
+        $seen = [];
+        $queue = [$rootId];
+        while ($queue) {
+            $id = (int)array_shift($queue);
+            if ($id <= 0 || isset($seen[$id])) continue;
+            $seen[$id] = true;
+            foreach ($children[$id] ?? [] as $childId) {
+                if (!isset($seen[$childId])) $queue[] = $childId;
+            }
+        }
+        return array_map('intval', array_keys($seen));
     }
 
     private function mediaUrl(int $id): string

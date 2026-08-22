@@ -1,0 +1,15 @@
+Portal IECLB Parobé v0.28.3
+
+CHANGELOG_v0.28.3.md
+LEIA-ME_v0.28.3.txt
+MANIFEST_v0.28.3.txt
+atualizar_v0.28.3.php
+admin/_header.php
+admin/aparencia/home.php
+app/Services/HomeService.php
+bootstrap.php
+config/config.example.php
+migrations/2026_08_22_v0.28.0.sql
+public/css/home-modular.css
+public/home-modular.php
+public/js/home-modular.js

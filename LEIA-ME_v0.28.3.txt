@@ -1,0 +1,19 @@
+PORTAL IECLB PAROBÉ - ATUALIZAÇÃO v0.28.3
+===========================================
+
+Pré-requisito recomendado: v0.28.2.
+
+1. Faça backup dos arquivos e banco de dados.
+2. Extraia este pacote sobre a raiz do Portal.
+3. Execute:
+
+   php atualizar_v0.28.3.php
+
+4. Abra a página inicial e pressione Ctrl+F5.
+
+O ajuste mantém o topo e a agenda existentes. A Home modular é movida no navegador
+para a posição dos blocos antigos e substitui "Nossas comunidades" / "Últimas notícias"
+quando os equivalentes modulares estiverem ativos.
+
+Aparência > Página Inicial continua sendo o local para ativar, desativar, ordenar,
+adicionar e remover seções.
