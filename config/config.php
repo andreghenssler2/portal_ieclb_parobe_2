@@ -11,7 +11,8 @@ define('APP_DEBUG', true);
 // define('BASE_URL', 'http://localhost/portal_ieclb_parobe');
 define('BASE_URL', 'https://ieclbparobe.com.br/portal_ieclb_parobe');
 define('TIMEZONE', 'America/Sao_Paulo');
-define('UPLOAD_MAX_SIZE', 35 * 1024 * 1024); // 35 MB por arquivo
+define('UPLOAD_MAX_SIZE', 300 * 1024 * 1024); // 300 MB por arquivo
+// define('UPLOAD_MAX_SIZE', 40 * 1024 * 1024); // 40 MB por arquivo
 
 // define('DB_HOST', 'localhost');
 // define('DB_PORT', '3306');

@@ -11,8 +11,7 @@ $canUpload = Auth::can('midias.gerenciar')
     || Auth::can('noticias.gerenciar')
     || Auth::can('paginas.gerenciar')
     || Auth::can('eventos.gerenciar')
-    || Auth::can('galerias.gerenciar')
-    || Auth::can('configuracoes.gerenciar');
+    || Auth::can('galerias.gerenciar');
 
 if (!$canUpload) {
     http_response_code(403);
