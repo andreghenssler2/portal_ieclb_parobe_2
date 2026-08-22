@@ -1,0 +1,28 @@
+PORTAL IECLB PAROBÉ - ATUALIZAÇÃO v0.28.0
+===========================================
+
+REQUISITOS
+- Portal atualizado até v0.27.2.
+- Faça backup dos arquivos e banco antes de atualizar.
+
+INSTALAÇÃO
+1. Extraia este ZIP sobre a raiz do Portal.
+2. Execute no terminal, a partir da raiz:
+
+   php atualizar_v0.28.0.php
+
+3. Acesse o painel:
+
+   Aparência > Página Inicial
+
+O ATUALIZADOR
+- cria a tabela home_secoes;
+- cria a permissão home.gerenciar;
+- concede a permissão ao Administrador;
+- cria as seções iniciais Últimas Notícias, Comunidades e Paróquia;
+- cria backup do index.php antes de integrar a nova home;
+- preserva o header e footer, substituindo somente o conteúdo interno de <main>;
+- cria backup de config/config.php e atualiza APP_VERSION para 0.28.0.
+
+IMPORTANTE
+Se o atualizador informar que não encontrou <main> no index.php, o arquivo original será preservado e será criado o arquivo INTEGRAR_HOME_v0.28.0.txt com a instrução de integração manual.

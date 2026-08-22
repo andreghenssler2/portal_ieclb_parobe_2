@@ -1,0 +1,2 @@
+Inclua dentro do conteúdo principal do index.php:
+<?php /* HOME_MODULAR_V028 */ require __DIR__ . '/public/home-modular.php'; ?>

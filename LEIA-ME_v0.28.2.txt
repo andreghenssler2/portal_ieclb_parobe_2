@@ -1,0 +1,12 @@
+Portal IECLB Parobé - atualização v0.28.2
+
+1. Faça backup dos arquivos e do banco.
+2. Extraia este ZIP sobre a instalação atual (v0.28.1).
+3. Execute na raiz do Portal:
+
+   php atualizar_v0.28.2.php
+
+4. Abra a página inicial e pressione Ctrl+F5.
+
+Esta versão corrige as capas e os links da Home modular em instalações Windows/XAMPP,
+sem apagar ou reimportar posts/mídias.

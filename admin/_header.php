@@ -27,7 +27,7 @@ $groupsOpen = $startsPath('grupos');
 $newsletterOpen = $startsPath('newsletter');
 $accountOpen = $isPath('minha-conta.php');
 
-$canAppearance = Auth::can('aparencia.gerenciar') || Auth::can('tema_editor.gerenciar') || Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') || Auth::can('configuracoes.gerenciar');
+$canAppearance = Auth::can('home.gerenciar') || Auth::can('aparencia.gerenciar') || Auth::can('tema_editor.gerenciar') || Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') || Auth::can('configuracoes.gerenciar');
 $pendingComments = 0;
 if (Auth::can('comentarios.gerenciar')) {
     try { $pendingComments = (int)Database::connection()->query("SELECT COUNT(*) FROM comentarios co INNER JOIN posts p ON p.id=co.post_id WHERE co.status='pendente' AND p.status <> 'lixeira'")->fetchColumn(); } catch (Throwable $e) {}
@@ -194,6 +194,9 @@ if (Auth::can('comentarios.gerenciar')) {
                         <i class="bi bi-palette"></i><span>Aparência</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
                     </button>
                     <div class="collapse admin-nav-submenu <?= $appearanceOpen ? 'show' : '' ?>" id="menuAparencia">
+                        <?php if (Auth::can('home.gerenciar')): ?>
+                            <a class="<?= $isPath('aparencia/home.php') ? 'active' : '' ?>" href="<?= e(url('admin/aparencia/home.php')) ?>">Página Inicial</a>
+                        <?php endif; ?>
                         <?php if (Auth::can('aparencia.gerenciar')): ?>
                             <a class="<?= $isPath('aparencia/temas.php') ? 'active' : '' ?>" href="<?= e(url('admin/aparencia/temas.php')) ?>">Temas</a>
                             <a class="<?= $isPath('aparencia/personalizar.php') ? 'active' : '' ?>" href="<?= e(url('admin/aparencia/personalizar.php')) ?>">Personalizar</a>
@@ -297,7 +300,7 @@ if (Auth::can('comentarios.gerenciar')) {
                 <a class="admin-nav-link" href="<?= e(url()) ?>" target="_blank">
                     <i class="bi bi-box-arrow-up-right"></i><span>Ver portal</span>
                 </a>
-                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.27.0') ?></div>
+                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.28.0') ?></div>
             </div>
         </div>
     </aside>

@@ -13,6 +13,7 @@ require_once __DIR__ . '/app/Services/RevisionService.php';
 require_once __DIR__ . '/app/Services/MailService.php';
 require_once __DIR__ . '/app/Services/NewsletterService.php';
 require_once __DIR__ . '/app/Services/WordPressImportService.php';
+require_once __DIR__ . '/app/Services/HomeService.php';
 
 Session::start();
 
