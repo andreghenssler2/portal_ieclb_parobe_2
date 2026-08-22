@@ -1,0 +1,17 @@
+Portal IECLB Parobé v0.29.0
+
+CHANGELOG_v0.29.0.md
+LEIA-ME_v0.29.0.txt
+admin/_header.php
+admin/aparencia/home.php
+app/Services/HomeService.php
+app/Services/WordPressImportService.php
+atualizar_v0.29.0.php
+bootstrap.php
+config/config.example.php
+migrations/2026_08_22_v0.28.0.sql
+migrations/2026_08_22_v0.28.4.sql
+migrations/2026_08_22_v0.29.0.sql
+public/css/home-modular.css
+public/home-modular.php
+public/js/home-modular.js

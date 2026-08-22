@@ -590,7 +590,7 @@ final class WordPressImportService
             return $existing ? 'updated' : 'created';
         }
         if ($existing && $mode === 'new' && $this->recordExists($table, (int)$existing['local_id'])) {
-            // v0.28.4: além das mídias, o modo "apenas novos" também repara as
+            // v0.29.0: além das mídias, o modo "apenas novos" também repara as
             // relações de categorias/tags dos posts já importados. Isso permite
             // corrigir a home sem duplicar notícias.
             $repair = [];
@@ -1658,7 +1658,7 @@ final class WordPressImportService
         $categories = is_array($item['categories'] ?? null) ? $item['categories'] : [];
         $tags = is_array($item['tags'] ?? null) ? $item['tags'] : [];
 
-        // Relação estável usada pela Home a partir da v0.28.4. Mantemos também
+        // Relação estável usada pela Home a partir da v0.29.0. Mantemos também
         // a tabela legada, quando existir, para compatibilidade com outras telas.
         $this->syncPivot($postId, 'category', $categories, ['home_post_categorias'], ['categoria_id', 'category_id']);
         $this->syncPivot($postId, 'category', $categories, [

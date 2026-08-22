@@ -308,7 +308,7 @@ final class HomeService
         $joins = '';
         $distinct = '';
         if ($categoryId && $table === 'posts') {
-            // v0.28.4: filtra pela união de TODAS as formas de relacionamento
+            // v0.29.0: filtra pela união de TODAS as formas de relacionamento
             // disponíveis. Isto é importante porque o Portal pode guardar uma
             // categoria principal no próprio post e as demais em tabela pivô.
             $categoryIds = $this->categoryTreeIds($categoryId);
@@ -359,7 +359,7 @@ final class HomeService
     /**
      * Descobre tabelas que relacionam posts e categorias, incluindo nomes
      * usados por versões antigas e instalações personalizadas do Portal.
-     * A tabela home_post_categorias da v0.28.4 sempre tem prioridade.
+     * A tabela home_post_categorias da v0.29.0 sempre tem prioridade.
      */
     private function postCategoryRelations(): array
     {

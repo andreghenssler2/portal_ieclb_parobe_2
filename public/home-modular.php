@@ -1,5 +1,5 @@
 <?php
-/** v0.28.4 - fragmento modular da página inicial. */
+/** v0.29.0 - fragmento modular da página inicial. */
 $homePdo = Database::connection();
 $homeService = new HomeService($homePdo);
 $homeSections = $homeService->sections(true);
@@ -18,8 +18,8 @@ $homeTitleKey = static function (string $value): string {
     return $value;
 };
 ?>
-<link rel="stylesheet" href="<?= e(url('public/css/home-modular.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.28.4'))) ?>">
-<div class="portal-home" id="portalHomeV028" data-home-version="0.28.4">
+<link rel="stylesheet" href="<?= e(url('public/css/home-modular.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.29.0'))) ?>">
+<div class="portal-home" id="portalHomeV028" data-home-version="0.29.0">
 <?php foreach ($homeSections as $section): ?>
     <?php
     $items = $homeService->itemsForSection($section);
@@ -121,4 +121,4 @@ $homeTitleKey = static function (string $value): string {
     </section>
 <?php endforeach; ?>
 </div>
-<script defer src="<?= e(url('public/js/home-modular.js?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.28.4'))) ?>"></script>
+<script defer src="<?= e(url('public/js/home-modular.js?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.29.0'))) ?>"></script>
