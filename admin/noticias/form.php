@@ -48,7 +48,13 @@ if ($id) {
 
 $comunidades = $pdo->query('SELECT id,nome FROM comunidades WHERE ativa=1 ORDER BY ordem,nome')->fetchAll();
 $categorias = CategoryService::tree($pdo);
-$tags = $pdo->query('SELECT id,nome,slug FROM tags ORDER BY nome')->fetchAll();
+$tags = $pdo->query(
+    "SELECT t.id,t.nome,t.slug,COUNT(pt.post_id) AS usage_count
+     FROM tags t
+     LEFT JOIN post_tags pt ON pt.tag_id=t.id
+     GROUP BY t.id,t.nome,t.slug
+     ORDER BY usage_count DESC,t.nome ASC"
+)->fetchAll();
 
 $selectedCategories = $id
     ? CategoryService::postCategoryIds($pdo, $id)
@@ -60,6 +66,19 @@ if ($id) {
     $st->execute(['id' => $id]);
     $selectedTags = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
 }
+
+$tagNamesById = [];
+foreach ($tags as $tag) {
+    $tagNamesById[(int)$tag['id']] = (string)$tag['nome'];
+}
+$tagNames = [];
+foreach ($selectedTags as $tagId) {
+    if (isset($tagNamesById[$tagId])) {
+        $tagNames[] = $tagNamesById[$tagId];
+    }
+}
+$tagInputValue = implode(', ', $tagNames);
+$popularTags = array_slice($tags, 0, 14);
 
 $midias = $pdo->query("SELECT id,caminho,titulo,alt_text,nome_original,largura,altura FROM midias WHERE mime_type LIKE 'image/%' ORDER BY id DESC")->fetchAll();
 $imagemCapaAtual = !empty($post['imagem_capa_id']) ? MediaService::find($pdo, (int)$post['imagem_capa_id']) : null;
@@ -85,10 +104,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $post['seo_noindex'] = isset($_POST['seo_noindex']) ? 1 : 0;
 
     $selectedCategories = CategoryService::validIds($pdo, (array)($_POST['categorias'] ?? []));
-    $selectedTags = array_values(array_unique(array_filter(
-        array_map('intval', (array)($_POST['tags'] ?? [])),
-        static fn($v) => $v > 0
-    )));
+    $tagInputRaw = trim((string)($_POST['tags_input'] ?? ''));
+    $tagNames = [];
+    if ($tagInputRaw !== '') {
+        foreach (preg_split('/[,;\n]+/u', $tagInputRaw) ?: [] as $tagName) {
+            $tagName = trim((string)$tagName);
+            if ($tagName === '') {
+                continue;
+            }
+            $tagName = mb_substr($tagName, 0, 100);
+            $key = mb_strtolower($tagName, 'UTF-8');
+            $tagNames[$key] = $tagName;
+            if (count($tagNames) >= 30) {
+                break;
+            }
+        }
+        $tagNames = array_values($tagNames);
+    }
+    $tagInputValue = implode(', ', $tagNames);
 
     if (!Csrf::validate($_POST['_token'] ?? null)) {
         $error = 'Token de segurança inválido.';
@@ -182,13 +215,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     CategoryService::syncPostCategories($pdo, $savedId, $selectedCategories, $primaryCategoryId);
 
                     $pdo->prepare('DELETE FROM post_tags WHERE post_id=:post_id')->execute(['post_id' => $savedId]);
-                    if ($selectedTags) {
-                        $validStmt = $pdo->prepare('SELECT id FROM tags WHERE id IN (' . implode(',', array_fill(0, count($selectedTags), '?')) . ')');
-                        $validStmt->execute($selectedTags);
-                        $validIds = array_map('intval', $validStmt->fetchAll(PDO::FETCH_COLUMN));
+                    $resolvedTagIds = [];
+                    foreach ($tagNames as $tagName) {
+                        $findTag = $pdo->prepare('SELECT id FROM tags WHERE LOWER(nome)=LOWER(:nome) LIMIT 1');
+                        $findTag->execute(['nome' => $tagName]);
+                        $tagId = (int)($findTag->fetchColumn() ?: 0);
+                        if ($tagId <= 0) {
+                            $tagSlug = uniqueSlug($pdo, 'tags', $tagName);
+                            $createTag = $pdo->prepare('INSERT INTO tags (nome,slug,descricao) VALUES (:nome,:slug,NULL)');
+                            $createTag->execute(['nome' => $tagName, 'slug' => $tagSlug]);
+                            $tagId = (int)$pdo->lastInsertId();
+                            logAction($pdo, 'tag.criar', 'tags', $tagId, $tagName);
+                        }
+                        $resolvedTagIds[$tagId] = true;
+                    }
+                    if ($resolvedTagIds) {
                         $link = $pdo->prepare('INSERT INTO post_tags (post_id,tag_id) VALUES (:post_id,:tag_id)');
-                        foreach ($validIds as $tagId) {
-                            $link->execute(['post_id' => $savedId, 'tag_id' => $tagId]);
+                        foreach (array_keys($resolvedTagIds) as $tagId) {
+                            $link->execute(['post_id' => $savedId, 'tag_id' => (int)$tagId]);
                         }
                     }
 
@@ -212,22 +256,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = $id ? 'Editar notícia' : 'Nova notícia';
+$authUser = Auth::user() ?? [];
+$authorName = (string)($authUser['nome'] ?? 'Usuário');
+$lastEdited = '';
+if ($id && !empty($post['updated_at'])) {
+    try {
+        $lastEdited = (new DateTime((string)$post['updated_at']))->format('d/m/Y H:i');
+    } catch (Throwable $ignored) {
+        $lastEdited = '';
+    }
+}
 require __DIR__ . '/../_header.php';
 ?>
 
-<div class="post-editor-page">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+<div class="wp-post-editor-page">
+    <div class="wp-editor-toolbar mb-3">
         <div>
             <div class="text-uppercase small text-secondary fw-semibold mb-1">Posts / Notícias</div>
             <h1 class="h4 mb-0"><?= e($pageTitle) ?></h1>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
             <?php if ($id): ?>
                 <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('admin/revisoes/index.php?tipo=post&id=' . $id)) ?>">
                     <i class="bi bi-clock-history me-1"></i>Revisões (<?= (int)$revisionCount ?>)
                 </a>
             <?php endif; ?>
             <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('admin/noticias/index.php')) ?>">Todos os Posts</a>
+            <button class="btn btn-primary btn-sm px-3" type="submit" form="postEditorForm">
+                <i class="bi bi-check2 me-1"></i><?= $id ? 'Atualizar' : 'Salvar' ?>
+            </button>
         </div>
     </div>
 
@@ -236,14 +293,14 @@ require __DIR__ . '/../_header.php';
     <form method="post" enctype="multipart/form-data" id="postEditorForm">
         <?= Csrf::field() ?>
 
-        <div class="post-editor-grid">
-            <main class="post-editor-main">
-                <section class="post-editor-canvas shadow-sm">
-                    <div class="post-title-wrap">
+        <div class="wp-post-editor-shell">
+            <main class="wp-post-editor-main">
+                <div class="wp-post-editor-canvas">
+                    <div class="wp-post-title-wrap">
                         <label class="visually-hidden" for="postTitulo">Título</label>
                         <input
                             id="postTitulo"
-                            class="post-title-input"
+                            class="wp-post-title-input"
                             name="titulo"
                             value="<?= e((string)$post['titulo']) ?>"
                             maxlength="220"
@@ -252,26 +309,18 @@ require __DIR__ . '/../_header.php';
                             required
                         >
                         <?php if ($id && !empty($post['slug'])): ?>
-                            <div class="post-permalink-preview">
+                            <div class="wp-post-permalink-preview">
                                 <i class="bi bi-link-45deg"></i>
                                 <a target="_blank" href="<?= e(contentUrl('noticia', (string)$post['slug'])) ?>"><?= e(contentUrl('noticia', (string)$post['slug'])) ?></a>
                             </div>
                         <?php endif; ?>
                     </div>
 
-                    <div class="post-content-wrap">
+                    <div class="wp-post-content-wrap">
                         <label class="visually-hidden" for="conteudo">Conteúdo</label>
                         <textarea id="conteudo" name="conteudo" rows="18"><?= e((string)$post['conteudo']) ?></textarea>
                     </div>
-                </section>
-
-                <section class="card border-0 shadow-sm mt-3">
-                    <div class="card-header bg-white fw-semibold py-3">Resumo</div>
-                    <div class="card-body">
-                        <textarea class="form-control" name="resumo" rows="4" placeholder="Escreva um resumo curto da notícia..."><?= e((string)($post['resumo'] ?? '')) ?></textarea>
-                        <div class="form-text">Usado nos cards, resultados de busca e como descrição quando o SEO específico estiver vazio.</div>
-                    </div>
-                </section>
+                </div>
 
                 <section class="card border-0 shadow-sm mt-3">
                     <div class="card-header bg-white fw-semibold py-3">SEO do conteúdo</div>
@@ -292,134 +341,176 @@ require __DIR__ . '/../_header.php';
                 </section>
             </main>
 
-            <aside class="post-editor-sidebar">
-                <section class="card border-0 shadow-sm post-editor-panel">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                        <strong>Publicação</strong>
-                        <?php if ($id && !empty($post['slug'])): ?>
-                            <a class="small text-decoration-none" target="_blank" href="<?= e(contentUrl('noticia', (string)$post['slug'])) ?>">Visualizar</a>
-                        <?php endif; ?>
+            <aside class="wp-post-settings" aria-label="Configurações do Post">
+                <div class="wp-settings-tabs" role="tablist">
+                    <button class="wp-settings-tab active" type="button" aria-selected="true">Post</button>
+                    <button class="wp-settings-tab" type="button" aria-selected="false" disabled>Bloco</button>
+                    <span class="wp-settings-close" title="Configurações do post"><i class="bi bi-x-lg"></i></span>
+                </div>
+
+                <section class="wp-settings-section wp-post-overview">
+                    <div class="wp-post-overview-title">
+                        <i class="bi bi-feather"></i>
+                        <strong id="sidebarPostTitle"><?= e(trim((string)$post['titulo']) !== '' ? (string)$post['titulo'] : 'Sem título') ?></strong>
+                        <i class="bi bi-three-dots-vertical ms-auto"></i>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">Status</label>
-                            <select class="form-select" name="status">
+
+                    <div class="wp-featured-area">
+                        <input type="hidden" name="imagem_capa_id" id="imagemCapaId" value="<?= e((string)($post['imagem_capa_id'] ?? '')) ?>">
+                        <div id="imagemCapaPreview" class="wp-featured-preview">
+                            <?php if ($imagemCapaAtual && MediaService::isImage($imagemCapaAtual)): ?>
+                                <img src="<?= e(mediaUrl($imagemCapaAtual['caminho'])) ?>" alt="<?= e($imagemCapaAtual['alt_text'] ?: $imagemCapaAtual['titulo'] ?: $imagemCapaAtual['nome_original']) ?>">
+                                <div class="wp-featured-actions">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-media-featured-open>Substituir imagem</button>
+                                    <button type="button" class="btn btn-sm btn-link text-danger" data-media-featured-remove>Remover</button>
+                                </div>
+                            <?php else: ?>
+                                <button type="button" class="wp-featured-button" data-media-featured-open>Definir imagem destacada</button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <button type="button" class="wp-summary-toggle" id="summaryToggle">Adicionar um resumo...</button>
+                    <div class="wp-summary-editor <?= trim((string)($post['resumo'] ?? '')) === '' ? 'd-none' : '' ?>" id="summaryEditor">
+                        <textarea class="form-control form-control-sm" name="resumo" rows="4" placeholder="Escreva um resumo curto..."><?= e((string)($post['resumo'] ?? '')) ?></textarea>
+                        <div class="form-text">Usado nos cards, busca e SEO quando a descrição específica estiver vazia.</div>
+                    </div>
+
+                    <div class="wp-last-edit">
+                        <?php if ($lastEdited !== ''): ?>Última edição em <?= e($lastEdited) ?><?php else: ?>Ainda não salvo<?php endif; ?>
+                    </div>
+
+                    <div class="wp-property-list">
+                        <label class="wp-property-row">
+                            <span>Status</span>
+                            <select class="wp-property-control" name="status">
                                 <?php foreach (['rascunho' => 'Rascunho', 'agendado' => 'Agendado', 'publicado' => 'Publicado', 'arquivado' => 'Arquivado'] as $v => $l): ?>
                                     <option value="<?= e($v) ?>" <?= $post['status'] === $v ? 'selected' : '' ?>><?= e($l) ?></option>
                                 <?php endforeach; ?>
                             </select>
+                        </label>
+
+                        <label class="wp-property-row">
+                            <span>Publicar</span>
+                            <input type="datetime-local" class="wp-property-control" name="publicado_em" value="<?= $post['publicado_em'] ? e((new DateTime((string)$post['publicado_em']))->format('Y-m-d\TH:i')) : '' ?>">
+                        </label>
+
+                        <label class="wp-property-row">
+                            <span>Slug</span>
+                            <input class="wp-property-control" name="slug" value="<?= e((string)($post['slug'] ?? '')) ?>" maxlength="240" placeholder="automática">
+                        </label>
+
+                        <div class="wp-property-row">
+                            <span>Autor</span>
+                            <span class="wp-property-value"><?= e($authorName) ?></span>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">Publicar em</label>
-                            <input type="datetime-local" class="form-control" name="publicado_em" value="<?= $post['publicado_em'] ? e((new DateTime((string)$post['publicado_em']))->format('Y-m-d\TH:i')) : '' ?>">
+                        <div class="wp-property-row">
+                            <span>Modelo</span>
+                            <span class="wp-property-value">Modelo padrão</span>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold">Slug</label>
-                            <input class="form-control" name="slug" value="<?= e((string)($post['slug'] ?? '')) ?>" maxlength="240" placeholder="gerada-pelo-titulo">
-                            <div class="form-text">Deixe vazio para gerar automaticamente.</div>
+                        <div class="wp-property-row">
+                            <span>Discussão</span>
+                            <label class="wp-property-check">
+                                <input type="checkbox" name="comentarios_ativos" <?= !empty($post['comentarios_ativos']) ? 'checked' : '' ?>>
+                                <span><?= !empty($post['comentarios_ativos']) ? 'Comentários' : 'Fechada' ?></span>
+                            </label>
                         </div>
 
+                        <div class="wp-property-row">
+                            <span>Formato</span>
+                            <span class="wp-property-value">Padrão</span>
+                        </div>
+                    </div>
+
+                    <?php if ($id): ?>
+                        <button class="btn btn-outline-primary w-100 mt-3" type="submit" form="duplicatePostForm">
+                            Copie para um novo rascunho
+                        </button>
+                    <?php endif; ?>
+                </section>
+
+                <details class="wp-settings-section wp-settings-details" open>
+                    <summary>Opções da notícia</summary>
+                    <div class="wp-settings-section-body">
                         <div class="mb-3">
                             <label class="form-label small fw-semibold">Comunidade</label>
-                            <select class="form-select" name="comunidade_id">
+                            <select class="form-select form-select-sm" name="comunidade_id">
                                 <option value="">Paroquial / Todas</option>
                                 <?php foreach ($comunidades as $c): ?>
                                     <option value="<?= (int)$c['id'] ?>" <?= (string)$post['comunidade_id'] === (string)$c['id'] ? 'selected' : '' ?>><?= e($c['nome']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-
-                        <div class="form-check form-switch mb-2">
+                        <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="destaque" id="destaque" <?= $post['destaque'] ? 'checked' : '' ?>>
                             <label class="form-check-label" for="destaque">Destacar na página inicial</label>
                         </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="comentarios_ativos" id="comentariosAtivos" <?= !empty($post['comentarios_ativos']) ? 'checked' : '' ?>>
-                            <label class="form-check-label" for="comentariosAtivos">Permitir comentários</label>
-                        </div>
                     </div>
-                    <div class="card-footer bg-white d-flex justify-content-between gap-2">
-                        <a class="btn btn-outline-secondary" href="<?= e(url('admin/noticias/index.php')) ?>">Cancelar</a>
-                        <button class="btn btn-primary px-4" type="submit"><i class="bi bi-check2 me-1"></i>Salvar</button>
-                    </div>
-                </section>
+                </details>
 
-                <section class="card border-0 shadow-sm post-editor-panel">
-                    <div class="card-header bg-white py-3"><strong>Imagem destacada</strong></div>
-                    <div class="card-body">
-                        <input type="hidden" name="imagem_capa_id" id="imagemCapaId" value="<?= e((string)($post['imagem_capa_id'] ?? '')) ?>">
-                        <div id="imagemCapaPreview" class="featured-picker-preview mb-3">
-                            <?php if ($imagemCapaAtual && MediaService::isImage($imagemCapaAtual)): ?>
-                                <div class="post-featured-current">
-                                    <img src="<?= e(mediaUrl($imagemCapaAtual['caminho'])) ?>" alt="<?= e($imagemCapaAtual['alt_text'] ?: $imagemCapaAtual['titulo'] ?: $imagemCapaAtual['nome_original']) ?>">
-                                    <div class="small fw-semibold mt-2 text-truncate"><?= e($imagemCapaAtual['titulo'] ?: $imagemCapaAtual['nome_original']) ?></div>
-                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 mt-1" data-media-featured-remove>Remover imagem</button>
-                                </div>
-                            <?php else: ?>
-                                <div class="post-featured-empty"><i class="bi bi-image"></i><span>Nenhuma imagem destacada</span></div>
-                            <?php endif; ?>
+                <details class="wp-settings-section wp-settings-details" open>
+                    <summary>Categorias <span class="wp-settings-count" id="categorySelectedCount"><?= count($selectedCategories) ?></span></summary>
+                    <div class="wp-settings-section-body">
+                        <div class="wp-category-search mb-3">
+                            <i class="bi bi-search"></i>
+                            <input type="search" id="categorySearch" placeholder="Pesquisar categorias" aria-label="Pesquisar categorias">
                         </div>
-                        <button class="btn btn-outline-primary w-100 mb-2" type="button" data-media-featured-open>Escolher da biblioteca</button>
-                        <label class="btn btn-outline-secondary w-100 mb-0">
-                            Fazer upload
-                            <input class="d-none" type="file" name="imagem_capa_upload" accept="image/jpeg,image/png,image/webp,image/gif">
-                        </label>
-                        <div class="form-text mt-2">Máximo <?= e(formatBytes(mediaUploadMaxSize($pdo))) ?>.</div>
-                    </div>
-                </section>
-
-                <section class="card border-0 shadow-sm post-editor-panel">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                        <strong>Categorias</strong>
-                        <span class="badge text-bg-light" id="categorySelectedCount"><?= count($selectedCategories) ?></span>
-                    </div>
-                    <div class="card-body">
-                        <div class="input-group input-group-sm mb-3">
-                            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                            <input type="search" id="categorySearch" class="form-control" placeholder="Pesquisar categorias">
-                        </div>
-                        <div id="categoryChoices" class="post-category-choices">
+                        <div id="categoryChoices" class="wp-category-choices">
                             <?php if (!$categorias): ?>
-                                <div class="text-secondary small">Nenhuma categoria cadastrada.</div>
+                                <div class="text-secondary small p-2">Nenhuma categoria cadastrada.</div>
                             <?php endif; ?>
                             <?php foreach ($categorias as $categoria): ?>
                                 <?php $depth = max(0, (int)($categoria['depth'] ?? 0)); ?>
-                                <label class="post-category-choice" data-category-name="<?= e(mb_strtolower((string)$categoria['nome'])) ?>" style="--category-depth:<?= $depth ?>">
-                                    <input class="form-check-input" type="checkbox" name="categorias[]" value="<?= (int)$categoria['id'] ?>" <?= in_array((int)$categoria['id'], $selectedCategories, true) ? 'checked' : '' ?>>
+                                <label class="wp-category-choice" data-category-name="<?= e(mb_strtolower((string)$categoria['nome'])) ?>" style="--category-depth:<?= $depth ?>">
+                                    <input type="checkbox" name="categorias[]" value="<?= (int)$categoria['id'] ?>" <?= in_array((int)$categoria['id'], $selectedCategories, true) ? 'checked' : '' ?>>
                                     <span><?= e($categoria['nome']) ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <div class="form-text m-0">Você pode marcar mais de uma.</div>
-                            <a class="small text-decoration-none" target="_blank" href="<?= e(url('admin/categorias/index.php')) ?>">Adicionar categoria</a>
-                        </div>
+                        <a class="wp-add-taxonomy" target="_blank" href="<?= e(url('admin/categorias/index.php')) ?>">Adicionar categoria</a>
                     </div>
-                </section>
+                </details>
 
-                <section class="card border-0 shadow-sm post-editor-panel">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                        <strong>Tags</strong>
-                        <span class="badge text-bg-light" id="tagSelectedCount"><?= count($selectedTags) ?></span>
-                    </div>
-                    <div class="card-body">
-                        <input type="search" id="tagSearch" class="form-control form-control-sm mb-3" placeholder="Pesquisar tags">
-                        <div id="tagChoices" class="post-tag-choices">
-                            <?php foreach ($tags as $tag): ?>
-                                <label class="tag-choice" data-tag-name="<?= e(mb_strtolower((string)$tag['nome'])) ?>">
-                                    <input class="form-check-input me-1" type="checkbox" name="tags[]" value="<?= (int)$tag['id'] ?>" <?= in_array((int)$tag['id'], $selectedTags, true) ? 'checked' : '' ?>><?= e($tag['nome']) ?>
-                                </label>
+                <details class="wp-settings-section wp-settings-details" open>
+                    <summary>Tags</summary>
+                    <div class="wp-settings-section-body">
+                        <label class="wp-tag-label" for="tagInput">ADICIONAR TAG</label>
+                        <input type="text" id="tagInput" class="form-control form-control-sm" autocomplete="off" placeholder="Digite uma tag e pressione Enter">
+                        <input type="hidden" id="tagsInputHidden" name="tags_input" value="<?= e($tagInputValue) ?>">
+                        <div class="form-text">Separe com vírgulas ou use a tecla Enter.</div>
+
+                        <div id="selectedTagChips" class="wp-selected-tags mt-3"></div>
+
+                        <div class="wp-popular-title mt-3">MAIS USADAS</div>
+                        <div class="wp-popular-tags">
+                            <?php foreach ($popularTags as $tag): ?>
+                                <button type="button" class="wp-popular-tag" data-tag-name="<?= e((string)$tag['nome']) ?>"><?= e((string)$tag['nome']) ?></button>
                             <?php endforeach; ?>
-                            <?php if (!$tags): ?><span class="text-secondary small">Nenhuma tag cadastrada.</span><?php endif; ?>
+                            <?php if (!$popularTags): ?><span class="text-secondary small">Nenhuma tag cadastrada.</span><?php endif; ?>
                         </div>
-                        <a class="small text-decoration-none d-inline-block mt-3" target="_blank" href="<?= e(url('admin/tags/index.php')) ?>">Gerenciar tags</a>
                     </div>
-                </section>
+                </details>
+
+                <div class="wp-sidebar-save">
+                    <button class="btn btn-primary w-100" type="submit">
+                        <i class="bi bi-check2 me-1"></i><?= $id ? 'Atualizar' : 'Salvar notícia' ?>
+                    </button>
+                    <?php if ($id && !empty($post['slug'])): ?>
+                        <a class="btn btn-link w-100 text-decoration-none" target="_blank" href="<?= e(contentUrl('noticia', (string)$post['slug'])) ?>">Visualizar notícia</a>
+                    <?php endif; ?>
+                </div>
             </aside>
         </div>
     </form>
+
+    <?php if ($id): ?>
+        <form id="duplicatePostForm" method="post" action="<?= e(url('admin/noticias/duplicar.php')) ?>" class="d-none">
+            <?= Csrf::field() ?>
+            <input type="hidden" name="id" value="<?= (int)$id ?>">
+        </form>
+    <?php endif; ?>
 </div>
 
 <?php require __DIR__ . '/../_editor_media_picker.php'; ?>
@@ -434,12 +525,12 @@ PortalMediaPicker.init({
 
 tinymce.init({
     selector: '#conteudo',
-    height: 620,
+    height: 650,
     menubar: false,
-    placeholder: 'Comece a escrever a notícia...',
+    placeholder: 'Digite / para começar a escrever…',
     plugins: 'link lists table code image media autoresize',
     toolbar: 'undo redo | blocks | bold italic | bullist numlist | link portalmedia table | alignleft aligncenter alignright | blockquote | code',
-    content_style: 'body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:17px;line-height:1.75;padding:18px 24px;max-width:920px;margin:0 auto;} img{max-width:100%;height:auto;}',
+    content_style: 'body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:17px;line-height:1.75;padding:24px 34px;max-width:920px;margin:0 auto;} img{max-width:100%;height:auto;}',
     setup: function (editor) {
         editor.ui.registry.addButton('portalmedia', {
             icon: 'image',
@@ -454,34 +545,110 @@ document.getElementById('postEditorForm').addEventListener('submit', function ()
     if (typeof tinymce !== 'undefined') tinymce.triggerSave();
 });
 
-function bindChoiceSearch(inputId, containerId, dataKey) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-    input.addEventListener('input', function () {
+const titleInput = document.getElementById('postTitulo');
+const sidebarTitle = document.getElementById('sidebarPostTitle');
+if (titleInput && sidebarTitle) {
+    titleInput.addEventListener('input', function () {
+        sidebarTitle.textContent = this.value.trim() || 'Sem título';
+    });
+}
+
+const summaryToggle = document.getElementById('summaryToggle');
+const summaryEditor = document.getElementById('summaryEditor');
+if (summaryToggle && summaryEditor) {
+    summaryToggle.addEventListener('click', function () {
+        summaryEditor.classList.toggle('d-none');
+        if (!summaryEditor.classList.contains('d-none')) {
+            summaryEditor.querySelector('textarea')?.focus();
+        }
+    });
+}
+
+const categorySearch = document.getElementById('categorySearch');
+if (categorySearch) {
+    categorySearch.addEventListener('input', function () {
         const q = this.value.trim().toLocaleLowerCase('pt-BR');
-        document.querySelectorAll('#' + containerId + ' [data-' + dataKey + ']').forEach(function (el) {
-            const value = el.getAttribute('data-' + dataKey) || '';
+        document.querySelectorAll('#categoryChoices [data-category-name]').forEach(function (el) {
+            const value = el.getAttribute('data-category-name') || '';
             el.classList.toggle('d-none', q !== '' && !value.includes(q));
         });
     });
 }
 
-bindChoiceSearch('categorySearch', 'categoryChoices', 'category-name');
-bindChoiceSearch('tagSearch', 'tagChoices', 'tag-name');
+const categoryChoices = document.getElementById('categoryChoices');
+const categorySelectedCount = document.getElementById('categorySelectedCount');
+function updateCategoryCount() {
+    if (categoryChoices && categorySelectedCount) {
+        categorySelectedCount.textContent = categoryChoices.querySelectorAll('input[type="checkbox"]:checked').length;
+    }
+}
+categoryChoices?.addEventListener('change', updateCategoryCount);
+updateCategoryCount();
 
-function bindCount(containerId, countId) {
-    const container = document.getElementById(containerId);
-    const output = document.getElementById(countId);
-    if (!container || !output) return;
-    const update = function () {
-        output.textContent = container.querySelectorAll('input[type="checkbox"]:checked').length;
-    };
-    container.addEventListener('change', update);
-    update();
+const tagInput = document.getElementById('tagInput');
+const tagsHidden = document.getElementById('tagsInputHidden');
+const selectedTagChips = document.getElementById('selectedTagChips');
+let selectedTagNames = [];
+
+function normalizeTagList(value) {
+    const seen = new Map();
+    String(value || '').split(/[,;\n]+/).forEach(function (item) {
+        const name = item.trim();
+        if (!name) return;
+        const key = name.toLocaleLowerCase('pt-BR');
+        if (!seen.has(key)) seen.set(key, name.substring(0, 100));
+    });
+    return Array.from(seen.values()).slice(0, 30);
 }
 
-bindCount('categoryChoices', 'categorySelectedCount');
-bindCount('tagChoices', 'tagSelectedCount');
+function syncTags() {
+    selectedTagNames = normalizeTagList(selectedTagNames.join(','));
+    tagsHidden.value = selectedTagNames.join(', ');
+    selectedTagChips.innerHTML = '';
+    selectedTagNames.forEach(function (name) {
+        const chip = document.createElement('span');
+        chip.className = 'wp-tag-chip';
+        chip.append(document.createTextNode(name));
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.setAttribute('aria-label', 'Remover ' + name);
+        remove.innerHTML = '&times;';
+        remove.addEventListener('click', function () {
+            selectedTagNames = selectedTagNames.filter(function (v) { return v.toLocaleLowerCase('pt-BR') !== name.toLocaleLowerCase('pt-BR'); });
+            syncTags();
+        });
+        chip.appendChild(remove);
+        selectedTagChips.appendChild(chip);
+    });
+}
+
+function addTags(value) {
+    selectedTagNames = selectedTagNames.concat(normalizeTagList(value));
+    syncTags();
+}
+
+selectedTagNames = normalizeTagList(tagsHidden.value);
+syncTags();
+
+if (tagInput) {
+    tagInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ',') {
+            event.preventDefault();
+            addTags(this.value);
+            this.value = '';
+        }
+    });
+    tagInput.addEventListener('blur', function () {
+        if (this.value.trim() !== '') {
+            addTags(this.value);
+            this.value = '';
+        }
+    });
+}
+
+document.querySelectorAll('[data-tag-name]').forEach(function (button) {
+    button.addEventListener('click', function () { addTags(this.dataset.tagName || ''); });
+});
 
 PortalMediaPicker.bindFeatured({
     openButton: document.querySelector('[data-media-featured-open]'),
