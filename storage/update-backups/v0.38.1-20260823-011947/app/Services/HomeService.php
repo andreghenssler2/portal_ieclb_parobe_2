@@ -437,6 +437,14 @@ final class HomeService
 
     private function mediaUrl(int $id): string
     {
+        // v0.32.0: usa uma variante adequada na Home quando disponível.
+        if (class_exists('ImageOptimizationService')) {
+            try {
+                $optimized = ImageOptimizationService::bestUrlForMedia($this->pdo, $id, 1600);
+                if ($optimized !== '') return $optimized;
+            } catch (Throwable $ignored) {}
+        }
+
         if ($id <= 0 || !$this->tableExists('midias')) return '';
         $cols = $this->columns('midias');
         $urlCol = $this->findColumn($cols, ['url','arquivo_url','local_url','source_url']);

@@ -121,7 +121,8 @@ if (Auth::can('comentarios.gerenciar')) {
                     <div class="collapse admin-nav-submenu <?= $mediaOpen ? 'show' : '' ?>" id="menuMidia">
                         <?php if (Auth::can('midias.gerenciar')): ?>
                             <a class="<?= $isPath('midias/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/midias/index.php')) ?>">Biblioteca</a>
-<a href="<?= e(url('admin/midias/index.php#adicionar-novo')) ?>">Adicionar Novo</a>
+                            <a class="<?= $isPath('midias/otimizacao.php') ? 'active' : '' ?>" href="<?= e(url('admin/midias/otimizacao.php')) ?>">Otimização de imagens</a>
+                            <a href="<?= e(url('admin/midias/index.php#adicionar-novo')) ?>">Adicionar Novo</a>
                             <?php if (Auth::can('wordpress.importar')): ?><a href="<?= e(url('admin/ferramentas/wordpress.php?modulo=media')) ?>">Importar do WordPress</a><?php endif; ?>
                         <?php endif; ?>
                         <?php if (Auth::can('galerias.gerenciar')): ?>
@@ -279,14 +280,11 @@ if (Auth::can('comentarios.gerenciar')) {
                     </a>
                 <?php endif; ?>
 
-                <?php if (Auth::can('tarefas.gerenciar') || Auth::can('backups.gerenciar') || Auth::can('manutencao.gerenciar') || Auth::can('wordpress.importar') || Auth::can('saude.visualizar')): ?>
+                <?php if (Auth::can('backups.gerenciar') || Auth::can('manutencao.gerenciar') || Auth::can('wordpress.importar') || Auth::can('saude.visualizar')): ?>
                     <button class="admin-nav-link admin-nav-toggle <?= $toolsOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuFerramentas" aria-expanded="<?= $toolsOpen ? 'true' : 'false' ?>">
                         <i class="bi bi-tools"></i><span>Ferramentas</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
                     </button>
                     <div class="collapse admin-nav-submenu <?= $toolsOpen ? 'show' : '' ?>" id="menuFerramentas">
-                        <?php if (Auth::can('tarefas.gerenciar')): ?>
-                            <a class="<?= $isPath('ferramentas/tarefas-agendadas.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/tarefas-agendadas.php')) ?>">Tarefas Agendadas</a>
-                        <?php endif; ?>
                         <?php if (Auth::can('backups.gerenciar')): ?>
                             <a class="<?= $isPath('ferramentas/backups.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/backups.php')) ?>">Backups</a>
                         <?php endif; ?>

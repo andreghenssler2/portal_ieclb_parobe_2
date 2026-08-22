@@ -30,6 +30,7 @@ if (count($segments) === 1) {
     }
 }
 
+
 // v0.35.0 - download de documento por caminho amigável.
 if (count($segments) === 3) {
     $documentPrefix = permalinkPrefix('documento', $pdo);
@@ -57,19 +58,12 @@ if (count($segments) === 2 && strtolower(rawurldecode((string)$segments[0])) ===
 if (count($segments) === 2) {
     $prefix = strtolower(rawurldecode((string)$segments[0]));
     $routes = [];
-
-    // IMPORTANTE: esta lista deve conter somente tipos aceitos por permalinkPrefix().
-    // "comunidade" e "grupo" não possuem permalinkPrefix/controlador individual e,
-    // quando eram passados para a função, causavam Fatal error em qualquer URL de 2 segmentos.
-    foreach (['noticia','pagina','evento','galeria','formulario','documento','lideranca'] as $type) {
+    foreach (['noticia','pagina','evento','galeria','formulario','comunidade','grupo', 'documento', 'lideranca'] as $type) {
         $configured = permalinkPrefix($type, $pdo);
-        if ($configured !== '') {
-            $routes[$configured] = $type . '.php';
-        }
+        if ($configured !== '') $routes[$configured] = $type . '.php';
         // Prefixos históricos continuam reconhecidos para redirecionamento canônico.
         $routes[$type] = $type . '.php';
     }
-
     if (isset($routes[$prefix])) {
         require __DIR__ . '/' . $routes[$prefix];
         exit;

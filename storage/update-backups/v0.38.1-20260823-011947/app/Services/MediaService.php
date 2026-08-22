@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/ImageOptimizationService.php';
+
 final class MediaService
 {
     private const ALLOWED_MIME_TYPES = [
@@ -123,6 +125,18 @@ final class MediaService
             throw new RuntimeException('Não foi possível recuperar a mídia enviada.');
         }
 
+        // v0.32.0: gera variantes automaticamente sem comprometer o upload.
+        if (self::isImage($media)) {
+            try {
+                $optSettings = ImageOptimizationService::settings($pdo);
+                if ($optSettings['enabled']) {
+                    ImageOptimizationService::optimizeMedia($pdo, $id, false);
+                }
+            } catch (Throwable $ignored) {
+                // O original já foi salvo; falha na otimização não cancela o upload.
+            }
+        }
+
         return $media;
     }
 
@@ -145,6 +159,9 @@ final class MediaService
         if (!$media) {
             return false;
         }
+
+        // v0.32.0: remove derivados físicos antes do registro principal.
+        try { ImageOptimizationService::deleteVariants($pdo, $id, true); } catch (Throwable $ignored) {}
 
         $stmt = $pdo->prepare('DELETE FROM midias WHERE id = :id');
         $stmt->execute(['id' => $id]);

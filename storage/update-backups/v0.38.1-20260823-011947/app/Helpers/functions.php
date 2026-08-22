@@ -307,6 +307,11 @@ function mediaUrl(?string $path): string
         return '';
     }
 
+    // v0.32.0: prefere a maior variante otimizada local, com fallback seguro.
+    if (class_exists('ImageOptimizationService')) {
+        return ImageOptimizationService::publicUrlForPath($path);
+    }
+
     if (preg_match('#^https?://#i', $path)) {
         return $path;
     }

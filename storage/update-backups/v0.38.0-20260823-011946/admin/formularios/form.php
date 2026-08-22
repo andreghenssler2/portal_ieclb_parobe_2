@@ -110,7 +110,7 @@ $pageTitle=$id>0?'Editar formulário':'Novo formulário';
 require __DIR__.'/../_header.php';
 $types=['texto'=>'Texto','email'=>'E-mail','telefone'=>'Telefone','numero'=>'Número','data'=>'Data','textarea'=>'Texto longo','select'=>'Lista de opções','checkbox'=>'Caixa de seleção'];
 ?>
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4"><div><h1 class="h3 mb-1"><?= $id>0?'Editar formulário':'Novo formulário' ?></h1><p class="text-secondary mb-0">Monte campos personalizados para páginas de contato, inscrições e outros cadastros.</p></div><?php if ($id>0): ?><a class="btn btn-outline-primary" href="<?= e(url('admin/formularios/notificacoes.php?id='.$id)) ?>"><i class="bi bi-envelope me-1"></i>Notificações por e-mail</a><?php endif; ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/formularios/index.php')) ?>">Voltar</a></div>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4"><div><h1 class="h3 mb-1"><?= $id>0?'Editar formulário':'Novo formulário' ?></h1><p class="text-secondary mb-0">Monte campos personalizados para páginas de contato, inscrições e outros cadastros.</p></div><a class="btn btn-outline-secondary" href="<?= e(url('admin/formularios/index.php')) ?>">Voltar</a></div>
 <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
 <form method="post" id="formBuilder"><?= Csrf::field() ?>
 <div class="row g-4">
