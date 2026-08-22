@@ -1,6 +1,7 @@
 /config/config.php
 /uploads/*
+!uploads/.gitkeep
 /public/uploads/*
-!/uploads/.gitkeep
+!/public/uploads/.gitkeep
 *.log
 .DS_Store

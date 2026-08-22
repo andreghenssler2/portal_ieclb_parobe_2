@@ -8,7 +8,6 @@ require_once __DIR__ . '/mod/auth/Session.php';
 require_once __DIR__ . '/mod/security/Csrf.php';
 require_once __DIR__ . '/mod/auth/Auth.php';
 require_once __DIR__ . '/app/Helpers/functions.php';
-require_once __DIR__ . '/app/Services/CacheService.php';
 require_once __DIR__ . '/app/Services/MediaService.php';
 require_once __DIR__ . '/app/Services/RevisionService.php';
 require_once __DIR__ . '/app/Services/MailService.php';
@@ -22,7 +21,6 @@ Session::start();
 // Em instalações ainda não migradas, permanece o TIMEZONE do config.php.
 try {
     $bootstrapPdo = Database::connection();
-    CacheService::configure($bootstrapPdo);
     $portalTimezone = siteConfig($bootstrapPdo, 'site_timezone', defined('TIMEZONE') ? (string)TIMEZONE : 'America/Sao_Paulo');
     if (in_array($portalTimezone, DateTimeZone::listIdentifiers(), true)) {
         date_default_timezone_set($portalTimezone);
@@ -41,9 +39,6 @@ try {
 
     // v0.21.0: bloqueia apenas a área pública quando o modo manutenção estiver ativo.
     enforceMaintenanceMode($bootstrapPdo);
-
-    // v0.31.0: cache seguro apenas para a Home pública e visitantes anônimos.
-    CacheService::bootstrapPublicPageCache($bootstrapPdo);
 } catch (Throwable $e) {
     // Mantém o portal funcionando durante instalação/migração.
 }

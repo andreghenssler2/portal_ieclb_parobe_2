@@ -314,11 +314,6 @@ function mediaUrl(?string $path): string
 
 function logAction(PDO $pdo, string $acao, ?string $entidade = null, ?int $entidadeId = null, ?string $detalhes = null, string $nivel = 'info'): void
 {
-    // v0.31.0: alterações de conteúdo invalidam fragmentos/páginas públicas.
-    if (class_exists('CacheService', false)) {
-        CacheService::invalidateForAction($acao, $entidade);
-    }
-
     try {
         $nivel = in_array($nivel, ['info', 'warning', 'critical'], true) ? $nivel : 'info';
         $method = isset($_SERVER['REQUEST_METHOD']) ? mb_substr((string)$_SERVER['REQUEST_METHOD'], 0, 10) : 'CLI';
@@ -405,14 +400,6 @@ function siteConfigAll(PDO $pdo, bool $refresh = false): array
     if (!$refresh && isset($GLOBALS['__portal_config_cache'][$key])) {
         return $GLOBALS['__portal_config_cache'][$key];
     }
-    // v0.31.0: cache persistente entre requisições.
-    if (!$refresh && class_exists('CacheService', false) && CacheService::enabled()) {
-        $cached = CacheService::get('config.all', null);
-        if (is_array($cached)) {
-            $GLOBALS['__portal_config_cache'][$key] = $cached;
-            return $cached;
-        }
-    }
     try {
         $stmt = $pdo->query('SELECT chave, valor FROM configuracoes ORDER BY chave');
         $items = [];
@@ -420,9 +407,6 @@ function siteConfigAll(PDO $pdo, bool $refresh = false): array
             $items[(string)$row['chave']] = (string)($row['valor'] ?? '');
         }
         $GLOBALS['__portal_config_cache'][$key] = $items;
-        if (class_exists('CacheService', false) && CacheService::enabled()) {
-            CacheService::put('config.all', $items, CacheService::defaultTtl(), 'config');
-        }
         return $items;
     } catch (Throwable $e) {
         return [];
@@ -448,11 +432,6 @@ function saveSiteConfig(PDO $pdo, string $key, ?string $value, string $type = 't
         'tipo' => $type,
     ]);
     unset($GLOBALS['__portal_config_cache'][spl_object_id($pdo)]);
-    if (class_exists('CacheService', false)) {
-        CacheService::forget('config.all');
-        CacheService::clearGroup('page');
-        CacheService::clearGroup('public');
-    }
 }
 
 function mediaUploadMaxSize(?PDO $pdo = null): int
