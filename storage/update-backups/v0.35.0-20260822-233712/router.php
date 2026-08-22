@@ -17,7 +17,6 @@ if (count($segments) === 1) {
         'grupos' => 'grupos.php',
         'busca' => 'busca.php',
         'newsletter' => 'newsletter.php',
-        'documentos' => 'documentos.php',
     ];
     if (isset($static[$alias])) {
         require __DIR__ . '/' . $static[$alias];
@@ -29,16 +28,6 @@ if (count($segments) === 1) {
     }
 }
 
-
-// v0.35.0 - download de documento por caminho amigável.
-if (count($segments) === 3) {
-    $documentPrefix = permalinkPrefix('documento', $pdo);
-    $first = strtolower(rawurldecode((string)$segments[0]));
-    if (($first === $documentPrefix || $first === 'documento') && strtolower((string)$segments[2]) === 'baixar') {
-        require __DIR__ . '/documento-baixar.php';
-        exit;
-    }
-}
 if (count($segments) === 3 && strtolower(rawurldecode((string)$segments[0])) === 'newsletter' && in_array(strtolower((string)$segments[1]), ['confirmar','cancelar'], true)) {
     require __DIR__ . '/newsletter.php';
     exit;
@@ -57,7 +46,7 @@ if (count($segments) === 2 && strtolower(rawurldecode((string)$segments[0])) ===
 if (count($segments) === 2) {
     $prefix = strtolower(rawurldecode((string)$segments[0]));
     $routes = [];
-    foreach (['noticia','pagina','evento','galeria','formulario','comunidade','grupo', 'documento'] as $type) {
+    foreach (['noticia','pagina','evento','galeria','formulario','comunidade','grupo'] as $type) {
         $configured = permalinkPrefix($type, $pdo);
         if ($configured !== '') $routes[$configured] = $type . '.php';
         // Prefixos históricos continuam reconhecidos para redirecionamento canônico.

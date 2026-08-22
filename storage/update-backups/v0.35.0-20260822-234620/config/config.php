@@ -5,7 +5,7 @@ declare(strict_types=1);
 // Copie este arquivo para config/config.php e ajuste os dados do ambiente.
 
 define('APP_NAME', 'Portal IECLB Parobé');
-define('APP_VERSION', '0.35.0');
+define('APP_VERSION', '0.34.0');
 define('APP_ENV', 'development');
 define('APP_DEBUG', true);
 define('BASE_URL', 'http://localhost/portal_ieclb_parobe');

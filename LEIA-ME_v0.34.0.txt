@@ -1,9 +1,0 @@
-Portal IECLB Parobé v0.34.0
-
-1. Extraia este ZIP sobre a raiz do Portal.
-2. Execute:
-   php atualizar_v0.34.0.php
-3. Atualize o navegador com Ctrl+F5.
-
-A versão renova somente a navegação administrativa.
-Não altera banco de dados nem conteúdo.

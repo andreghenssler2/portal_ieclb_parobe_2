@@ -186,9 +186,6 @@ $aliases = [
     'tag.sitemaps.xml' => 'tags.sitemaps.xml',
     'tag.sitemap.xml' => 'tags.sitemaps.xml',
     'tags.sitemap.xml' => 'tags.sitemaps.xml',
-    'documento.sitemaps.xml' => 'documentos.sitemaps.xml',
-    'documento.sitemap.xml' => 'documentos.sitemaps.xml',
-    'documentos.sitemap.xml' => 'documentos.sitemaps.xml',
     'formulario.sitemaps.xml' => 'formularios.sitemaps.xml',
     'formulario.sitemap.xml' => 'formularios.sitemaps.xml',
     'formularios.sitemap.xml' => 'formularios.sitemaps.xml',
@@ -232,10 +229,6 @@ $groups = [
     'tags.sitemaps.xml' => [
         'enabled' => ($settings['seo_sitemap_tags'] ?? '1') === '1' && ($settings['seo_sitemap_posts'] ?? '1') === '1',
         'lastmod' => sitemapMaxDate($pdo, "SELECT MAX(COALESCE(p.updated_at,p.publicado_em,p.created_at)) FROM tags t INNER JOIN post_tags pt ON pt.tag_id=t.id INNER JOIN posts p ON p.id=pt.post_id WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0"),
-    ],
-    'documentos.sitemaps.xml' => [
-        'enabled' => ($settings['seo_sitemap_documentos'] ?? '1') === '1',
-        'lastmod' => sitemapMaxDate($pdo, "SELECT MAX(COALESCE(updated_at,publicado_em,created_at)) FROM documentos WHERE status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND seo_noindex=0"),
     ],
     'formularios.sitemaps.xml' => [
         'enabled' => ($settings['seo_sitemap_formularios'] ?? '0') === '1',
@@ -286,7 +279,6 @@ try {
         sitemapEmitUrl(url('comunidades'), null, 'monthly', '0.7', [], $includeImages);
         sitemapEmitUrl(url('grupos'), null, 'monthly', '0.7', [], $includeImages);
         sitemapEmitUrl(url('galerias'), null, 'weekly', '0.7', [], $includeImages);
-        sitemapEmitUrl(url('documentos'), null, 'weekly', '0.7', [], $includeImages);
     }
 
     if ($requestFile === 'posts.sitemaps.xml') {
@@ -394,17 +386,6 @@ try {
         }
     }
 
-    if ($requestFile === 'documentos.sitemaps.xml') {
-        $sql = "SELECT slug,COALESCE(updated_at,publicado_em,created_at) lm
-                FROM documentos
-                WHERE status='publicado'
-                  AND (publicado_em IS NULL OR publicado_em<=NOW())
-                  AND seo_noindex=0
-                ORDER BY id DESC";
-        foreach ($pdo->query($sql)->fetchAll() as $row) {
-            sitemapEmitUrl(contentUrl('documento', (string)$row['slug']), sitemapDate((string)$row['lm']), 'monthly', '0.6', [], false);
-        }
-    }
     if ($requestFile === 'formularios.sitemaps.xml') {
         $sql = "SELECT slug,COALESCE(updated_at,publicado_em,created_at) lm FROM formularios WHERE status='publicado' AND ativo=1 AND (publicado_em IS NULL OR publicado_em<=NOW()) ORDER BY id DESC";
         foreach ($pdo->query($sql)->fetchAll() as $row) {

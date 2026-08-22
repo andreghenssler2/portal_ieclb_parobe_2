@@ -25,7 +25,6 @@ function permalinkPrefix(string $type, ?PDO $pdo = null): string
         'evento' => 'evento',
         'galeria' => 'galeria',
         'formulario' => 'formulario',
-        'documento' => 'documento',
     ];
     if (!isset($defaults[$type])) {
         throw new InvalidArgumentException('Tipo de conteúdo inválido.');
@@ -50,7 +49,7 @@ function permalinkPrefix(string $type, ?PDO $pdo = null): string
 /** Gera a URL pública amigável usando a slug salva no banco. */
 function contentUrl(string $type, string $slug): string
 {
-    $allowed = ['noticia', 'pagina', 'evento', 'galeria', 'formulario', 'documento'];
+    $allowed = ['noticia', 'pagina', 'evento', 'galeria', 'formulario'];
     if (!in_array($type, $allowed, true)) {
         throw new InvalidArgumentException('Tipo de conteúdo inválido.');
     }
@@ -85,7 +84,7 @@ function currentRelativePath(): string
  */
 function routeSlug(string $type): string
 {
-    $allowed = ['noticia', 'pagina', 'evento', 'galeria', 'formulario', 'documento'];
+    $allowed = ['noticia', 'pagina', 'evento', 'galeria', 'formulario'];
     if (!in_array($type, $allowed, true)) {
         return '';
     }
@@ -189,7 +188,7 @@ function slugify(string $text): string
 
 function uniqueSlug(PDO $pdo, string $table, string $title, ?int $ignoreId = null): string
 {
-    $allowed = ['posts', 'paginas', 'comunidades', 'categorias', 'tags', 'eventos', 'evento_categorias', 'menus', 'galerias', 'formularios', 'documentos', 'documento_categorias'];
+    $allowed = ['posts', 'paginas', 'comunidades', 'categorias', 'tags', 'eventos', 'evento_categorias', 'menus', 'galerias', 'formularios'];
     if (!in_array($table, $allowed, true)) {
         throw new InvalidArgumentException('Tabela inválida para slug.');
     }

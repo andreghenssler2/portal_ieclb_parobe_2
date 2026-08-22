@@ -1,0 +1,27 @@
+Portal IECLB Parobé - v0.35.0
+Pacote incremental (somente arquivos novos/alterados da versão)
+
+CHANGELOG_v0.35.0.md
+LEIA-ME_v0.35.0.txt
+MANIFEST_v0.35.0.txt
+atualizar_v0.35.0.php
+migrations/2026_08_22_v0.35.0.sql
+app/Services/DocumentService.php
+admin/documentos/index.php
+admin/documentos/form.php
+admin/documentos/categorias.php
+documentos.php
+documento.php
+documento-baixar.php
+
+O atualizador modifica com backup:
+bootstrap.php
+app/Helpers/functions.php
+app/Services/CacheService.php
+router.php
+admin/_header.php
+busca.php
+sitemap.php
+admin/seo/sitemap.php
+.htaccess
+config/config.php

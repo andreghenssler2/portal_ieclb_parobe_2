@@ -24,7 +24,6 @@ $auditOpen = $startsPath('auditoria');
 $toolsOpen = $startsPath('ferramentas');
 $communitiesOpen = $startsPath('comunidades');
 $groupsOpen = $startsPath('grupos');
-$documentsOpen = $startsPath('documentos');
 $newsletterOpen = $startsPath('newsletter');
 $accountOpen = $isPath('minha-conta.php');
 
@@ -241,18 +240,7 @@ if (Auth::can('comentarios.gerenciar')) {
                     </div>
                 <?php endif; ?>
 
-                
-                <?php if (Auth::can('documentos.gerenciar')): ?>
-                    <button class="admin-nav-link admin-nav-toggle <?= $documentsOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuDocumentos" aria-expanded="<?= $documentsOpen ? 'true' : 'false' ?>">
-                        <i class="bi bi-file-earmark-arrow-down"></i><span>Documentos</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
-                    </button>
-                    <div class="collapse admin-nav-submenu <?= $documentsOpen ? 'show' : '' ?>" id="menuDocumentos">
-                        <a class="<?= $isPath('documentos/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/documentos/index.php')) ?>">Todos os Documentos</a>
-                        <a class="<?= $isPath('documentos/form.php') && !isset($_GET['id']) ? 'active' : '' ?>" href="<?= e(url('admin/documentos/form.php')) ?>">Adicionar Novo</a>
-                        <a class="<?= $isPath('documentos/categorias.php') ? 'active' : '' ?>" href="<?= e(url('admin/documentos/categorias.php')) ?>">Categorias</a>
-                    </div>
-                <?php endif; ?>
-<?php if (Auth::can('newsletter.gerenciar')): ?>
+                <?php if (Auth::can('newsletter.gerenciar')): ?>
                     <button class="admin-nav-link admin-nav-toggle <?= $newsletterOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuNewsletter" aria-expanded="<?= $newsletterOpen ? 'true' : 'false' ?>">
                         <i class="bi bi-envelope-paper"></i><span>Newsletter</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
                     </button>

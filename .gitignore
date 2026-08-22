@@ -2,6 +2,7 @@
 /uploads/*
 !uploads/.gitkeep
 /public/uploads/*
+/storage/backups/*
 !/public/uploads/.gitkeep
 *.log
 .DS_Store
