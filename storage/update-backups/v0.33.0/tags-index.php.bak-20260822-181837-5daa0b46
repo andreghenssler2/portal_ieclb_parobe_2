@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
-require_once __DIR__ . '/../_pagination.php';
 Auth::requireLogin();
 Auth::requirePermission('noticias.gerenciar');
 $pdo = Database::connection();
@@ -60,10 +59,7 @@ if ($editId > 0) {
     $edit=$stmt->fetch() ?: null;
     if (!$edit && $error==='') $error='Tag não encontrada.';
 }
-// v0.33.0: paginação de tags — 50 registros por página.
-$totalItems = (int)$pdo->query('SELECT COUNT(*) FROM tags')->fetchColumn();
-$pagination = adminPaginationState($totalItems, 50);
-$tags=$pdo->query("SELECT t.id,t.nome,t.slug,t.descricao,COUNT(p.id) total_posts FROM tags t LEFT JOIN post_tags pt ON pt.tag_id=t.id LEFT JOIN posts p ON p.id=pt.post_id AND p.status <> 'lixeira' GROUP BY t.id,t.nome,t.slug,t.descricao ORDER BY t.nome LIMIT " . (int)$pagination['limit'] . " OFFSET " . (int)$pagination['offset'])->fetchAll();
+$tags=$pdo->query("SELECT t.id,t.nome,t.slug,t.descricao,COUNT(p.id) total_posts FROM tags t LEFT JOIN post_tags pt ON pt.tag_id=t.id LEFT JOIN posts p ON p.id=pt.post_id AND p.status <> 'lixeira' GROUP BY t.id,t.nome,t.slug,t.descricao ORDER BY t.nome")->fetchAll();
 $pageTitle='Tags de Posts';
 require __DIR__ . '/../_header.php';
 ?>
@@ -79,6 +75,4 @@ require __DIR__ . '/../_header.php';
 <?php if(!$tags): ?><tr><td colspan="4" class="text-secondary">Nenhuma tag cadastrada.</td></tr><?php endif; ?>
 <?php foreach($tags as $tag): ?><tr><td><div class="fw-semibold"><?= e($tag['nome']) ?></div><?php if($tag['descricao']): ?><div class="small text-secondary"><?= e($tag['descricao']) ?></div><?php endif; ?></td><td><code><?= e($tag['slug']) ?></code></td><td class="text-center"><?= (int)$tag['total_posts'] ?></td><td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary" target="_blank" href="<?= e(tagUrl((string)$tag['slug'])) ?>">Ver</a> <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('admin/tags/index.php?editar='.(int)$tag['id'])) ?>">Editar</a> <form method="post" class="d-inline" onsubmit="return confirm('Excluir esta tag?');"><?= Csrf::field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$tag['id'] ?>"><button class="btn btn-sm btn-outline-danger">Excluir</button></form></td></tr><?php endforeach; ?>
 </tbody></table></div></div></div></div>
-<?php /* v0.33.0-pagination-render */ ?>
-<?= adminPaginationHtml('admin/tags/index.php', $pagination) ?>
 <?php require __DIR__ . '/../_footer.php'; ?>

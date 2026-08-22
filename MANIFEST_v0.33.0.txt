@@ -1,0 +1,21 @@
+Portal IECLB Parobé v0.33.0 - arquivos novos/alterados
+
+NOVOS
+- admin/_pagination.php
+- atualizar_v0.33.0.php
+- CHANGELOG_v0.33.0.md
+- LEIA-ME_v0.33.0.txt
+- MANIFEST_v0.33.0.txt
+
+ATUALIZADO NO PACOTE
+- config/config.example.php
+
+ALTERADOS PELO ATUALIZADOR (com backup automático)
+- admin/noticias/index.php
+- admin/categorias/index.php
+- admin/tags/index.php
+- admin/paginas/index.php
+- config/config.php (somente APP_VERSION)
+
+BANCO DE DADOS
+- Nenhuma alteração de estrutura.

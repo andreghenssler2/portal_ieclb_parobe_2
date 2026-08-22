@@ -1,0 +1,22 @@
+Portal IECLB Parobé - v0.33.0
+================================
+
+Paginação administrativa: 50 registros por página.
+
+Listagens afetadas:
+- Posts / Notícias
+- Categorias
+- Tags
+- Páginas
+
+Instalação:
+
+1. Extraia o ZIP na raiz do Portal.
+2. Execute pelo terminal:
+
+   php atualizar_v0.33.0.php
+
+3. Abra as listagens administrativas normalmente.
+
+A paginação aparece automaticamente quando houver mais de 50 registros.
+Não há migração de banco de dados nesta versão.

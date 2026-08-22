@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
-require_once __DIR__ . '/../_pagination.php';
 require_once __DIR__ . '/../../app/Services/CategoryService.php';
 
 Auth::requirePermission('noticias.gerenciar');
@@ -134,9 +133,6 @@ if ($editId > 0) {
 }
 
 $categorias = CategoryService::tree($pdo);
-// v0.33.0: paginação de categorias — preserva a árvore completa no seletor de ascendente.
-$pagination = adminPaginationState(count($categorias), 50);
-$categoriasPagina = array_slice($categorias, $pagination['offset'], $pagination['limit']);
 $countRows = $pdo->query(
     "SELECT c.id, COUNT(DISTINCT p.id) AS total_posts
      FROM categorias c
@@ -227,11 +223,11 @@ require __DIR__ . '/../_header.php';
                     </tr>
                     </thead>
                     <tbody>
-                    <?php if (!$categoriasPagina): ?>
+                    <?php if (!$categorias): ?>
                         <tr><td colspan="4" class="text-secondary">Nenhuma categoria cadastrada.</td></tr>
                     <?php endif; ?>
 
-                    <?php foreach ($categoriasPagina as $categoria): ?>
+                    <?php foreach ($categorias as $categoria): ?>
                         <?php $depth = max(0, (int)($categoria['depth'] ?? 0)); ?>
                         <tr>
                             <td>
@@ -262,6 +258,4 @@ require __DIR__ . '/../_header.php';
         </div>
     </div>
 </div>
-<?php /* v0.33.0-pagination-render */ ?>
-<?= adminPaginationHtml('admin/categorias/index.php', $pagination) ?>
 <?php require __DIR__ . '/../_footer.php'; ?>

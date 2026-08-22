@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
-require_once __DIR__ . '/../_pagination.php';
 Auth::requireLogin();
 Auth::requirePermission('paginas.gerenciar');
 $pdo = Database::connection();
@@ -69,16 +68,13 @@ $view = (string)($_GET['status'] ?? '') === 'lixeira' ? 'lixeira' : 'ativos';
 $activeCount = (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status <> 'lixeira'")->fetchColumn();
 $trashCount = (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status = 'lixeira'")->fetchColumn();
 $where = $view === 'lixeira' ? "p.status = 'lixeira'" : "p.status <> 'lixeira'";
-// v0.33.0: paginação de páginas — 50 registros por página.
-$totalItems = $view === 'lixeira' ? $trashCount : $activeCount;
-$pagination = adminPaginationState($totalItems, 50);
 $paginas = $pdo->query(
     "SELECT p.*, u.nome AS autor_nome,
             (SELECT COUNT(*) FROM revisoes r WHERE r.tipo='pagina' AND r.conteudo_id=p.id) AS total_revisoes
      FROM paginas p
      LEFT JOIN usuarios u ON u.id = p.autor_id
      WHERE {$where}
-     ORDER BY " . ($view === 'lixeira' ? 'p.lixeira_em DESC, p.id DESC' : 'p.ordem ASC, p.id DESC') . " LIMIT " . (int)$pagination['limit'] . " OFFSET " . (int)$pagination['offset']
+     ORDER BY " . ($view === 'lixeira' ? 'p.lixeira_em DESC, p.id DESC' : 'p.ordem ASC, p.id DESC')
 )->fetchAll();
 
 $pageTitle = $view === 'lixeira' ? 'Lixeira de Páginas' : 'Páginas';
@@ -116,6 +112,4 @@ require __DIR__ . '/../_header.php';
 </div></td>
 </tr><?php endforeach; ?>
 </tbody></table></div></div>
-<?php /* v0.33.0-pagination-render */ ?>
-<?= adminPaginationHtml('admin/paginas/index.php', $pagination, ['status' => $view === 'lixeira' ? 'lixeira' : null]) ?>
 <?php require __DIR__ . '/../_footer.php'; ?>
