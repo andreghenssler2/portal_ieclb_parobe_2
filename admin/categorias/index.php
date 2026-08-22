@@ -27,12 +27,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         throw new RuntimeException('Categoria não encontrada.');
                     }
 
+                    $affectedStmt = $pdo->prepare('SELECT id FROM posts WHERE categoria_id = :id');
+                    $affectedStmt->execute(['id' => $id]);
+                    $affectedPostIds = array_map('intval', $affectedStmt->fetchAll(PDO::FETCH_COLUMN));
+
                     $stmt = $pdo->prepare('DELETE FROM categorias WHERE id = :id');
                     $stmt->execute(['id' => $id]);
+
+                    if ($affectedPostIds) {
+                        $nextCategory = $pdo->prepare('SELECT categoria_id FROM post_categorias WHERE post_id = :post_id ORDER BY categoria_id LIMIT 1');
+                        $updatePost = $pdo->prepare('UPDATE posts SET categoria_id = :categoria_id WHERE id = :post_id');
+                        $clearPrimary = $pdo->prepare('UPDATE post_categorias SET principal = 0 WHERE post_id = :post_id');
+                        $setPrimary = $pdo->prepare('UPDATE post_categorias SET principal = 1 WHERE post_id = :post_id AND categoria_id = :categoria_id');
+                        foreach ($affectedPostIds as $postId) {
+                            $nextCategory->execute(['post_id' => $postId]);
+                            $nextId = (int)($nextCategory->fetchColumn() ?: 0);
+                            $updatePost->bindValue(':categoria_id', $nextId > 0 ? $nextId : null, $nextId > 0 ? PDO::PARAM_INT : PDO::PARAM_NULL);
+                            $updatePost->bindValue(':post_id', $postId, PDO::PARAM_INT);
+                            $updatePost->execute();
+                            if ($nextId > 0) {
+                                $clearPrimary->execute(['post_id' => $postId]);
+                                $setPrimary->execute(['post_id' => $postId, 'categoria_id' => $nextId]);
+                            }
+                        }
+                    }
+
                     logAction($pdo, 'categoria.excluir', 'categorias', $id, (string)$categoria['nome']);
                     Session::flash(
                         'success',
-                        'Categoria excluída. As notícias vinculadas ficaram sem categoria e as subcategorias passaram para o nível principal.'
+                        'Categoria excluída. As notícias continuam vinculadas às demais categorias selecionadas; as subcategorias passaram para o nível principal.'
                     );
                     header('Location: ' . url('admin/categorias/index.php'));
                     exit;
@@ -111,9 +134,10 @@ if ($editId > 0) {
 
 $categorias = CategoryService::tree($pdo);
 $countRows = $pdo->query(
-    "SELECT c.id, COUNT(p.id) AS total_posts
+    "SELECT c.id, COUNT(DISTINCT p.id) AS total_posts
      FROM categorias c
-     LEFT JOIN posts p ON p.categoria_id = c.id AND p.status <> 'lixeira'
+     LEFT JOIN post_categorias pc ON pc.categoria_id = c.id
+     LEFT JOIN posts p ON p.id = pc.post_id AND p.status <> 'lixeira'
      GROUP BY c.id"
 )->fetchAll();
 $totalPosts = [];
@@ -219,7 +243,7 @@ require __DIR__ . '/../_header.php';
                             <td class="text-center"><?= (int)($totalPosts[(int)$categoria['id']] ?? 0) ?></td>
                             <td class="text-end text-nowrap">
                                 <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('admin/categorias/index.php?editar=' . (int)$categoria['id'])) ?>">Editar</a>
-                                <form method="post" class="d-inline" onsubmit="return confirm('Excluir esta categoria? As notícias vinculadas ficarão sem categoria e suas subcategorias passarão ao nível principal.');">
+                                <form method="post" class="d-inline" onsubmit="return confirm('Excluir esta categoria? Ela será removida das notícias; as demais categorias continuarão vinculadas. As subcategorias passarão ao nível principal.');">
                                     <?= Csrf::field() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?= (int)$categoria['id'] ?>">

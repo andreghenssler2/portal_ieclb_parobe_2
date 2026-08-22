@@ -174,6 +174,12 @@ $aliases = [
     'galeria.sitemaps.xml' => 'galerias.sitemaps.xml',
     'galeria.sitemap.xml' => 'galerias.sitemaps.xml',
     'galerias.sitemap.xml' => 'galerias.sitemaps.xml',
+    'comunidade.sitemaps.xml' => 'comunidades.sitemaps.xml',
+    'comunidade.sitemap.xml' => 'comunidades.sitemaps.xml',
+    'comunidades.sitemap.xml' => 'comunidades.sitemaps.xml',
+    'grupo.sitemaps.xml' => 'grupos.sitemaps.xml',
+    'grupo.sitemap.xml' => 'grupos.sitemaps.xml',
+    'grupos.sitemap.xml' => 'grupos.sitemaps.xml',
     'categoria.sitemaps.xml' => 'categorias.sitemaps.xml',
     'categoria.sitemap.xml' => 'categorias.sitemaps.xml',
     'categorias.sitemap.xml' => 'categorias.sitemaps.xml',
@@ -208,9 +214,17 @@ $groups = [
         'enabled' => ($settings['seo_sitemap_galerias'] ?? '1') === '1',
         'lastmod' => sitemapMaxDate($pdo, "SELECT MAX(COALESCE(updated_at,publicado_em,created_at)) FROM galerias WHERE status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND seo_noindex=0"),
     ],
+    'comunidades.sitemaps.xml' => [
+        'enabled' => ($settings['seo_sitemap_comunidades'] ?? '1') === '1',
+        'lastmod' => sitemapMaxDate($pdo, "SELECT MAX(updated_at) FROM comunidades WHERE ativa=1 AND seo_noindex=0"),
+    ],
+    'grupos.sitemaps.xml' => [
+        'enabled' => ($settings['seo_sitemap_grupos'] ?? '1') === '1',
+        'lastmod' => sitemapMaxDate($pdo, "SELECT MAX(updated_at) FROM grupos WHERE ativo=1 AND seo_noindex=0"),
+    ],
     'categorias.sitemaps.xml' => [
         'enabled' => ($settings['seo_sitemap_categorias'] ?? '1') === '1' && ($settings['seo_sitemap_posts'] ?? '1') === '1',
-        'lastmod' => sitemapMaxDate($pdo, "SELECT MAX(COALESCE(p.updated_at,p.publicado_em,p.created_at)) FROM categorias c INNER JOIN posts p ON p.categoria_id=c.id WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0"),
+        'lastmod' => sitemapMaxDate($pdo, "SELECT MAX(COALESCE(p.updated_at,p.publicado_em,p.created_at)) FROM categorias c INNER JOIN post_categorias pc ON pc.categoria_id=c.id INNER JOIN posts p ON p.id=pc.post_id WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0"),
     ],
     'tags.sitemaps.xml' => [
         'enabled' => ($settings['seo_sitemap_tags'] ?? '1') === '1' && ($settings['seo_sitemap_posts'] ?? '1') === '1',
@@ -263,6 +277,7 @@ try {
         sitemapEmitUrl(url(), $groups[$requestFile]['lastmod'], 'daily', '1.0', $logoImages, $includeImages);
         sitemapEmitUrl(url('agenda'), null, 'daily', '0.8', [], $includeImages);
         sitemapEmitUrl(url('comunidades'), null, 'monthly', '0.7', [], $includeImages);
+        sitemapEmitUrl(url('grupos'), null, 'monthly', '0.7', [], $includeImages);
         sitemapEmitUrl(url('galerias'), null, 'weekly', '0.7', [], $includeImages);
     }
 
@@ -315,10 +330,33 @@ try {
     }
 
 
+    if ($requestFile === 'comunidades.sitemaps.xml') {
+        $sql = "SELECT c.slug,c.nome,c.conteudo,c.imagem,COALESCE(c.updated_at,c.created_at) lm,m.caminho cover_path
+                FROM comunidades c LEFT JOIN midias m ON m.id=c.imagem_capa_id
+                WHERE c.ativa=1 AND c.seo_noindex=0
+                ORDER BY c.ordem,c.nome";
+        foreach ($pdo->query($sql)->fetchAll() as $row) {
+            $cover = $row['cover_path'] ?? null;
+            if (!$cover && !empty($row['imagem'])) $cover = (string)$row['imagem'];
+            $images = sitemapMergeImages(sitemapCover($cover), sitemapImagesFromHtml((string)($row['conteudo'] ?? '')));
+            sitemapEmitUrl(contentUrl('comunidade', (string)$row['slug']), sitemapDate((string)$row['lm']), 'monthly', '0.7', $images, $includeImages);
+        }
+    }
+
+
+    if ($requestFile === 'grupos.sitemaps.xml') {
+        $sql = "SELECT g.slug,g.nome,g.conteudo,COALESCE(g.updated_at,g.created_at) lm,m.caminho cover_path FROM grupos g LEFT JOIN midias m ON m.id=g.imagem_capa_id WHERE g.ativo=1 AND g.seo_noindex=0 ORDER BY g.ordem,g.nome";
+        foreach($pdo->query($sql)->fetchAll() as $row){
+            $images=sitemapMergeImages(sitemapCover($row['cover_path']??null),sitemapImagesFromHtml((string)($row['conteudo']??'')));
+            sitemapEmitUrl(contentUrl('grupo',(string)$row['slug']),sitemapDate((string)$row['lm']),'monthly','0.6',$images,$includeImages);
+        }
+    }
+
+
     if ($requestFile === 'categorias.sitemaps.xml') {
-        $sql = "SELECT c.id,c.slug,MAX(COALESCE(p.updated_at,p.publicado_em,p.created_at)) lm FROM categorias c INNER JOIN posts p ON p.categoria_id=c.id WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0 GROUP BY c.id,c.slug HAVING COUNT(p.id)>0 ORDER BY c.nome";
+        $sql = "SELECT c.id,c.slug,MAX(COALESCE(p.updated_at,p.publicado_em,p.created_at)) lm FROM categorias c INNER JOIN post_categorias pc ON pc.categoria_id=c.id INNER JOIN posts p ON p.id=pc.post_id WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0 GROUP BY c.id,c.slug HAVING COUNT(p.id)>0 ORDER BY c.nome";
         $rows = $pdo->query($sql)->fetchAll();
-        $categoryImages = $pdo->prepare("SELECT DISTINCT m.caminho FROM posts p INNER JOIN midias m ON m.id=p.imagem_capa_id WHERE p.categoria_id=:categoria_id AND p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0 AND m.mime_type LIKE 'image/%' ORDER BY p.id DESC LIMIT 1000");
+        $categoryImages = $pdo->prepare("SELECT DISTINCT m.caminho FROM post_categorias pc INNER JOIN posts p ON p.id=pc.post_id INNER JOIN midias m ON m.id=p.imagem_capa_id WHERE pc.categoria_id=:categoria_id AND p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0 AND m.mime_type LIKE 'image/%' ORDER BY p.id DESC LIMIT 1000");
         foreach ($rows as $row) {
             $images = [];
             if ($includeImages) {

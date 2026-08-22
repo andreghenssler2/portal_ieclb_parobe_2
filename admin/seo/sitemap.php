@@ -9,6 +9,8 @@ $defaults = [
     'seo_sitemap_paginas' => '1',
     'seo_sitemap_eventos' => '1',
     'seo_sitemap_galerias' => '1',
+    'seo_sitemap_comunidades' => '1',
+    'seo_sitemap_grupos' => '1',
     'seo_sitemap_tags' => '1',
     'seo_sitemap_categorias' => '1',
     'seo_sitemap_formularios' => '0',
@@ -21,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Csrf::validate($_POST['_token'] ?? null)) {
         Session::flash('error', 'Token de segurança inválido.');
     } else {
-        foreach (['seo_sitemap_ativo','seo_sitemap_geral','seo_sitemap_posts','seo_sitemap_paginas','seo_sitemap_eventos','seo_sitemap_galerias','seo_sitemap_tags','seo_sitemap_categorias','seo_sitemap_formularios','seo_sitemap_imagens'] as $key) {
+        foreach (['seo_sitemap_ativo','seo_sitemap_geral','seo_sitemap_posts','seo_sitemap_paginas','seo_sitemap_eventos','seo_sitemap_galerias','seo_sitemap_comunidades','seo_sitemap_grupos','seo_sitemap_tags','seo_sitemap_categorias','seo_sitemap_formularios','seo_sitemap_imagens'] as $key) {
             $settings[$key] = isset($_POST[$key]) ? '1' : '0';
             saveSiteConfig($pdo, $key, $settings[$key], 'booleano');
         }
@@ -40,7 +42,9 @@ foreach ([
     'Páginas' => "SELECT COUNT(*) FROM paginas WHERE status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND seo_noindex=0",
     'Eventos' => "SELECT COUNT(*) FROM eventos WHERE status='publicado' AND seo_noindex=0",
     'Galerias' => "SELECT COUNT(*) FROM galerias WHERE status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND seo_noindex=0",
-    'Categorias' => "SELECT COUNT(DISTINCT c.id) FROM categorias c INNER JOIN posts p ON p.categoria_id=c.id WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0",
+    'Comunidades' => "SELECT COUNT(*) FROM comunidades WHERE ativa=1 AND seo_noindex=0",
+    'Grupos' => "SELECT COUNT(*) FROM grupos WHERE ativo=1 AND seo_noindex=0",
+    'Categorias' => "SELECT COUNT(DISTINCT c.id) FROM categorias c INNER JOIN post_categorias pc ON pc.categoria_id=c.id INNER JOIN posts p ON p.id=pc.post_id WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0",
     'Tags' => "SELECT COUNT(DISTINCT t.id) FROM tags t INNER JOIN post_tags pt ON pt.tag_id=t.id INNER JOIN posts p ON p.id=pt.post_id WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0",
     'Formulários' => "SELECT COUNT(*) FROM formularios WHERE status='publicado' AND ativo=1 AND (publicado_em IS NULL OR publicado_em<=NOW())",
 ] as $label => $sql) {
@@ -57,6 +61,8 @@ $subSitemaps = [
     ['key'=>'seo_sitemap_paginas','label'=>'Páginas','file'=>'paginas.sitemaps.xml','count'=>$counts['Páginas'],'description'=>'Páginas institucionais publicadas e indexáveis.'],
     ['key'=>'seo_sitemap_eventos','label'=>'Eventos e Cultos','file'=>'eventos.sitemaps.xml','count'=>$counts['Eventos'],'description'=>'Eventos e cultos publicados.'],
     ['key'=>'seo_sitemap_galerias','label'=>'Galerias','file'=>'galerias.sitemaps.xml','count'=>$counts['Galerias'],'description'=>'Galerias publicadas, incluindo suas fotos.'],
+    ['key'=>'seo_sitemap_comunidades','label'=>'Comunidades','file'=>'comunidades.sitemaps.xml','count'=>$counts['Comunidades'],'description'=>'Páginas públicas das comunidades, com imagem de capa e imagens do conteúdo.'],
+    ['key'=>'seo_sitemap_grupos','label'=>'Grupos / Ministérios','file'=>'grupos.sitemaps.xml','count'=>$counts['Grupos'],'description'=>'Grupos, ministérios e departamentos ativos, com imagens do conteúdo.'],
     ['key'=>'seo_sitemap_categorias','label'=>'Categorias','file'=>'categorias.sitemaps.xml','count'=>$counts['Categorias'],'description'=>'Categorias que possuem notícias publicadas.'],
     ['key'=>'seo_sitemap_tags','label'=>'Tags','file'=>'tags.sitemaps.xml','count'=>$counts['Tags'],'description'=>'Arquivos de tags que possuem notícias publicadas.'],
     ['key'=>'seo_sitemap_formularios','label'=>'Formulários públicos','file'=>'formularios.sitemaps.xml','count'=>$counts['Formulários'],'description'=>'Formulários publicados e ativos.'],

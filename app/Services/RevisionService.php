@@ -108,9 +108,22 @@ final class RevisionService
             }
             $tagsStmt = $pdo->prepare('SELECT tag_id FROM post_tags WHERE post_id = :id ORDER BY tag_id');
             $tagsStmt->execute(['id' => $contentId]);
+
+            $categories = [];
+            try {
+                $catStmt = $pdo->prepare('SELECT categoria_id FROM post_categorias WHERE post_id = :id ORDER BY principal DESC, categoria_id');
+                $catStmt->execute(['id' => $contentId]);
+                $categories = array_map('intval', $catStmt->fetchAll(PDO::FETCH_COLUMN));
+            } catch (Throwable $ignored) {
+                if (!empty($record['categoria_id'])) {
+                    $categories = [(int)$record['categoria_id']];
+                }
+            }
+
             return [
                 'record' => $record,
                 'tags' => array_map('intval', $tagsStmt->fetchAll(PDO::FETCH_COLUMN)),
+                'categories' => $categories,
             ];
         }
 
@@ -167,6 +180,37 @@ final class RevisionService
             'publicado_em' => $record['publicado_em'] ?? null,
             'id' => $contentId,
         ]);
+
+        try {
+            $pdo->prepare('DELETE FROM post_categorias WHERE post_id = :id')->execute(['id' => $contentId]);
+            $categories = array_values(array_unique(array_filter(array_map('intval', (array)($snapshot['categories'] ?? [])), static fn(int $v): bool => $v > 0)));
+            if (!$categories && !empty($record['categoria_id'])) {
+                $categories = [(int)$record['categoria_id']];
+            }
+            if ($categories) {
+                $validCats = $pdo->prepare('SELECT id FROM categorias WHERE id IN (' . implode(',', array_fill(0, count($categories), '?')) . ')');
+                $validCats->execute($categories);
+                $validCatIds = array_map('intval', $validCats->fetchAll(PDO::FETCH_COLUMN));
+                $primary = (int)($record['categoria_id'] ?? 0);
+                if (!in_array($primary, $validCatIds, true)) {
+                    $primary = $validCatIds[0] ?? 0;
+                }
+                $catLink = $pdo->prepare('INSERT INTO post_categorias (post_id, categoria_id, principal) VALUES (:post_id, :categoria_id, :principal)');
+                foreach ($validCatIds as $categoryId) {
+                    $catLink->execute([
+                        'post_id' => $contentId,
+                        'categoria_id' => $categoryId,
+                        'principal' => $categoryId === $primary ? 1 : 0,
+                    ]);
+                }
+                $pdo->prepare('UPDATE posts SET categoria_id = :categoria_id WHERE id = :id')->execute([
+                    'categoria_id' => $primary ?: null,
+                    'id' => $contentId,
+                ]);
+            }
+        } catch (Throwable $ignored) {
+            // Compatibilidade com bases que ainda não possuem post_categorias.
+        }
 
         $pdo->prepare('DELETE FROM post_tags WHERE post_id = :id')->execute(['id' => $contentId]);
         $tags = array_values(array_unique(array_filter(array_map('intval', (array)($snapshot['tags'] ?? [])), static fn(int $v): bool => $v > 0)));

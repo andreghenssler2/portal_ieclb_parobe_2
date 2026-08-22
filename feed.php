@@ -38,13 +38,13 @@ if ($type==='eventos') {
     if ($type==='categoria') {
         if (!$context || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/',$context)) { http_response_code(404); exit; }
         $st=$pdo->prepare('SELECT id,nome,slug FROM categorias WHERE slug=:slug LIMIT 1'); $st->execute(['slug'=>$context]); $cat=$st->fetch(); if(!$cat){http_response_code(404);exit;}
-        $where.=' AND p.categoria_id=:context_id'; $params['context_id']=$cat['id']; $title=$siteName.' - '.$cat['nome']; $description='Notícias da categoria '.$cat['nome']; $channelLink=categoryUrl((string)$cat['slug']); $self=rssFeedUrl('categoria',(string)$cat['slug']);
+        $where.=' AND EXISTS (SELECT 1 FROM post_categorias pcx WHERE pcx.post_id=p.id AND pcx.categoria_id=:context_id)'; $params['context_id']=$cat['id']; $title=$siteName.' - '.$cat['nome']; $description='Notícias da categoria '.$cat['nome']; $channelLink=categoryUrl((string)$cat['slug']); $self=rssFeedUrl('categoria',(string)$cat['slug']);
     } elseif ($type==='tag') {
         if (!$context || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/',$context)) { http_response_code(404); exit; }
         $st=$pdo->prepare('SELECT id,nome,slug FROM tags WHERE slug=:slug LIMIT 1'); $st->execute(['slug'=>$context]); $tag=$st->fetch(); if(!$tag){http_response_code(404);exit;}
         $where.=' AND EXISTS (SELECT 1 FROM post_tags ptx WHERE ptx.post_id=p.id AND ptx.tag_id=:context_id)'; $params['context_id']=$tag['id']; $title=$siteName.' - #'.$tag['nome']; $description='Notícias marcadas com '.$tag['nome']; $channelLink=tagUrl((string)$tag['slug']); $self=rssFeedUrl('tag',(string)$tag['slug']);
     }
-    $sql="SELECT p.titulo,p.slug,p.resumo,p.conteudo,p.publicado_em,p.created_at,p.updated_at,cat.nome categoria_nome,u.nome autor_nome,m.caminho imagem,m.mime_type,m.tamanho,(SELECT GROUP_CONCAT(t.nome ORDER BY t.nome SEPARATOR '||') FROM post_tags pt INNER JOIN tags t ON t.id=pt.tag_id WHERE pt.post_id=p.id) tags_csv FROM posts p LEFT JOIN categorias cat ON cat.id=p.categoria_id LEFT JOIN usuarios u ON u.id=p.autor_id LEFT JOIN midias m ON m.id=p.imagem_capa_id WHERE {$where} ORDER BY COALESCE(p.publicado_em,p.created_at) DESC LIMIT {$limit}";
+    $sql="SELECT p.titulo,p.slug,p.resumo,p.conteudo,p.publicado_em,p.created_at,p.updated_at,(SELECT GROUP_CONCAT(c2.nome ORDER BY pc2.principal DESC,c2.nome SEPARATOR '||') FROM post_categorias pc2 INNER JOIN categorias c2 ON c2.id=pc2.categoria_id WHERE pc2.post_id=p.id) categorias_csv,u.nome autor_nome,m.caminho imagem,m.mime_type,m.tamanho,(SELECT GROUP_CONCAT(t.nome ORDER BY t.nome SEPARATOR '||') FROM post_tags pt INNER JOIN tags t ON t.id=pt.tag_id WHERE pt.post_id=p.id) tags_csv FROM posts p LEFT JOIN usuarios u ON u.id=p.autor_id LEFT JOIN midias m ON m.id=p.imagem_capa_id WHERE {$where} ORDER BY COALESCE(p.publicado_em,p.created_at) DESC LIMIT {$limit}";
     $st=$pdo->prepare($sql); $st->execute($params); $items=$st->fetchAll();
 }
 
@@ -67,7 +67,8 @@ foreach($items as $item) {
         $link=contentUrl('noticia',(string)$item['slug']); $pub=$item['publicado_em']?:$item['created_at'];
         $summary=trim((string)$item['resumo']) ?: portalExcerpt((string)$item['conteudo'],220);
         $content=$full ? rssCleanHtml((string)$item['conteudo']) : '<p>'.e($summary).'</p>';
-        $categories=array_filter(array_merge([(string)($item['categoria_nome']??'')], isset($item['tags_csv'])&&$item['tags_csv']!==null ? explode('||',(string)$item['tags_csv']) : []));
+        $postCats = isset($item['categorias_csv']) && $item['categorias_csv'] !== null ? explode('||', (string)$item['categorias_csv']) : [];
+        $categories=array_filter(array_merge($postCats, isset($item['tags_csv'])&&$item['tags_csv']!==null ? explode('||',(string)$item['tags_csv']) : []));
     }
     if($includeImages && !empty($item['imagem'])) { $img=mediaUrl((string)$item['imagem']); $content='<p><img src="'.e($img).'" alt="'.e((string)$item['titulo']).'"></p>'.$content; }
     echo "<item>\n<title>".rssXml((string)$item['titulo'])."</title>\n<link>".rssXml($link)."</link>\n<guid isPermaLink=\"true\">".rssXml($link)."</guid>\n<pubDate>".rssDate((string)$pub)."</pubDate>\n";

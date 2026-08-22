@@ -14,7 +14,7 @@ $metaTitle = 'Categoria: ' . $categoria['nome'];
 $metaDescription = $categoria['descricao'] ?: 'Notícias da categoria ' . $categoria['nome'] . '.';
 $alternateFeedUrl = siteConfig($pdo,'seo_feed_ativo','1')==='1' && siteConfig($pdo,'seo_feed_categorias','1')==='1' ? rssFeedUrl('categoria',(string)$categoria['slug']) : '';
 $alternateFeedTitle = 'Categoria ' . $categoria['nome'] . ' - RSS';
-$sql = "SELECT p.id,p.titulo,p.slug,p.resumo,p.conteudo,p.publicado_em,p.created_at,m.caminho AS imagem FROM posts p LEFT JOIN midias m ON m.id=p.imagem_capa_id WHERE p.categoria_id=:categoria_id AND p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0 ORDER BY COALESCE(p.publicado_em,p.created_at) DESC";
+$sql = "SELECT DISTINCT p.id,p.titulo,p.slug,p.resumo,p.conteudo,p.publicado_em,p.created_at,m.caminho AS imagem FROM posts p INNER JOIN post_categorias pc ON pc.post_id=p.id LEFT JOIN midias m ON m.id=p.imagem_capa_id WHERE pc.categoria_id=:categoria_id AND p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0 ORDER BY COALESCE(p.publicado_em,p.created_at) DESC";
 $ps=$pdo->prepare($sql); $ps->execute(['categoria_id'=>$categoria['id']]); $posts=$ps->fetchAll();
 require themeFile($pdo,'header.php');
 ?>
