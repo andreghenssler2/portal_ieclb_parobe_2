@@ -23,6 +23,8 @@ $configOpen = $startsPath('configuracoes');
 $auditOpen = $startsPath('auditoria');
 $toolsOpen = $startsPath('ferramentas');
 $communitiesOpen = $startsPath('comunidades');
+$groupsOpen = $startsPath('grupos');
+$newsletterOpen = $startsPath('newsletter');
 $accountOpen = $isPath('minha-conta.php');
 
 $canAppearance = Auth::can('aparencia.gerenciar') || Auth::can('tema_editor.gerenciar') || Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') || Auth::can('configuracoes.gerenciar');
@@ -93,8 +95,11 @@ if (Auth::can('comentarios.gerenciar')) {
                             <a class="<?= $isPath('noticias/index.php') && (($_GET['status'] ?? '') !== 'lixeira') ? 'active' : '' ?>" href="<?= e(url('admin/noticias/index.php')) ?>">Todos os Posts</a>
                             <a class="<?= $isPath('noticias/index.php') && (($_GET['status'] ?? '') === 'lixeira') ? 'active' : '' ?>" href="<?= e(url('admin/noticias/index.php?status=lixeira')) ?>">Lixeira</a>
                             <a class="<?= $isPath('noticias/form.php') && !isset($_GET['id']) ? 'active' : '' ?>" href="<?= e(url('admin/noticias/form.php')) ?>">Adicionar Novo</a>
+                            <?php if (Auth::can('wordpress.importar')): ?><a href="<?= e(url('admin/ferramentas/wordpress.php?modulo=posts')) ?>">Importar do WordPress</a><?php endif; ?>
                             <a class="<?= $startsPath('categorias') ? 'active' : '' ?>" href="<?= e(url('admin/categorias/index.php')) ?>">Categorias</a>
+                            <?php if (Auth::can('wordpress.importar')): ?><a href="<?= e(url('admin/ferramentas/wordpress.php?modulo=categories')) ?>">Importar Categorias</a><?php endif; ?>
                             <a class="<?= $startsPath('tags') ? 'active' : '' ?>" href="<?= e(url('admin/tags/index.php')) ?>">Tags</a>
+                            <?php if (Auth::can('wordpress.importar')): ?><a href="<?= e(url('admin/ferramentas/wordpress.php?modulo=tags')) ?>">Importar Tags</a><?php endif; ?>
                         <?php endif; ?>
                         <?php if (Auth::can('comentarios.gerenciar')): ?>
                             <a class="<?= $startsPath('comentarios') ? 'active' : '' ?>" href="<?= e(url('admin/comentarios/index.php')) ?>">Comentários<?php if($pendingComments>0): ?><span class="badge text-bg-warning ms-auto"><?= (int)$pendingComments ?></span><?php endif; ?></a>
@@ -110,6 +115,7 @@ if (Auth::can('comentarios.gerenciar')) {
                         <?php if (Auth::can('midias.gerenciar')): ?>
                             <a class="<?= $isPath('midias/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/midias/index.php')) ?>">Biblioteca</a>
                             <a href="<?= e(url('admin/midias/index.php#adicionar-novo')) ?>">Adicionar Novo</a>
+                            <?php if (Auth::can('wordpress.importar')): ?><a href="<?= e(url('admin/ferramentas/wordpress.php?modulo=media')) ?>">Importar do WordPress</a><?php endif; ?>
                         <?php endif; ?>
                         <?php if (Auth::can('galerias.gerenciar')): ?>
                             <a class="<?= $startsPath('galerias') ? 'active' : '' ?>" href="<?= e(url('admin/galerias/index.php')) ?>">Galerias</a>
@@ -125,6 +131,7 @@ if (Auth::can('comentarios.gerenciar')) {
                         <a class="<?= $isPath('paginas/index.php') && (($_GET['status'] ?? '') !== 'lixeira') ? 'active' : '' ?>" href="<?= e(url('admin/paginas/index.php')) ?>">Todas as Páginas</a>
                         <a class="<?= $isPath('paginas/index.php') && (($_GET['status'] ?? '') === 'lixeira') ? 'active' : '' ?>" href="<?= e(url('admin/paginas/index.php?status=lixeira')) ?>">Lixeira</a>
                         <a class="<?= $isPath('paginas/form.php') && !isset($_GET['id']) ? 'active' : '' ?>" href="<?= e(url('admin/paginas/form.php')) ?>">Adicionar Nova</a>
+                        <?php if (Auth::can('wordpress.importar')): ?><a href="<?= e(url('admin/ferramentas/wordpress.php?modulo=pages')) ?>">Importar do WordPress</a><?php endif; ?>
                     </div>
                 <?php endif; ?>
 
@@ -135,6 +142,7 @@ if (Auth::can('comentarios.gerenciar')) {
                     <div class="collapse admin-nav-submenu <?= $eventsOpen ? 'show' : '' ?>" id="menuEventos">
                         <a class="<?= $isPath('eventos/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/eventos/index.php')) ?>">Todos os Eventos</a>
                         <a class="<?= $isPath('eventos/form.php') && !isset($_GET['id']) ? 'active' : '' ?>" href="<?= e(url('admin/eventos/form.php')) ?>">Adicionar Novo</a>
+                        <?php if (Auth::can('wordpress.importar')): ?><a href="<?= e(url('admin/ferramentas/wordpress.php?modulo=events')) ?>">Importar do WordPress</a><?php endif; ?>
                         <a class="<?= $isPath('eventos/categorias.php') ? 'active' : '' ?>" href="<?= e(url('admin/eventos/categorias.php')) ?>">Categorias</a>
                     </div>
                 <?php endif; ?>
@@ -204,9 +212,34 @@ if (Auth::can('comentarios.gerenciar')) {
                 <?php endif; ?>
 
                 <?php if (Auth::can('comunidades.gerenciar')): ?>
-                    <a class="admin-nav-link <?= $communitiesOpen ? 'active' : '' ?>" href="<?= e(url('admin/comunidades/index.php')) ?>">
-                        <i class="bi bi-buildings"></i><span>Comunidades</span>
-                    </a>
+                    <button class="admin-nav-link admin-nav-toggle <?= $communitiesOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuComunidades" aria-expanded="<?= $communitiesOpen ? 'true' : 'false' ?>">
+                        <i class="bi bi-buildings"></i><span>Comunidades</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
+                    </button>
+                    <div class="collapse admin-nav-submenu <?= $communitiesOpen ? 'show' : '' ?>" id="menuComunidades">
+                        <a class="<?= $isPath('comunidades/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/comunidades/index.php')) ?>">Todas as Comunidades</a>
+                        <a class="<?= $isPath('comunidades/form.php') && !isset($_GET['id']) ? 'active' : '' ?>" href="<?= e(url('admin/comunidades/form.php')) ?>">Adicionar Nova</a>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (Auth::can('grupos.gerenciar')): ?>
+                    <button class="admin-nav-link admin-nav-toggle <?= $groupsOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuGrupos" aria-expanded="<?= $groupsOpen ? 'true' : 'false' ?>">
+                        <i class="bi bi-people-fill"></i><span>Grupos / Ministérios</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
+                    </button>
+                    <div class="collapse admin-nav-submenu <?= $groupsOpen ? 'show' : '' ?>" id="menuGrupos">
+                        <a class="<?= $isPath('grupos/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/grupos/index.php')) ?>">Todos os Grupos</a>
+                        <a class="<?= $isPath('grupos/form.php') && !isset($_GET['id']) ? 'active' : '' ?>" href="<?= e(url('admin/grupos/form.php')) ?>">Adicionar Novo</a>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (Auth::can('newsletter.gerenciar')): ?>
+                    <button class="admin-nav-link admin-nav-toggle <?= $newsletterOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuNewsletter" aria-expanded="<?= $newsletterOpen ? 'true' : 'false' ?>">
+                        <i class="bi bi-envelope-paper"></i><span>Newsletter</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
+                    </button>
+                    <div class="collapse admin-nav-submenu <?= $newsletterOpen ? 'show' : '' ?>" id="menuNewsletter">
+                        <a class="<?= $isPath('newsletter/assinantes.php') ? 'active' : '' ?>" href="<?= e(url('admin/newsletter/assinantes.php')) ?>">Assinantes</a>
+                        <a class="<?= ($isPath('newsletter/campanhas.php') || $isPath('newsletter/campanha-form.php') || $isPath('newsletter/enviar.php')) ? 'active' : '' ?>" href="<?= e(url('admin/newsletter/campanhas.php')) ?>">Campanhas</a>
+                        <a class="<?= $isPath('newsletter/configuracoes.php') ? 'active' : '' ?>" href="<?= e(url('admin/newsletter/configuracoes.php')) ?>">Configurações</a>
+                    </div>
                 <?php endif; ?>
 
                 <?php if (Auth::can('auditoria.visualizar')): ?>
@@ -215,7 +248,7 @@ if (Auth::can('comentarios.gerenciar')) {
                     </a>
                 <?php endif; ?>
 
-                <?php if (Auth::can('backups.gerenciar') || Auth::can('manutencao.gerenciar')): ?>
+                <?php if (Auth::can('backups.gerenciar') || Auth::can('manutencao.gerenciar') || Auth::can('wordpress.importar')): ?>
                     <button class="admin-nav-link admin-nav-toggle <?= $toolsOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuFerramentas" aria-expanded="<?= $toolsOpen ? 'true' : 'false' ?>">
                         <i class="bi bi-tools"></i><span>Ferramentas</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
                     </button>
@@ -227,10 +260,13 @@ if (Auth::can('comentarios.gerenciar')) {
                             <a class="<?= $isPath('ferramentas/manutencao.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/manutencao.php')) ?>">Manutenção</a>
                             <a class="<?= $isPath('ferramentas/limpeza.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/limpeza.php')) ?>">Limpeza</a>
                         <?php endif; ?>
+                        <?php if (Auth::can('wordpress.importar')): ?>
+                            <a class="<?= $isPath('ferramentas/wordpress.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/wordpress.php')) ?>">Importar WordPress</a>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
 
-                <?php if (Auth::can('configuracoes.gerenciar') || Auth::can('seguranca.gerenciar')): ?>
+                <?php if (Auth::can('configuracoes.gerenciar') || Auth::can('seguranca.gerenciar') || Auth::can('email.gerenciar')): ?>
                     <button class="admin-nav-link admin-nav-toggle <?= $configOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuConfiguracoes" aria-expanded="<?= $configOpen ? 'true' : 'false' ?>">
                         <i class="bi bi-gear"></i><span>Configurações</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
                     </button>
@@ -243,6 +279,9 @@ if (Auth::can('comentarios.gerenciar')) {
                             <a class="<?= $isPath('configuracoes/midia.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/midia.php')) ?>">Mídia</a>
                             <a class="<?= $isPath('configuracoes/links-permanentes.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/links-permanentes.php')) ?>">Links Permanentes</a>
                             <a class="<?= $isPath('configuracoes/privacidade.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/privacidade.php')) ?>">Privacidade</a>
+                        <?php endif; ?>
+                        <?php if (Auth::can('email.gerenciar')): ?>
+                            <a class="<?= $isPath('configuracoes/email.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/email.php')) ?>">E-mail</a>
                         <?php endif; ?>
                         <?php if (Auth::can('seguranca.gerenciar')): ?>
                             <a class="<?= $isPath('configuracoes/seguranca.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/seguranca.php')) ?>">Segurança</a>
@@ -258,7 +297,7 @@ if (Auth::can('comentarios.gerenciar')) {
                 <a class="admin-nav-link" href="<?= e(url()) ?>" target="_blank">
                     <i class="bi bi-box-arrow-up-right"></i><span>Ver portal</span>
                 </a>
-                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.21.0') ?></div>
+                <div class="admin-version px-3 pt-2">Portal v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.27.0') ?></div>
             </div>
         </div>
     </aside>

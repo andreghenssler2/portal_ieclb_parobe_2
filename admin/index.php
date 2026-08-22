@@ -71,6 +71,13 @@ if (Auth::can('formularios.gerenciar')) {
         // Atualização v0.8.0 ainda não executada.
     }
 }
+if (Auth::can('newsletter.gerenciar')) {
+    try {
+        $cards[] = ['Newsletter ativos', (int)$pdo->query("SELECT COUNT(*) FROM newsletter_assinantes WHERE status='ativo'")->fetchColumn()];
+    } catch (Throwable $e) {
+        // Atualização v0.25.0 ainda não executada.
+    }
+}
 if (Auth::can('usuarios.gerenciar')) {
     $cards[] = ['Usuários ativos', (int)$pdo->query("SELECT COUNT(*) FROM usuarios WHERE ativo = 1")->fetchColumn()];
 }
@@ -101,6 +108,7 @@ require __DIR__ . '/_header.php';
     <div class="d-flex flex-wrap gap-2">
         <?php if (Auth::can('backups.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/ferramentas/backups.php')) ?>">Backups</a><?php endif; ?>
         <?php if (Auth::can('manutencao.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/ferramentas/manutencao.php')) ?>">Manutenção</a><?php endif; ?>
+        <?php if (Auth::can('newsletter.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/newsletter/campanhas.php')) ?>">Newsletter</a><?php endif; ?>
         <?php if (Auth::can('formularios.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/formularios/index.php')) ?>">Formulários</a><?php endif; ?>
         <?php if (Auth::can('auditoria.visualizar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/auditoria/index.php')) ?>">Auditoria</a><?php endif; ?>
         <?php if (Auth::can('configuracoes.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/configuracoes/index.php')) ?>">Configurações</a><?php endif; ?>

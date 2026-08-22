@@ -1,0 +1,10 @@
+c036ca5f9af97f004648f87b76f58ba8a126e229bfef0f95f175937d8c793800  ./CHANGELOG_v0.27.0.md
+80f25667876caa56b4872881fd683dfef22acf526b3566f1eeb6ab9f3ad5c5bd  ./LEIA-ME_v0.27.0.txt
+048bd4b023872b26f9ee654771175cfce9858bc931f356f703b86cc5e8286d7e  ./admin/_header.php
+bbe31fdb35648b6749b720b231513cb0f525638cac58612d9d371eb5a0c6c044  ./admin/ferramentas/wordpress-processar.php
+e226aa023bb5f6dcad055d58756aa81c55d0cedbc347ad8ac31ca63f027d9d4a  ./admin/ferramentas/wordpress.php
+3b156b0ad89561f1067352314d7206ea9e6470c0ada9d59b23bebfbaac5d255a  ./app/Services/WordPressImportService.php
+2e3bed15e4a72d196e1731e447cb786f8e4cc5c1b56e1e0f73edd1508005abe2  ./atualizar_v0.27.0.php
+717dacd05c90ef6c7fcb5f226752480945ca2f76d80de862606ea5bd1b85d552  ./bootstrap.php
+837cade3596ce9c5701f3fd5d5592b7af302c3b53efcfa725ece98b4b0fc7561  ./config/config.example.php
+301b65cabd7d757807802a79a0a274ec21aa67014513f78879b0566502bb83df  ./migrations/2026_08_22_v0.27.0.sql

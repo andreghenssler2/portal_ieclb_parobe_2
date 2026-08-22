@@ -1,0 +1,27 @@
+PORTAL IECLB PAROBÉ - ATUALIZAÇÃO v0.27.0
+==========================================
+
+Pré-requisito: Portal atualizado até v0.26.0.
+
+1. Faça backup dos arquivos e do banco de dados.
+2. Extraia este pacote sobre a raiz do Portal, preservando a estrutura de pastas.
+3. Execute pelo terminal, na raiz do Portal:
+
+   php atualizar_v0.27.0.php
+
+4. Acesse o painel administrativo.
+5. Abra Ferramentas > Importar WordPress.
+
+O atualizador:
+- cria as tabelas do importador;
+- cria a permissão wordpress.importar e concede ao Administrador;
+- prepara public/uploads/wordpress;
+- atualiza APP_VERSION para 0.27.0, criando backup do config.php.
+
+IMPORTANTE
+----------
+O importador usa a REST API do WordPress. Para conteúdo público, normalmente basta a URL.
+Para conteúdo protegido, informe um usuário do WordPress e uma Application Password.
+
+A importação completa processa:
+Categorias -> Tags -> Mídias -> Páginas -> Posts/Notícias -> Eventos.

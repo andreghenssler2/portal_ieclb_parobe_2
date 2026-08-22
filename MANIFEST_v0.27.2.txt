@@ -1,0 +1,13 @@
+Portal IECLB Parobé v0.27.2
+
+Arquivos do pacote:
+- atualizar_v0.27.2.php
+- app/Services/WordPressImportService.php
+- admin/ferramentas/wordpress.php
+- CHANGELOG_v0.27.2.md
+- LEIA-ME_v0.27.2.txt
+- MANIFEST_v0.27.2.txt
+
+Banco de dados:
+- cria/verifica wordpress_import_media_urls
+- migra source_url conhecidos de wordpress_import_map para a nova tabela de aliases

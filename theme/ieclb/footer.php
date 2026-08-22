@@ -5,6 +5,7 @@ $footerText = trim((string)($footerSettings['footer_texto'] ?? '')) ?: 'Paróqui
 $footerEmail = trim((string)($footerSettings['site_email'] ?? ''));
 $footerPhone = trim((string)($footerSettings['site_telefone'] ?? ''));
 $footerAddress = trim((string)($footerSettings['site_endereco'] ?? ''));
+$newsletterFooterEnabled = (string)($footerSettings['newsletter_enabled'] ?? '1') === '1';
 $socials = [
     'Instagram' => trim((string)($footerSettings['site_instagram'] ?? '')),
     'YouTube' => trim((string)($footerSettings['site_youtube'] ?? '')),
@@ -37,6 +38,7 @@ try {
             </div>
             <div class="col-lg-5 text-lg-end">
                 <?php if ($privacyPage): ?><a class="footer-social-link" href="<?= e(contentUrl('pagina',(string)$privacyPage['slug'])) ?>">Política de Privacidade</a><?php endif; ?>
+                <?php if ($newsletterFooterEnabled): ?><a class="footer-social-link" href="<?= e(url('newsletter')) ?>">Newsletter</a><?php endif; ?>
                 <?php foreach ($socials as $label => $socialUrl): ?>
                     <?php if ($socialUrl): ?><a class="footer-social-link" href="<?= e($socialUrl) ?>" target="_blank" rel="noopener"><?= e($label) ?></a><?php endif; ?>
                 <?php endforeach; ?>

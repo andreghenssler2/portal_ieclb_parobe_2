@@ -14,7 +14,9 @@ if (count($segments) === 1) {
         'agenda' => 'agenda.php',
         'galerias' => 'galerias.php',
         'comunidades' => 'comunidades.php',
+        'grupos' => 'grupos.php',
         'busca' => 'busca.php',
+        'newsletter' => 'newsletter.php',
     ];
     if (isset($static[$alias])) {
         require __DIR__ . '/' . $static[$alias];
@@ -24,6 +26,11 @@ if (count($segments) === 1) {
         require __DIR__ . '/pagina.php';
         exit;
     }
+}
+
+if (count($segments) === 3 && strtolower(rawurldecode((string)$segments[0])) === 'newsletter' && in_array(strtolower((string)$segments[1]), ['confirmar','cancelar'], true)) {
+    require __DIR__ . '/newsletter.php';
+    exit;
 }
 
 if (count($segments) === 2 && strtolower(rawurldecode((string)$segments[0])) === 'tag') {
@@ -39,7 +46,7 @@ if (count($segments) === 2 && strtolower(rawurldecode((string)$segments[0])) ===
 if (count($segments) === 2) {
     $prefix = strtolower(rawurldecode((string)$segments[0]));
     $routes = [];
-    foreach (['noticia','pagina','evento','galeria','formulario'] as $type) {
+    foreach (['noticia','pagina','evento','galeria','formulario','comunidade','grupo'] as $type) {
         $configured = permalinkPrefix($type, $pdo);
         if ($configured !== '') $routes[$configured] = $type . '.php';
         // Prefixos históricos continuam reconhecidos para redirecionamento canônico.
