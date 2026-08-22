@@ -1,17 +1,60 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 require_once __DIR__ . '/../_pagination.php';
+require_once __DIR__ . '/../_search.php';
 Auth::requireLogin();
 Auth::requirePermission('noticias.gerenciar');
 $pdo = Database::connection();
-// v0.33.0: paginação de posts — 50 registros por página.
-$totalItems = (int)$pdo->query('SELECT COUNT(*) FROM posts')->fetchColumn();
+// v0.33.1: pesquisa de posts + paginação de 50 registros.
+$search = adminSearchTerm();
+$searchSql = '';
+$searchParams = [];
+if ($search !== '') {
+    $searchSql = " WHERE (
+        p.titulo LIKE :post_q1
+        OR p.slug LIKE :post_q2
+        OR COALESCE(p.resumo,'') LIKE :post_q3
+        OR COALESCE(p.conteudo,'') LIKE :post_q4
+        OR COALESCE(c.nome,'') LIKE :post_q5
+        OR EXISTS (
+            SELECT 1
+            FROM post_categorias pcq
+            INNER JOIN categorias cq ON cq.id=pcq.categoria_id
+            WHERE pcq.post_id=p.id
+              AND (cq.nome LIKE :post_q6 OR cq.slug LIKE :post_q7)
+        )
+    )";
+    $like = '%' . $search . '%';
+    for ($i = 1; $i <= 7; $i++) $searchParams['post_q' . $i] = $like;
+}
+
+$countStmt = $pdo->prepare(
+    "SELECT COUNT(DISTINCT p.id)
+     FROM posts p
+     LEFT JOIN comunidades c ON c.id=p.comunidade_id" . $searchSql
+);
+$countStmt->execute($searchParams);
+$totalItems = (int)$countStmt->fetchColumn();
 $pagination = adminPaginationState($totalItems, 50);
-$posts = $pdo->query("SELECT p.*, c.nome AS comunidade_nome, (SELECT GROUP_CONCAT(cat.nome ORDER BY pc.principal DESC, cat.nome SEPARATOR '||') FROM post_categorias pc INNER JOIN categorias cat ON cat.id=pc.categoria_id WHERE pc.post_id=p.id) AS categorias_nomes FROM posts p LEFT JOIN comunidades c ON c.id=p.comunidade_id ORDER BY p.id DESC LIMIT " . (int)$pagination['limit'] . " OFFSET " . (int)$pagination['offset'])->fetchAll();
+
+$listSql = "SELECT p.*, c.nome AS comunidade_nome,
+        (SELECT GROUP_CONCAT(cat.nome ORDER BY pc.principal DESC, cat.nome SEPARATOR '||')
+         FROM post_categorias pc
+         INNER JOIN categorias cat ON cat.id=pc.categoria_id
+         WHERE pc.post_id=p.id) AS categorias_nomes
+     FROM posts p
+     LEFT JOIN comunidades c ON c.id=p.comunidade_id"
+     . $searchSql
+     . " ORDER BY p.id DESC LIMIT " . (int)$pagination['limit'] . " OFFSET " . (int)$pagination['offset'];
+$listStmt = $pdo->prepare($listSql);
+$listStmt->execute($searchParams);
+$posts = $listStmt->fetchAll();
 $pageTitle = 'Notícias';
 require __DIR__ . '/../_header.php';
 ?>
 <div class="d-flex justify-content-between align-items-center mb-4"><div><h1 class="h3 mb-1">Notícias</h1><p class="text-secondary mb-0">Conteúdo publicado no portal.</p></div><a class="btn btn-primary" href="<?= e(url('admin/noticias/form.php')) ?>">Nova notícia</a></div>
+<?php /* v0.33.1-search-form-posts */ ?>
+<?= adminSearchHtml('admin/noticias/index.php', $search, [], 'Pesquisar notícias…', $totalItems) ?>
 <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle">
 <thead><tr><th>Título</th><th>Comunidade</th><th>Categoria</th><th>Status</th><th>Publicação</th><th></th></tr></thead><tbody>
 <?php if (!$posts): ?><tr><td colspan="6" class="text-secondary">Nenhuma notícia cadastrada.</td></tr><?php endif; ?>
@@ -20,5 +63,5 @@ require __DIR__ . '/../_header.php';
 </tr><?php endforeach; ?>
 </tbody></table></div></div>
 <?php /* v0.33.0-pagination-render */ ?>
-<?= adminPaginationHtml('admin/noticias/index.php', $pagination) ?>
+<?= adminPaginationHtml('admin/noticias/index.php', $pagination, ['q' => $search]) ?>
 <?php require __DIR__ . '/../_footer.php'; ?>

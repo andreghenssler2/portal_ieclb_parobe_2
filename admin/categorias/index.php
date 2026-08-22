@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 require_once __DIR__ . '/../_pagination.php';
+require_once __DIR__ . '/../_search.php';
 require_once __DIR__ . '/../../app/Services/CategoryService.php';
 
 Auth::requirePermission('noticias.gerenciar');
@@ -134,9 +135,21 @@ if ($editId > 0) {
 }
 
 $categorias = CategoryService::tree($pdo);
-// v0.33.0: paginação de categorias — preserva a árvore completa no seletor de ascendente.
-$pagination = adminPaginationState(count($categorias), 50);
-$categoriasPagina = array_slice($categorias, $pagination['offset'], $pagination['limit']);
+// v0.33.1: pesquisa de categorias + paginação de 50 itens na tabela.
+$search = adminSearchTerm();
+$categoriasFiltradas = $search === ''
+    ? $categorias
+    : array_values(array_filter($categorias, static function (array $categoria) use ($search): bool {
+        return adminSearchMatches(
+            $search,
+            $categoria['nome'] ?? '',
+            $categoria['slug'] ?? '',
+            $categoria['descricao'] ?? '',
+            CategoryService::optionLabel($categoria)
+        );
+    }));
+$pagination = adminPaginationState(count($categoriasFiltradas), 50);
+$categoriasPagina = array_slice($categoriasFiltradas, $pagination['offset'], $pagination['limit']);
 $countRows = $pdo->query(
     "SELECT c.id, COUNT(DISTINCT p.id) AS total_posts
      FROM categorias c
@@ -170,6 +183,8 @@ require __DIR__ . '/../_header.php';
 
 <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
 
+<?php /* v0.33.1-search-form-categories */ ?>
+<?= adminSearchHtml('admin/categorias/index.php', $search, [], 'Pesquisar categorias…', (int)$pagination['total']) ?>
 <div class="row g-4">
     <div class="col-xl-4">
         <form method="post" class="card border-0 shadow-sm">
@@ -263,5 +278,5 @@ require __DIR__ . '/../_header.php';
     </div>
 </div>
 <?php /* v0.33.0-pagination-render */ ?>
-<?= adminPaginationHtml('admin/categorias/index.php', $pagination) ?>
+<?= adminPaginationHtml('admin/categorias/index.php', $pagination, ['q' => $search]) ?>
 <?php require __DIR__ . '/../_footer.php'; ?>

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 require_once __DIR__ . '/../_pagination.php';
+require_once __DIR__ . '/../_search.php';
 Auth::requireLogin();
 Auth::requirePermission('paginas.gerenciar');
 $pdo = Database::connection();
@@ -69,18 +70,40 @@ $view = (string)($_GET['status'] ?? '') === 'lixeira' ? 'lixeira' : 'ativos';
 $activeCount = (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status <> 'lixeira'")->fetchColumn();
 $trashCount = (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status = 'lixeira'")->fetchColumn();
 $where = $view === 'lixeira' ? "p.status = 'lixeira'" : "p.status <> 'lixeira'";
-// v0.33.0: paginação de páginas — 50 registros por página.
-$totalItems = $view === 'lixeira' ? $trashCount : $activeCount;
+// v0.33.1: pesquisa de páginas + paginação de 50 registros.
+$search = adminSearchTerm();
+$searchSql = '';
+$searchParams = [];
+if ($search !== '') {
+    $searchSql = " AND (
+        p.titulo LIKE :page_q1
+        OR p.slug LIKE :page_q2
+        OR COALESCE(p.resumo,'') LIKE :page_q3
+        OR COALESCE(p.conteudo,'') LIKE :page_q4
+        OR COALESCE(u.nome,'') LIKE :page_q5
+    )";
+    $like = '%' . $search . '%';
+    for ($i = 1; $i <= 5; $i++) $searchParams['page_q' . $i] = $like;
+}
+$countStmt = $pdo->prepare(
+    "SELECT COUNT(DISTINCT p.id)
+     FROM paginas p
+     LEFT JOIN usuarios u ON u.id=p.autor_id
+     WHERE {$where}{$searchSql}"
+);
+$countStmt->execute($searchParams);
+$totalItems = (int)$countStmt->fetchColumn();
 $pagination = adminPaginationState($totalItems, 50);
-$paginas = $pdo->query(
-    "SELECT p.*, u.nome AS autor_nome,
+$listSql = "SELECT p.*, u.nome AS autor_nome,
             (SELECT COUNT(*) FROM revisoes r WHERE r.tipo='pagina' AND r.conteudo_id=p.id) AS total_revisoes
      FROM paginas p
      LEFT JOIN usuarios u ON u.id = p.autor_id
-     WHERE {$where}
-     ORDER BY " . ($view === 'lixeira' ? 'p.lixeira_em DESC, p.id DESC' : 'p.ordem ASC, p.id DESC') . " LIMIT " . (int)$pagination['limit'] . " OFFSET " . (int)$pagination['offset']
-)->fetchAll();
-
+     WHERE {$where}{$searchSql}
+     ORDER BY " . ($view === 'lixeira' ? 'p.lixeira_em DESC, p.id DESC' : 'p.ordem ASC, p.id DESC')
+     . " LIMIT " . (int)$pagination['limit'] . " OFFSET " . (int)$pagination['offset'];
+$listStmt = $pdo->prepare($listSql);
+$listStmt->execute($searchParams);
+$paginas = $listStmt->fetchAll();
 $pageTitle = $view === 'lixeira' ? 'Lixeira de Páginas' : 'Páginas';
 require __DIR__ . '/../_header.php';
 ?>
@@ -94,6 +117,8 @@ require __DIR__ . '/../_header.php';
     <li class="nav-item"><a class="nav-link <?= $view === 'lixeira' ? 'active' : '' ?>" href="<?= e(url('admin/paginas/index.php?status=lixeira')) ?>">Lixeira <span class="badge <?= $view === 'lixeira' ? 'text-bg-light' : 'text-bg-secondary' ?> ms-1"><?= $trashCount ?></span></a></li>
 </ul>
 
+<?php /* v0.33.1-search-form-pages */ ?>
+<?= adminSearchHtml('admin/paginas/index.php', $search, ['status' => $view === 'lixeira' ? 'lixeira' : null], 'Pesquisar páginas…', $totalItems) ?>
 <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle">
 <thead><tr><th>Título</th><th>Slug</th><th>Status</th><th>Menu</th><th><?= $view === 'lixeira' ? 'Excluída em' : 'Publicação' ?></th><th></th></tr></thead><tbody>
 <?php if (!$paginas): ?><tr><td colspan="6" class="text-secondary py-4"><?= $view === 'lixeira' ? 'A Lixeira está vazia.' : 'Nenhuma página cadastrada.' ?></td></tr><?php endif; ?>
@@ -117,5 +142,5 @@ require __DIR__ . '/../_header.php';
 </tr><?php endforeach; ?>
 </tbody></table></div></div>
 <?php /* v0.33.0-pagination-render */ ?>
-<?= adminPaginationHtml('admin/paginas/index.php', $pagination, ['status' => $view === 'lixeira' ? 'lixeira' : null]) ?>
+<?= adminPaginationHtml('admin/paginas/index.php', $pagination, ['status' => $view === 'lixeira' ? 'lixeira' : null, 'q' => $search]) ?>
 <?php require __DIR__ . '/../_footer.php'; ?>

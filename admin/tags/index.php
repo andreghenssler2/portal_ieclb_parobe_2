@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 require_once __DIR__ . '/../_pagination.php';
+require_once __DIR__ . '/../_search.php';
 Auth::requireLogin();
 Auth::requirePermission('noticias.gerenciar');
 $pdo = Database::connection();
@@ -60,15 +61,38 @@ if ($editId > 0) {
     $edit=$stmt->fetch() ?: null;
     if (!$edit && $error==='') $error='Tag não encontrada.';
 }
-// v0.33.0: paginação de tags — 50 registros por página.
-$totalItems = (int)$pdo->query('SELECT COUNT(*) FROM tags')->fetchColumn();
+// v0.33.1: pesquisa de tags + paginação de 50 registros.
+$search = adminSearchTerm();
+$searchWhere = '';
+$searchParams = [];
+if ($search !== '') {
+    $searchWhere = " WHERE (t.nome LIKE :tag_q1 OR t.slug LIKE :tag_q2 OR COALESCE(t.descricao,'') LIKE :tag_q3)";
+    $like = '%' . $search . '%';
+    $searchParams = ['tag_q1' => $like, 'tag_q2' => $like, 'tag_q3' => $like];
+}
+$countStmt = $pdo->prepare('SELECT COUNT(*) FROM tags t' . $searchWhere);
+$countStmt->execute($searchParams);
+$totalItems = (int)$countStmt->fetchColumn();
 $pagination = adminPaginationState($totalItems, 50);
-$tags=$pdo->query("SELECT t.id,t.nome,t.slug,t.descricao,COUNT(p.id) total_posts FROM tags t LEFT JOIN post_tags pt ON pt.tag_id=t.id LEFT JOIN posts p ON p.id=pt.post_id AND p.status <> 'lixeira' GROUP BY t.id,t.nome,t.slug,t.descricao ORDER BY t.nome LIMIT " . (int)$pagination['limit'] . " OFFSET " . (int)$pagination['offset'])->fetchAll();
+$listStmt = $pdo->prepare(
+    "SELECT t.id,t.nome,t.slug,t.descricao,COUNT(p.id) total_posts
+     FROM tags t
+     LEFT JOIN post_tags pt ON pt.tag_id=t.id
+     LEFT JOIN posts p ON p.id=pt.post_id AND p.status <> 'lixeira'"
+     . $searchWhere
+     . " GROUP BY t.id,t.nome,t.slug,t.descricao
+         ORDER BY t.nome
+         LIMIT " . (int)$pagination['limit'] . " OFFSET " . (int)$pagination['offset']
+);
+$listStmt->execute($searchParams);
+$tags = $listStmt->fetchAll();
 $pageTitle='Tags de Posts';
 require __DIR__ . '/../_header.php';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4"><div><h1 class="h3 mb-1">Tags de Posts</h1><p class="text-secondary mb-0">Crie palavras-chave para relacionar notícias de assuntos semelhantes.</p></div><?php if($edit): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/tags/index.php')) ?>">Cancelar edição</a><?php endif; ?></div>
 <?php if($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
+<?php /* v0.33.1-search-form-tags */ ?>
+<?= adminSearchHtml('admin/tags/index.php', $search, [], 'Pesquisar tags…', $totalItems) ?>
 <div class="row g-4"><div class="col-xl-4"><form method="post" class="card border-0 shadow-sm"><div class="card-header bg-white fw-semibold py-3"><?= $edit?'Editar tag':'Adicionar tag' ?></div><div class="card-body p-4">
 <?= Csrf::field() ?><input type="hidden" name="action" value="save"><input type="hidden" name="id" value="<?= (int)($edit['id']??0) ?>">
 <div class="mb-3"><label class="form-label">Nome</label><input class="form-control" name="nome" maxlength="100" required value="<?= e($edit['nome']??'') ?>"></div>
@@ -80,5 +104,5 @@ require __DIR__ . '/../_header.php';
 <?php foreach($tags as $tag): ?><tr><td><div class="fw-semibold"><?= e($tag['nome']) ?></div><?php if($tag['descricao']): ?><div class="small text-secondary"><?= e($tag['descricao']) ?></div><?php endif; ?></td><td><code><?= e($tag['slug']) ?></code></td><td class="text-center"><?= (int)$tag['total_posts'] ?></td><td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary" target="_blank" href="<?= e(tagUrl((string)$tag['slug'])) ?>">Ver</a> <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('admin/tags/index.php?editar='.(int)$tag['id'])) ?>">Editar</a> <form method="post" class="d-inline" onsubmit="return confirm('Excluir esta tag?');"><?= Csrf::field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$tag['id'] ?>"><button class="btn btn-sm btn-outline-danger">Excluir</button></form></td></tr><?php endforeach; ?>
 </tbody></table></div></div></div></div>
 <?php /* v0.33.0-pagination-render */ ?>
-<?= adminPaginationHtml('admin/tags/index.php', $pagination) ?>
+<?= adminPaginationHtml('admin/tags/index.php', $pagination, ['q' => $search]) ?>
 <?php require __DIR__ . '/../_footer.php'; ?>

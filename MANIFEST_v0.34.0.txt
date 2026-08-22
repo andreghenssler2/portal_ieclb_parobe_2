@@ -1,0 +1,12 @@
+Portal IECLB Parobé - v0.34.0
+Arquivos novos/alterados do pacote incremental:
+
+CHANGELOG_v0.34.0.md
+LEIA-ME_v0.34.0.txt
+MANIFEST_v0.34.0.txt
+atualizar_v0.34.0.php
+config/config.example.php
+public/css/admin-menu-v34.css
+public/js/admin-menu-v34.js
+
+Observação: admin/_header.php e config/config.php são atualizados com backup pelo atualizador.

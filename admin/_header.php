@@ -42,15 +42,20 @@ if (Auth::can('comentarios.gerenciar')) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= e(url('public/css/admin.css')) ?>">
+    <link rel="stylesheet" href="<?= e(url('public/css/admin-menu-v34.css')) ?>">
     <!-- Bootstrap JS precisa estar disponível antes dos scripts específicos das páginas. -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script defer src="<?= e(url('public/js/admin-menu-v34.js')) ?>"></script>
 </head>
 <body class="admin-body">
 <nav class="navbar navbar-dark admin-topbar sticky-top">
     <div class="container-fluid px-3 px-lg-4">
         <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-link text-white d-lg-none p-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" aria-controls="adminSidebar" aria-label="Abrir menu">
+            <button class="admin-menu-trigger d-lg-none" type="button" id="adminMobileMenuToggle" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" aria-controls="adminSidebar" aria-label="Abrir menu">
                 <i class="bi bi-list fs-3"></i>
+            </button>
+            <button class="admin-menu-trigger d-none d-lg-inline-flex" type="button" id="adminDesktopMenuToggle" aria-expanded="true" aria-label="Recolher menu administrativo" title="Recolher menu">
+                <i class="bi bi-list"></i>
             </button>
             <a class="navbar-brand fw-semibold mb-0" href="<?= e(url('admin/index.php')) ?>">
                 <span class="admin-brand-mark">IE</span>
