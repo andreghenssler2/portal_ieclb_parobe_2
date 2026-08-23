@@ -7,31 +7,9 @@ $stmt->execute(['slug'=>$slug]);
 $post=$stmt->fetch();
 if (!$post) { http_response_code(404); $metaTitle='Notícia não encontrada'; require __DIR__.'/theme/ieclb/header.php'; echo '<div class="container py-5"><h1>Notícia não encontrada</h1></div>'; require themeFile($pdo, 'footer.php'); exit; }
 NewsAnalyticsService::trackView($pdo, (int)$post['id']);
-// v0.42.0-r1 - categorias com fallback legado.
-$postCategories = [];
-try {
-    $categoryStmt = $pdo->prepare(
-        "SELECT c.nome,c.slug
-         FROM post_categorias pc
-         INNER JOIN categorias c ON c.id=pc.categoria_id
-         WHERE pc.post_id=:id
-         ORDER BY pc.principal DESC,c.nome"
-    );
-    $categoryStmt->execute(['id'=>$post['id']]);
-    $postCategories = $categoryStmt->fetchAll() ?: [];
-} catch (Throwable $e) {
-    // Compatibilidade com base antiga: usa posts.categoria_id.
-    if (!empty($post['categoria_id'])) {
-        $categoryStmt = $pdo->prepare(
-            "SELECT nome,slug FROM categorias WHERE id=:id LIMIT 1"
-        );
-        $categoryStmt->execute(['id'=>(int)$post['categoria_id']]);
-        $legacyCategory = $categoryStmt->fetch();
-        if ($legacyCategory) {
-            $postCategories = [$legacyCategory];
-        }
-    }
-}
+$categoryStmt = $pdo->prepare("SELECT c.nome,c.slug FROM post_categorias pc INNER JOIN categorias c ON c.id=pc.categoria_id WHERE pc.post_id=:id ORDER BY pc.principal DESC,c.nome");
+$categoryStmt->execute(['id'=>$post['id']]);
+$postCategories=$categoryStmt->fetchAll();
 $cover = $post['imagem_capa_midia'] ?: ($post['imagem_capa'] ?? '');
 $metaTitle = trim((string)($post['seo_titulo'] ?? '')) ?: $post['titulo'];
 $metaDescription = trim((string)($post['seo_descricao'] ?? '')) ?: ($post['resumo'] ?: trim(strip_tags(mb_substr((string)$post['conteudo'], 0, 160))));
