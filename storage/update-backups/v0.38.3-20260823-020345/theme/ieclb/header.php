@@ -43,25 +43,8 @@ try {
 }
 
 $resolvedImage = trim((string)($metaImage ?? ''));
-$resolvedImageAlt = trim((string)($metaImageAlt ?? ''));
-$resolvedImageWidth = max(0, (int)($metaImageWidth ?? 0));
-$resolvedImageHeight = max(0, (int)($metaImageHeight ?? 0));
-$resolvedImageType = trim((string)($metaImageType ?? ''));
-
-if ($resolvedImage !== '' && !preg_match('#^https?://#i', $resolvedImage)) {
-    $resolvedImage = mediaUrl($resolvedImage);
-}
-
 if ($resolvedImage === '' && $ogMedia) {
     $resolvedImage = mediaUrl((string)$ogMedia['caminho']);
-    $resolvedImageAlt = trim((string)($ogMedia['alt_text'] ?? $ogMedia['titulo'] ?? $siteName));
-    $resolvedImageWidth = max(0, (int)($ogMedia['largura'] ?? 0));
-    $resolvedImageHeight = max(0, (int)($ogMedia['altura'] ?? 0));
-    $resolvedImageType = trim((string)($ogMedia['mime_type'] ?? ''));
-}
-
-if ($resolvedImageAlt === '') {
-    $resolvedImageAlt = $socialTitle;
 }
 
 $appearancePrimary = trim((string)($siteSettings['aparencia_cor_primaria'] ?? '#0b5d4b')) ?: '#0b5d4b';
@@ -120,14 +103,7 @@ if (!$menuPrincipal) {
     <meta property="og:description" content="<?= e($socialDescription) ?>">
     <meta property="og:url" content="<?= e($resolvedCanonical) ?>">
     <meta property="og:site_name" content="<?= e($siteName) ?>">
-    <?php if ($resolvedImage !== ''): ?>
-    <meta property="og:image" content="<?= e($resolvedImage) ?>">
-    <?php if (str_starts_with(strtolower($resolvedImage), 'https://')): ?><meta property="og:image:secure_url" content="<?= e($resolvedImage) ?>"><?php endif; ?>
-    <?php if ($resolvedImageType !== ''): ?><meta property="og:image:type" content="<?= e($resolvedImageType) ?>"><?php endif; ?>
-    <?php if ($resolvedImageWidth > 0): ?><meta property="og:image:width" content="<?= (int)$resolvedImageWidth ?>"><?php endif; ?>
-    <?php if ($resolvedImageHeight > 0): ?><meta property="og:image:height" content="<?= (int)$resolvedImageHeight ?>"><?php endif; ?>
-    <meta property="og:image:alt" content="<?= e($resolvedImageAlt) ?>">
-    <?php endif; ?>
+    <?php if ($resolvedImage !== ''): ?><meta property="og:image" content="<?= e($resolvedImage) ?>"><?php endif; ?>
     <?php endif; ?>
 
     <?php if ($twitterCardActive): ?>
@@ -135,10 +111,7 @@ if (!$menuPrincipal) {
     <meta name="twitter:title" content="<?= e($socialTitle) ?>">
     <meta name="twitter:description" content="<?= e($socialDescription) ?>">
     <?php if ($twitterSite !== ''): ?><meta name="twitter:site" content="<?= e(str_starts_with($twitterSite, '@') ? $twitterSite : '@' . $twitterSite) ?>"><?php endif; ?>
-    <?php if ($resolvedImage !== ''): ?>
-    <meta name="twitter:image" content="<?= e($resolvedImage) ?>">
-    <meta name="twitter:image:alt" content="<?= e($resolvedImageAlt) ?>">
-    <?php endif; ?>
+    <?php if ($resolvedImage !== ''): ?><meta name="twitter:image" content="<?= e($resolvedImage) ?>"><?php endif; ?>
     <?php endif; ?>
 
     <?php if ($faviconMedia): ?><link rel="icon" href="<?= e(mediaUrl((string)$faviconMedia['caminho'])) ?>"><?php endif; ?>

@@ -9,7 +9,7 @@ if ($slug === '') {
 }
 
 $stmt = $pdo->prepare(
-    "SELECT g.*, m.caminho AS capa_caminho, m.alt_text AS capa_alt, m.largura AS capa_largura, m.altura AS capa_altura, m.mime_type AS capa_mime
+    "SELECT g.*, m.caminho AS capa_caminho, m.alt_text AS capa_alt
      FROM galerias g
      LEFT JOIN midias m ON m.id=g.imagem_capa_id
      WHERE g.slug=:slug AND g.status='publicado' AND (g.publicado_em IS NULL OR g.publicado_em <= NOW())
@@ -38,10 +38,7 @@ $metaDescription = trim((string)($galeria['seo_descricao'] ?? '')) ?: (trim((str
 $metaNoindex = (int)($galeria['seo_noindex'] ?? 0) === 1;
 $canonicalUrl = contentUrl('galeria', (string)$galeria['slug']);
 $metaImage = $galeria['capa_caminho'] ? mediaUrl((string)$galeria['capa_caminho']) : '';
-$metaImageAlt = trim((string)($galeria['capa_alt'] ?? '')) ?: (string)$galeria['titulo'];
-$metaImageWidth = (int)($galeria['capa_largura'] ?? 0);
-$metaImageHeight = (int)($galeria['capa_altura'] ?? 0);
-$metaImageType = trim((string)($galeria['capa_mime'] ?? ''));require themeFile($pdo, 'header.php');
+require themeFile($pdo, 'header.php');
 ?>
 <section class="container py-5">
     <div class="row justify-content-center">

@@ -5,7 +5,7 @@ $siteLabel = siteConfig($pdo, 'seo_titulo', 'IECLB Parobé');
 
 $slug = routeSlug('evento');
 $stmt = $pdo->prepare(
-    "SELECT e.*, c.nome AS comunidade_nome, ec.nome AS categoria_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt, m.largura AS imagem_capa_largura, m.altura AS imagem_capa_altura, m.mime_type AS imagem_capa_mime
+    "SELECT e.*, c.nome AS comunidade_nome, ec.nome AS categoria_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt
      FROM eventos e
      LEFT JOIN comunidades c ON c.id = e.comunidade_id
      LEFT JOIN evento_categorias ec ON ec.id = e.categoria_evento_id
@@ -33,10 +33,6 @@ $metaTitle = trim((string)($evento['seo_titulo'] ?? '')) ?: $evento['titulo'];
 $metaDescription = trim((string)($evento['seo_descricao'] ?? '')) ?: ($evento['resumo'] ?: trim(strip_tags(mb_substr((string)($evento['descricao'] ?? ''), 0, 160))));
 $metaNoindex = (int)($evento['seo_noindex'] ?? 0) === 1;
 $metaImage = $evento['imagem_capa_midia'] ? mediaUrl((string)$evento['imagem_capa_midia']) : '';
-$metaImageAlt = trim((string)($evento['imagem_capa_alt'] ?? '')) ?: (string)$evento['titulo'];
-$metaImageWidth = (int)($evento['imagem_capa_largura'] ?? 0);
-$metaImageHeight = (int)($evento['imagem_capa_altura'] ?? 0);
-$metaImageType = trim((string)($evento['imagem_capa_mime'] ?? ''));$metaOgType = 'article';
 $canonicalUrl = contentUrl('evento', (string)$evento['slug']);
 $metaOgType = 'article';
 require themeFile($pdo, 'header.php');

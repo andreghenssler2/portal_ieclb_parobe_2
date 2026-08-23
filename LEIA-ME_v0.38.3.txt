@@ -1,0 +1,39 @@
+Portal IECLB Parobé v0.38.3
+Imagem de capa no compartilhamento
+
+REQUISITO
+Portal v0.38.2 ou superior.
+
+INSTALAÇÃO
+1. Extraia este ZIP na raiz do Portal.
+2. Execute:
+   php atualizar_v0.38.3.php
+3. Atualize o navegador com Ctrl+F5.
+
+COMPORTAMENTO
+Ao escolher uma imagem de capa/destacada em:
+- Notícia/Post
+- Página
+- Evento/Culto
+- Galeria
+
+essa mesma imagem será enviada nos metadados sociais da página e usada, quando o
+aplicativo aceitar Open Graph/Twitter Card, na prévia de compartilhamento.
+
+Compatível com prévias de:
+- WhatsApp
+- Facebook / Messenger
+- Telegram
+- X / Twitter
+- LinkedIn
+- outros aplicativos que leem Open Graph
+
+IMPORTANTE
+Aplicativos podem manter cache da prévia de links já compartilhados. Depois da
+alteração, um link que já tenha sido compartilhado anteriormente pode demorar um
+pouco para atualizar a miniatura.
+
+Se não houver imagem de capa, o Portal continua usando a imagem social global
+configurada em SEO.
+
+Nenhuma migração de banco de dados.

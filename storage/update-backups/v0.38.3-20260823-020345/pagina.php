@@ -5,7 +5,7 @@ $siteLabel = siteConfig($pdo, 'seo_titulo', 'IECLB Parobé');
 
 $slug = routeSlug('pagina');
 $stmt = $pdo->prepare(
-    "SELECT p.*, u.nome AS autor_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt, m.largura AS imagem_capa_largura, m.altura AS imagem_capa_altura, m.mime_type AS imagem_capa_mime
+    "SELECT p.*, u.nome AS autor_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt
      FROM paginas p
      LEFT JOIN usuarios u ON u.id = p.autor_id
      LEFT JOIN midias m ON m.id = p.imagem_capa_id
@@ -34,10 +34,6 @@ $metaTitle = trim((string)($pagina['seo_titulo'] ?? '')) ?: $pagina['titulo'];
 $metaDescription = trim((string)($pagina['seo_descricao'] ?? '')) ?: ($pagina['resumo'] ?: trim(strip_tags(mb_substr((string)$pagina['conteudo'], 0, 160))));
 $metaNoindex = (int)($pagina['seo_noindex'] ?? 0) === 1;
 $metaImage = $cover ? mediaUrl((string)$cover) : '';
-$metaImageAlt = trim((string)($pagina['imagem_capa_alt'] ?? '')) ?: (string)$pagina['titulo'];
-$metaImageWidth = (int)($pagina['imagem_capa_largura'] ?? 0);
-$metaImageHeight = (int)($pagina['imagem_capa_altura'] ?? 0);
-$metaImageType = trim((string)($pagina['imagem_capa_mime'] ?? ''));$metaOgType = 'article';
 $canonicalUrl = contentUrl('pagina', (string)$pagina['slug']);
 require themeFile($pdo, 'header.php');
 ?>

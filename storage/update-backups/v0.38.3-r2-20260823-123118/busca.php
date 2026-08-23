@@ -7,12 +7,12 @@ $results = [];
 if (mb_strlen($q) >= 2) {
     $like = '%' . $q . '%';
     $queries = [
-        ['noticia', "SELECT titulo,slug,resumo,conteudo,COALESCE(publicado_em,created_at) dt FROM posts WHERE status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND (titulo LIKE ? OR resumo LIKE ? OR conteudo LIKE ?) ORDER BY dt DESC LIMIT 20"],
-        ['pagina', "SELECT titulo,slug,resumo,conteudo,COALESCE(publicado_em,created_at) dt FROM paginas WHERE status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND (titulo LIKE ? OR resumo LIKE ? OR conteudo LIKE ?) ORDER BY dt DESC LIMIT 15"],
-        ['evento', "SELECT titulo,slug,resumo,descricao conteudo,data_inicio dt FROM eventos WHERE status='publicado' AND (titulo LIKE ? OR resumo LIKE ? OR descricao LIKE ? OR local LIKE ?) ORDER BY data_inicio DESC LIMIT 15"],
-        ['lideranca', "SELECT nome titulo,slug,resumo,biografia conteudo,updated_at dt FROM liderancas WHERE ativo=1 AND (nome LIKE ? OR funcao LIKE ? OR resumo LIKE ? OR biografia LIKE ?) ORDER BY ordem ASC,nome ASC LIMIT 15"],
-        ['documento', "SELECT titulo,slug,descricao resumo,descricao conteudo,COALESCE(publicado_em,created_at) dt FROM documentos WHERE status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND (titulo LIKE ? OR descricao LIKE ?) ORDER BY dt DESC LIMIT 15"],
-        ['galeria', "SELECT titulo,slug,descricao resumo,'' conteudo,COALESCE(publicado_em,created_at) dt FROM galerias WHERE status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND (titulo LIKE ? OR descricao LIKE ?) ORDER BY dt DESC LIMIT 10"],
+        ['noticia', "SELECT titulo,slug,resumo,conteudo,COALESCE(publicado_em,created_at) dt FROM posts WHERE status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND (titulo LIKE :q OR resumo LIKE :q OR conteudo LIKE :q) ORDER BY dt DESC LIMIT 20"],
+        ['pagina', "SELECT titulo,slug,resumo,conteudo,COALESCE(publicado_em,created_at) dt FROM paginas WHERE status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND (titulo LIKE :q OR resumo LIKE :q OR conteudo LIKE :q) ORDER BY dt DESC LIMIT 15"],
+        ['evento', "SELECT titulo,slug,resumo,descricao conteudo,data_inicio dt FROM eventos WHERE status='publicado' AND (titulo LIKE :q OR resumo LIKE :q OR descricao LIKE :q OR local LIKE :q) ORDER BY data_inicio DESC LIMIT 15"],
+        ['lideranca', "SELECT nome titulo,slug,resumo,biografia conteudo,updated_at dt FROM liderancas WHERE ativo=1 AND (nome LIKE :q OR funcao LIKE :q OR resumo LIKE :q OR biografia LIKE :q) ORDER BY ordem ASC,nome ASC LIMIT 15"],
+        ['documento', "SELECT titulo,slug,descricao resumo,descricao conteudo,COALESCE(publicado_em,created_at) dt FROM documentos WHERE status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND (titulo LIKE :q OR descricao LIKE :q) ORDER BY dt DESC LIMIT 15"],
+        ['galeria', "SELECT titulo,slug,descricao resumo,'' conteudo,COALESCE(publicado_em,created_at) dt FROM galerias WHERE status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND (titulo LIKE :q OR descricao LIKE :q) ORDER BY dt DESC LIMIT 10"],
     ];
     foreach ($queries as [$type, $sql]) {
         try {
@@ -27,13 +27,13 @@ if (mb_strlen($q) >= 2) {
     }
     usort($results, static fn($a, $b) => strcmp((string) $b['dt'], (string) $a['dt']));
 }
-$labels=[
-    'noticia'=>'Notícia',
-    'pagina'=>'Página',
-    'evento'=>'Evento',
-    'galeria'=>'Galeria',
-    'documento'=>'Documento',
-    'lideranca'=>'Liderança',
+$labels = [
+    'noticia' => 'Notícia',
+    'pagina' => 'Página',
+    'evento' => 'Evento',
+    'galeria' => 'Galeria',
+    'documento' => 'Documento',
+    'lideranca' => 'Liderança',
 ];
 $metaTitle = $q !== '' ? 'Busca por ' . $q : 'Busca';
 $metaDescription = 'Busca interna do Portal IECLB Parobé.';
