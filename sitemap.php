@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 
 $pdo = Database::connection();
+CategoryService::ensureSchema($pdo);
 $settings = siteConfigAll($pdo);
 
 if (($settings['seo_sitemap_ativo'] ?? '1') !== '1') {

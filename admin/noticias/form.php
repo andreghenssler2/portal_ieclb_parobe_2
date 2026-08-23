@@ -5,6 +5,7 @@ Auth::requireLogin();
 Auth::requirePermission('noticias.gerenciar');
 
 $pdo = Database::connection();
+CategoryService::ensureSchema($pdo);
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 $defaultCategory = (int)siteConfig($pdo, 'writing_default_category', '0');
 $defaultStatus = siteConfig($pdo, 'writing_default_status', 'rascunho');

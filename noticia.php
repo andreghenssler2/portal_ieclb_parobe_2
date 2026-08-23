@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/bootstrap.php';
 $pdo = Database::connection();
+CategoryService::ensureSchema($pdo);
 $slug = routeSlug('noticia');
 $stmt = $pdo->prepare("SELECT p.*, c.nome AS comunidade_nome, u.nome AS autor_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt, m.largura AS imagem_capa_largura, m.altura AS imagem_capa_altura, m.mime_type AS imagem_capa_mime FROM posts p LEFT JOIN comunidades c ON c.id=p.comunidade_id LEFT JOIN usuarios u ON u.id=p.autor_id LEFT JOIN midias m ON m.id=p.imagem_capa_id WHERE p.slug=:slug AND p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em <= NOW()) LIMIT 1");
 $stmt->execute(['slug'=>$slug]);

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/bootstrap.php';
 $pdo = Database::connection();
+CategoryService::ensureSchema($pdo);
 $slug = routeCategorySlug();
 $stmt = $pdo->prepare('SELECT id,nome,slug,descricao FROM categorias WHERE slug=:slug LIMIT 1');
 $stmt->execute(['slug' => $slug]);

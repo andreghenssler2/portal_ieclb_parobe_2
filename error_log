@@ -1,5 +1,6 @@
-[23-Aug-2026 19:49:51 America/Sao_Paulo] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'ieclbp28_portal_ieclb.post_categorias' doesn't exist in /home1/ieclbp28/public_html/admin/noticias/index.php:49
+[23-Aug-2026 20:07:13 America/Sao_Paulo] PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY000] [1045] Access denied for user 'root'@'localhost' (using password: NO) in /home1/ieclbp28/public_html/mod/db/Database.php:25
 Stack trace:
-#0 /home1/ieclbp28/public_html/admin/noticias/index.php(49): PDO->prepare('SELECT p.*, c.n...')
-#1 {main}
-  thrown in /home1/ieclbp28/public_html/admin/noticias/index.php on line 49
+#0 /home1/ieclbp28/public_html/mod/db/Database.php(25): PDO->__construct('mysql:host=loca...', 'root', Object(SensitiveParameterValue), Array)
+#1 /home1/ieclbp28/public_html/index.php(3): Database::connection()
+#2 {main}
+  thrown in /home1/ieclbp28/public_html/mod/db/Database.php on line 25

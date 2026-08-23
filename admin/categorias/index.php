@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../app/Services/CategoryService.php';
 
 Auth::requirePermission('noticias.gerenciar');
 $pdo = Database::connection();
+CategoryService::ensureSchema($pdo);
 $error = '';
 $editId = (int)($_GET['editar'] ?? 0);
 $edit = null;

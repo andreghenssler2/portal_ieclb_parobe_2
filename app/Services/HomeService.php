@@ -83,12 +83,18 @@ final class HomeService
             $background = 'white';
         }
 
+        $width = (string)($data['width'] ?? 'full');
+        if (!in_array($width, ['full', 'half'], true)) {
+            $width = 'full';
+        }
+
         $config = [
             'show_date' => !empty($data['show_date']),
             'show_excerpt' => !empty($data['show_excerpt']),
             'autoplay' => !empty($data['autoplay']),
             'date_position' => $datePosition,
             'background' => $background,
+            'width' => $width,
         ];
 
         $payload = [

@@ -81,6 +81,7 @@ $form = [
     'autoplay' => $editing ? (bool)($editConfig['autoplay'] ?? false) : false,
     'date_position' => (string)($editConfig['date_position'] ?? 'after'),
     'background' => (string)($editConfig['background'] ?? 'white'),
+    'width' => (string)($editConfig['width'] ?? 'full'),
 ];
 
 $pageTitle = 'Página Inicial';
@@ -226,6 +227,16 @@ require __DIR__ . '/../_header.php';
                                 <option value="white" <?= $form['background']==='white'?'selected':'' ?>>Branco</option>
                                 <option value="soft" <?= $form['background']==='soft'?'selected':'' ?>>Cinza claro</option>
                             </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Largura da seção</label>
+                        <select class="form-select" name="width">
+                            <option value="full" <?= $form['width']==='full'?'selected':'' ?>>Largura inteira</option>
+                            <option value="half" <?= $form['width']==='half'?'selected':'' ?>>Meia largura</option>
+                        </select>
+                        <div class="form-text">
+                            Use meia largura em duas seções consecutivas, como Informativo e IECLB, para deixá-las lado a lado.
                         </div>
                     </div>
                     <div class="border rounded p-3 mb-3 bg-body-tertiary">

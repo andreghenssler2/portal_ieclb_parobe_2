@@ -485,11 +485,18 @@ final class PortalInstaller
         foreach (glob($directory . '/*.sql') ?: [] as $path) {
             $file = basename($path);
 
-            if (!preg_match('/v(\d+\.\d+\.\d+)/i', $file, $match)) {
+            $specialVersions = [
+                '2026_08_19_categoria_ascendente_posts.sql' => '0.22.1',
+                '2026_08_22_posts_multiplas_categorias.sql' => '0.26.1',
+            ];
+
+            if (isset($specialVersions[$file])) {
+                $version = $specialVersions[$file];
+            } elseif (preg_match('/v(\d+\.\d+\.\d+)/i', $file, $match)) {
+                $version = $match[1];
+            } else {
                 continue;
             }
-
-            $version = $match[1];
 
             if (version_compare($version, self::BASE_SCHEMA_VERSION, '<=')) {
                 continue;
@@ -834,6 +841,47 @@ final class PortalInstaller
 
     private function ensureCurrentSchema(PDO $pdo): void
     {
+        // v0.42.0-r2 - schema atual de categorias de posts.
+        if ($this->tableExists($pdo, 'categorias')
+            && !$this->columnExists($pdo, 'categorias', 'parent_id')) {
+            $pdo->exec(
+                'ALTER TABLE categorias
+                 ADD COLUMN parent_id INT UNSIGNED NULL AFTER descricao'
+            );
+        }
+
+        if ($this->tableExists($pdo, 'posts')
+            && $this->tableExists($pdo, 'categorias')) {
+            $pdo->exec(
+                "CREATE TABLE IF NOT EXISTS post_categorias (
+                    post_id INT UNSIGNED NOT NULL,
+                    categoria_id INT UNSIGNED NOT NULL,
+                    principal TINYINT(1) NOT NULL DEFAULT 0,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (post_id,categoria_id),
+                    KEY idx_post_categorias_categoria (categoria_id,post_id),
+                    KEY idx_post_categorias_principal (post_id,principal),
+                    CONSTRAINT fk_post_categorias_post
+                        FOREIGN KEY (post_id) REFERENCES posts(id)
+                        ON DELETE CASCADE ON UPDATE CASCADE,
+                    CONSTRAINT fk_post_categorias_categoria
+                        FOREIGN KEY (categoria_id) REFERENCES categorias(id)
+                        ON DELETE CASCADE ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+
+            if ($this->columnExists($pdo, 'posts', 'categoria_id')) {
+                $pdo->exec(
+                    "INSERT IGNORE INTO post_categorias
+                        (post_id,categoria_id,principal)
+                     SELECT p.id,p.categoria_id,1
+                     FROM posts p
+                     INNER JOIN categorias c ON c.id=p.categoria_id
+                     WHERE p.categoria_id IS NOT NULL
+                       AND p.categoria_id>0"
+                );
+            }
+        }
         // v0.40.0 - visualizações agregadas.
         if ($this->tableExists($pdo, 'posts') && !$this->columnExists($pdo, 'posts', 'visualizacoes')) {
             $pdo->exec(

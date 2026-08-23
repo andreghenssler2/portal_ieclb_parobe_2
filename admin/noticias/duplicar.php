@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !Csrf::validate($_POST['_token'] ??
 }
 
 $pdo = Database::connection();
+CategoryService::ensureSchema($pdo);
 $id = (int)($_POST['id'] ?? 0);
 
 try {

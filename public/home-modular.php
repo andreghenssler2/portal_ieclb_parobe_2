@@ -41,8 +41,12 @@ $homeTitleKey = static function (string $value): string {
     if (!in_array($datePosition, ['before','after'], true)) {
         $datePosition = str_contains($titleKey, 'paroquia') ? 'before' : 'after';
     }
+    $width = (string)($config['width'] ?? 'full');
+    if (!in_array($width, ['full','half'], true)) {
+        $width = 'full';
+    }
     ?>
-    <section class="home-block home-block--<?= e($type) ?> home-block--bg-<?= e($background) ?>" id="<?= e($sectionId) ?>" data-home-title="<?= e($titleKey) ?>" data-home-autoplay="<?= !empty($config['autoplay']) ? '1' : '0' ?>">
+    <section class="home-block home-block--<?= e($type) ?> home-block--bg-<?= e($background) ?> home-block--width-<?= e($width) ?>" id="<?= e($sectionId) ?>" data-home-title="<?= e($titleKey) ?>" data-home-width="<?= e($width) ?>" data-home-autoplay="<?= !empty($config['autoplay']) ? '1' : '0' ?>">
         <div class="home-block__head">
             <h2><?= e($sectionTitle) ?></h2>
             <?php if ($linkText !== '' && $linkUrl !== ''): ?>

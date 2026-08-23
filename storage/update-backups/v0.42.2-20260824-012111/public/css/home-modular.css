@@ -1,0 +1,238 @@
+.portal-home{
+  --home-red:#ef1b17;
+  --home-blue:#158ed5;
+  --home-text:#1f252c;
+  --home-muted:#7d848c;
+  --home-line:#e1e5e8;
+  max-width:1180px;
+  margin:0 auto;
+  padding:34px 24px 56px;
+  color:var(--home-text);
+  box-sizing:border-box;
+}
+.portal-home *{box-sizing:border-box}
+.home-block{position:relative;margin:0 0 54px}
+.home-block:last-child{margin-bottom:0}
+.home-block--bg-soft{padding-top:34px;padding-bottom:38px;isolation:isolate}
+.home-block--bg-soft::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  top:0;
+  bottom:0;
+  left:50%;
+  width:100vw;
+  transform:translateX(-50%);
+  background:#f5f7f8;
+}
+.home-block__head{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  margin-bottom:20px;
+  padding:0 2px 10px;
+  border-bottom:1px solid var(--home-line);
+}
+.home-block__head::after{
+  content:"";
+  position:absolute;
+  left:0;
+  bottom:-1px;
+  width:54px;
+  height:2px;
+  background:var(--home-blue);
+}
+.home-block__head h2{
+  margin:0;
+  color:#1e252b;
+  font:600 24px/1.2 Arial,Helvetica,sans-serif;
+}
+.home-block--featured .home-block__head{
+  border-bottom:2px solid var(--home-red);
+}
+.home-block--featured .home-block__head::after{display:none}
+.home-block--featured .home-block__head h2{color:var(--home-red)}
+.home-block__more{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  color:#111;
+  text-decoration:none;
+  white-space:nowrap;
+  font:500 15px/1.2 Arial,Helvetica,sans-serif;
+}
+.home-block__more:hover{text-decoration:underline}
+.home-block__more span{
+  color:var(--home-blue);
+  font-size:34px;
+  font-weight:300;
+  line-height:15px;
+}
+
+/* Destaque + 2: proporção fixa igual ao modelo enviado. */
+.home-featured{
+  display:grid;
+  grid-template-columns:minmax(0,2fr) minmax(300px,1fr);
+  gap:20px;
+  height:420px;
+}
+.home-featured--single{grid-template-columns:1fr}
+.home-featured__lead,.home-featured__small{
+  position:relative;
+  display:block;
+  min-width:0;
+  height:100%;
+  overflow:hidden;
+  border-radius:3px;
+  background:#ececec;
+  color:#fff;
+  text-decoration:none;
+}
+.home-featured__side{
+  display:grid;
+  grid-template-rows:1fr 1fr;
+  gap:20px;
+  min-width:0;
+  height:420px;
+}
+.home-featured img,.home-card__image img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  transition:transform .3s ease;
+}
+.home-featured a:hover img,.home-card__image:hover img{transform:scale(1.02)}
+.home-featured__shade{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg,rgba(0,0,0,0) 38%,rgba(0,0,0,.74) 100%);
+}
+.home-featured__content{
+  position:absolute;
+  left:28px;
+  right:28px;
+  bottom:24px;
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+.home-featured__content strong{
+  font:600 clamp(25px,2.45vw,32px)/1.12 Arial,Helvetica,sans-serif;
+  text-shadow:0 1px 2px rgba(0,0,0,.35);
+}
+.home-featured__content small{
+  max-width:760px;
+  font:400 14px/1.45 Arial,Helvetica,sans-serif;
+}
+.home-featured__content--small{left:15px;right:15px;bottom:13px}
+.home-featured__content--small strong{font-size:16px;line-height:1.2}
+
+/* Grade e carrossel no estilo dos exemplos de Comunidades e Paróquia. */
+.home-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:20px;
+}
+.home-card{min-width:0;background:transparent}
+.home-card__image{
+  display:block;
+  width:100%;
+  aspect-ratio:4/3;
+  overflow:hidden;
+  border-radius:4px;
+  background:#e9ecef;
+}
+.home-card__body{padding:12px 0 0}
+.home-card h3{
+  margin:0;
+  font:600 17px/1.42 Georgia,'Times New Roman',serif;
+}
+.home-card h3 a{color:#252525;text-decoration:none}
+.home-card h3 a:hover{text-decoration:underline}
+.home-card__date{
+  margin:0 0 9px;
+  color:#858585;
+  font:400 13px/1.25 Arial,Helvetica,sans-serif;
+}
+.home-card__date--after{margin:9px 0 0}
+.home-card__date--light{margin:0;color:rgba(255,255,255,.9)}
+.home-card p{
+  margin:8px 0 0;
+  color:#5d5d5d;
+  font:400 14px/1.5 Arial,Helvetica,sans-serif;
+}
+.home-media-placeholder{
+  display:block;
+  width:100%;
+  height:100%;
+  min-height:100%;
+  background:linear-gradient(180deg,#f0f0f0 0%,#dddddd 58%,#b7b7b7 100%);
+}
+.home-carousel-wrap{position:relative}
+.home-carousel{
+  display:flex;
+  gap:20px;
+  overflow-x:auto;
+  padding:0 1px 6px;
+  scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
+  scrollbar-width:none;
+}
+.home-carousel::-webkit-scrollbar{display:none}
+.home-card--carousel{
+  flex:0 0 calc((100% - 60px)/4);
+  scroll-snap-align:start;
+}
+.home-carousel-arrow{
+  position:absolute;
+  z-index:5;
+  top:87px;
+  display:grid;
+  place-items:center;
+  width:36px;
+  height:36px;
+  padding:0;
+  border:1px solid #ddd;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 2px 9px rgba(0,0,0,.16);
+  color:#999;
+  cursor:pointer;
+  font:300 32px/28px Arial,Helvetica,sans-serif;
+}
+.home-carousel-arrow:hover{color:var(--home-blue)}
+.home-carousel-arrow--prev{left:-18px}
+.home-carousel-arrow--next{right:-18px}
+
+@media (max-width:900px){
+  .portal-home{padding-left:18px;padding-right:18px}
+  .home-featured{grid-template-columns:1fr;height:auto}
+  .home-featured__lead{height:360px}
+  .home-featured__side{grid-template-columns:1fr 1fr;grid-template-rows:none;height:190px}
+  .home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .home-card--carousel{flex-basis:calc((100% - 20px)/2)}
+  .home-carousel-arrow{top:76px}
+}
+@media (max-width:560px){
+  .portal-home{padding:24px 14px 38px}
+  .home-block{margin-bottom:40px}
+  .home-block--bg-soft{padding-top:28px;padding-bottom:30px}
+  .home-block__head h2{font-size:21px}
+  .home-block__more{font-size:14px}
+  .home-featured__lead{height:315px}
+  .home-featured__side{grid-template-columns:1fr;height:auto}
+  .home-featured__small{height:180px}
+  .home-featured__content{left:18px;right:18px;bottom:18px}
+  .home-featured__content strong{font-size:25px}
+  .home-grid{grid-template-columns:1fr}
+  .home-card--carousel{flex-basis:82%}
+  .home-carousel-arrow{top:74px;width:32px;height:32px}
+  .home-carousel-arrow--prev{left:-8px}
+  .home-carousel-arrow--next{right:-8px}
+}
+
+[data-home-legacy-hidden="1"]{display:none!important}

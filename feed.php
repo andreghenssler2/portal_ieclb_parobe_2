@@ -3,6 +3,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 $pdo = Database::connection();
+CategoryService::ensureSchema($pdo);
 $settings = siteConfigAll($pdo);
 if (($settings['seo_feed_ativo'] ?? '1') !== '1') {
     http_response_code(404); header('Content-Type: text/plain; charset=UTF-8'); exit('Feed RSS desativado.');

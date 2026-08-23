@@ -5,6 +5,100 @@ declare(strict_types=1);
 final class CategoryService
 {
     /**
+     * Garante a estrutura usada pelas categorias hierárquicas e pelas
+     * múltiplas categorias de Posts. Idempotente por requisição.
+     */
+    public static function ensureSchema(PDO $pdo): void
+    {
+        static $ensured = false;
+        if ($ensured) {
+            return;
+        }
+
+        $tableExists = static function (string $table) use ($pdo): bool {
+            $stmt = $pdo->prepare(
+                'SELECT COUNT(*) FROM information_schema.tables
+                 WHERE table_schema=DATABASE() AND table_name=?'
+            );
+            $stmt->execute([$table]);
+            return (int)$stmt->fetchColumn() > 0;
+        };
+
+        $columnExists = static function (string $table, string $column) use ($pdo): bool {
+            $stmt = $pdo->prepare(
+                'SELECT COUNT(*) FROM information_schema.columns
+                 WHERE table_schema=DATABASE()
+                   AND table_name=?
+                   AND column_name=?'
+            );
+            $stmt->execute([$table, $column]);
+            return (int)$stmt->fetchColumn() > 0;
+        };
+
+        $indexExists = static function (string $table, string $index) use ($pdo): bool {
+            $stmt = $pdo->prepare(
+                'SELECT COUNT(*) FROM information_schema.statistics
+                 WHERE table_schema=DATABASE()
+                   AND table_name=?
+                   AND index_name=?'
+            );
+            $stmt->execute([$table, $index]);
+            return (int)$stmt->fetchColumn() > 0;
+        };
+
+        if (!$tableExists('posts') || !$tableExists('categorias')) {
+            return;
+        }
+
+        if (!$columnExists('categorias', 'parent_id')) {
+            $pdo->exec(
+                'ALTER TABLE categorias
+                 ADD COLUMN parent_id INT UNSIGNED NULL AFTER descricao'
+            );
+        }
+
+        if (!$indexExists('categorias', 'idx_categorias_parent_id')) {
+            $pdo->exec(
+                'CREATE INDEX idx_categorias_parent_id
+                 ON categorias (parent_id)'
+            );
+        }
+
+        if (!$tableExists('post_categorias')) {
+            $pdo->exec(
+                "CREATE TABLE post_categorias (
+                    post_id INT UNSIGNED NOT NULL,
+                    categoria_id INT UNSIGNED NOT NULL,
+                    principal TINYINT(1) NOT NULL DEFAULT 0,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (post_id,categoria_id),
+                    KEY idx_post_categorias_categoria (categoria_id,post_id),
+                    KEY idx_post_categorias_principal (post_id,principal),
+                    CONSTRAINT fk_post_categorias_post
+                        FOREIGN KEY (post_id) REFERENCES posts(id)
+                        ON DELETE CASCADE ON UPDATE CASCADE,
+                    CONSTRAINT fk_post_categorias_categoria
+                        FOREIGN KEY (categoria_id) REFERENCES categorias(id)
+                        ON DELETE CASCADE ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+        }
+
+        if ($columnExists('posts', 'categoria_id')) {
+            $pdo->exec(
+                "INSERT IGNORE INTO post_categorias
+                    (post_id,categoria_id,principal)
+                 SELECT p.id,p.categoria_id,1
+                 FROM posts p
+                 INNER JOIN categorias c ON c.id=p.categoria_id
+                 WHERE p.categoria_id IS NOT NULL
+                   AND p.categoria_id>0"
+            );
+        }
+
+        $ensured = true;
+    }
+    /**
      * Retorna as categorias de Posts em ordem hierárquica.
      * Cada item recebe a chave "depth" (0 = categoria raiz).
      */
@@ -194,7 +288,8 @@ final class CategoryService
      * como categoria principal para compatibilidade com código/integrações antigas.
      */
     public static function syncPostCategories(PDO $pdo, int $postId, array $categoryIds, ?int $primaryId = null): ?int
-    {
+    {        self::ensureSchema($pdo);
+
         if ($postId <= 0) {
             throw new InvalidArgumentException('Post inválido para sincronizar categorias.');
         }

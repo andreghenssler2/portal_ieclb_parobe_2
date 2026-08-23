@@ -26,11 +26,24 @@ $heroTitle = trim((string) ($homeSettings['hero_titulo'] ?? '')) ?: 'IECLB Parob
 $heroSubtitle = trim((string) ($homeSettings['hero_subtitulo'] ?? '')) ?: 'Notícias, cultos, eventos e informações das comunidades da Paróquia de Parobé.';
 $siteFullName = trim((string) ($homeSettings['site_nome'] ?? '')) ?: 'Paróquia Evangélica de Confissão Luterana de Parobé';
 $widgets = homeWidgets($pdo);
+
+// v0.42.2: a Home modular substitui os blocos antigos quando há seções ativas.
+$homeModularService = new HomeService($pdo);
+$homeModularSections = $homeModularService->sections(true);
+$homeModularActive = !empty($homeModularSections);
+
 require themeFile($pdo, 'header.php');
 
 foreach ($widgets as $widget):
     $type = (string) $widget['tipo'];
     $widgetTitle = trim((string) ($widget['titulo'] ?? ''));
+
+    // v0.42.2 - evita duplicação da Home antiga.
+    // Em modo modular, só banners antigos permanecem acima da Home.
+    // A Agenda é renderizada separadamente no final.
+    if ($homeModularActive && $type !== 'banners') {
+        continue;
+    }
     ?>
     <?php if ($type === 'banners' && $banners): ?>
         <section class="home-banners widget-section" data-widget="banners">
@@ -205,4 +218,12 @@ foreach ($widgets as $widget):
 <?php endforeach; ?>
 
 <?php /* HOME_MODULAR_V028_APPEND */ require __DIR__ . '/public/home-modular.php'; ?>
+
+<?php
+// v0.42.2: Agenda sempre depois da Home modular.
+if ($homeModularActive) {
+    require __DIR__ . '/public/home-agenda-bottom.php';
+}
+?>
+
 <?php require themeFile($pdo, 'footer.php'); ?>

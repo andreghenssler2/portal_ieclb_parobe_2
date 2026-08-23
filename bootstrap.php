@@ -15,6 +15,7 @@ require_once __DIR__ . '/mod/auth/Auth.php';
 require_once __DIR__ . '/app/Helpers/functions.php';
 require_once __DIR__ . '/app/Services/CacheService.php';
 require_once __DIR__ . '/app/Services/MediaService.php';
+require_once __DIR__ . '/app/Services/CategoryService.php';
 require_once __DIR__ . '/app/Services/RevisionService.php';
 require_once __DIR__ . '/app/Services/MailService.php';
 require_once __DIR__ . '/app/Services/FormNotificationService.php';

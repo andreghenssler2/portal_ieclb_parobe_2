@@ -63,7 +63,7 @@ final class NewsAnalyticsService
             $sql = "SELECT p.id,p.titulo,p.slug,p.resumo,p.publicado_em,p.created_at,
                            COALESCE(p.visualizacoes,0) visualizacoes_periodo,
                            COALESCE(p.visualizacoes,0) visualizacoes_total,
-                           m.caminho imagem_capa_midia,m.alt_text imagem_capa_alt,
+                           COALESCE(NULLIF(m.caminho,''),NULLIF(p.imagem_capa,'')) imagem_capa_midia,m.alt_text imagem_capa_alt,
                            c.nome comunidade_nome
                     FROM posts p
                     LEFT JOIN midias m ON m.id=p.imagem_capa_id
@@ -81,7 +81,7 @@ final class NewsAnalyticsService
         $sql = "SELECT p.id,p.titulo,p.slug,p.resumo,p.publicado_em,p.created_at,
                        COALESCE(v.visualizacoes_periodo,0) visualizacoes_periodo,
                        COALESCE(p.visualizacoes,0) visualizacoes_total,
-                       m.caminho imagem_capa_midia,m.alt_text imagem_capa_alt,
+                       COALESCE(NULLIF(m.caminho,''),NULLIF(p.imagem_capa,'')) imagem_capa_midia,m.alt_text imagem_capa_alt,
                        c.nome comunidade_nome
                 FROM posts p
                 INNER JOIN (

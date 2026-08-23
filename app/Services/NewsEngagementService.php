@@ -11,7 +11,11 @@ final class NewsEngagementService
      * @return array<int,array<string,mixed>>
      */
     public static function related(PDO $pdo, array $post, int $limit = 4): array
-    {
+    {        // v0.42.0-r2 - garante múltiplas categorias antes das consultas.
+        if (class_exists('CategoryService')) {
+            CategoryService::ensureSchema($pdo);
+        }
+
         $currentId = max(0, (int)($post['id'] ?? 0));
         if ($currentId <= 0) {
             return [];

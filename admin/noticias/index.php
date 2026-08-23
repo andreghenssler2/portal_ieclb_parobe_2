@@ -5,6 +5,7 @@ require_once __DIR__ . '/../_search.php';
 Auth::requireLogin();
 Auth::requirePermission('noticias.gerenciar');
 $pdo = Database::connection();
+CategoryService::ensureSchema($pdo);
 // v0.33.1: pesquisa de posts + paginação de 50 registros.
 $search = adminSearchTerm();
 $searchSql = '';
