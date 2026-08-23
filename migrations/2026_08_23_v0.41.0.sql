@@ -1,0 +1,3 @@
+-- Portal IECLB Parobé v0.41.0
+-- Notícias relacionadas + Mais Lidas na Home.
+-- Nenhuma alteração estrutural de banco de dados.

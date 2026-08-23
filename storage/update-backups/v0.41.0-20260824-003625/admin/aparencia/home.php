@@ -129,7 +129,7 @@ require __DIR__ . '/../_header.php';
                                         <span class="badge text-bg-light border"><?= e(match ((string)$section['tipo']) { 'featured' => 'Destaque + 2', 'grid' => 'Grade', default => 'Carrossel' }) ?></span>
                                     </div>
                                     <div class="small text-secondary">
-                                        Fonte: <?= e(match ((string)$section['origem']) { 'eventos' => 'Eventos', 'paginas' => 'Páginas', 'mais_lidas' => 'Mais Lidas (30 dias)', default => 'Posts / Notícias' }) ?>
+                                        Fonte: <?= e(match ((string)$section['origem']) { 'eventos' => 'Eventos', 'paginas' => 'Páginas', default => 'Posts / Notícias' }) ?>
                                         · limite <?= (int)$section['limite'] ?>
                                         <?php if (!empty($section['categoria_id'])): ?> · categoria #<?= (int)$section['categoria_id'] ?><?php endif; ?>
                                         · <span class="<?= $sectionHasNoItems ? 'text-danger fw-semibold' : 'text-success' ?>"><?= $sectionItemsFound ?> encontrado(s)</span>
@@ -185,7 +185,6 @@ require __DIR__ . '/../_header.php';
                                 <option value="posts" <?= $form['origem']==='posts'?'selected':'' ?>>Posts / Notícias</option>
                                 <option value="eventos" <?= $form['origem']==='eventos'?'selected':'' ?>>Eventos</option>
                                 <option value="paginas" <?= $form['origem']==='paginas'?'selected':'' ?>>Páginas</option>
-                                <option value="mais_lidas" <?= $form['origem']==='mais_lidas'?'selected':'' ?>>Mais Lidas (30 dias)</option>
                             </select>
                         </div>
                     </div>

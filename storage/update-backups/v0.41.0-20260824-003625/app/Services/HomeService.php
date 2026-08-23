@@ -66,7 +66,7 @@ final class HomeService
             $type = 'carousel';
         }
         $source = (string)($data['origem'] ?? 'posts');
-        if (!in_array($source, ['posts', 'eventos', 'paginas', 'mais_lidas'], true)) {
+        if (!in_array($source, ['posts', 'eventos', 'paginas'], true)) {
             $source = 'posts';
         }
         $limit = max(1, min(20, (int)($data['limite'] ?? 8)));
@@ -149,11 +149,6 @@ final class HomeService
         $source = (string)($section['origem'] ?? 'posts');
         $limit = max(1, min(20, (int)($section['limite'] ?? 8)));
         $categoryId = (int)($section['categoria_id'] ?? 0);
-
-        if ($source === 'mais_lidas') {
-            return NewsEngagementService::popular($this->pdo, $limit, '30');
-        }
-
         return $this->fetchItems($source, $limit, $categoryId > 0 ? $categoryId : null);
     }
 
@@ -165,13 +160,6 @@ final class HomeService
 
     public function itemImage(array $row, string $source): string
     {
-        if ($source === 'mais_lidas' && !empty($row['imagem_capa_midia'])) {
-            return $this->normalizePublicUrl((string)$row['imagem_capa_midia']);
-        }
-        if ($source === 'mais_lidas') {
-            $source = 'posts';
-        }
-
         $table = $source;
         if (!$this->tableExists($table)) return '';
         $cols = $this->columns($table);
@@ -243,7 +231,6 @@ final class HomeService
 
     public function itemDate(array $row, string $source): ?DateTimeImmutable
     {
-        if ($source === 'mais_lidas') $source = 'posts';
         $keys = $source === 'eventos'
             ? ['inicio','data_inicio','starts_at','start_date','data','created_at']
             : ['publicado_em','data_publicacao','publication_date','data','created_at'];
@@ -257,7 +244,6 @@ final class HomeService
 
     public function itemUrl(array $row, string $source): string
     {
-        if ($source === 'mais_lidas') $source = 'posts';
         // v0.28.2: aproveita uma URL pública interna já existente apenas quando
         // ela realmente pertence ao Portal. Permalinks externos do WordPress
         // são ignorados. Caminhos físicos antigos são convertidos para URL.

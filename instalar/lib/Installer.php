@@ -623,7 +623,7 @@ final class PortalInstaller
             }
 
             try {
-                $pdo->exec($statement);
+                $this->executeCompatStatement($pdo, $statement);
             } catch (Throwable $e) {
                 throw new RuntimeException(
                     'Falha em ' . $migrationFile
@@ -638,6 +638,167 @@ final class PortalInstaller
             );
             $stmt->execute([$migrationFile, $hash]);
         }
+    }
+
+    /**
+     * Executa DDL de migrações antigas de modo compatível com versões de
+     * MySQL/MariaDB que não aceitam ADD COLUMN/CREATE INDEX IF NOT EXISTS.
+     */
+    private function executeCompatStatement(PDO $pdo, string $statement): void
+    {
+        $statement = trim($statement);
+
+        // MySQL antigos não aceitam CREATE INDEX IF NOT EXISTS.
+        if (preg_match(
+            '/^CREATE\s+(UNIQUE\s+)?INDEX\s+IF\s+NOT\s+EXISTS\s+(`?[A-Za-z0-9_]+`?)\s+ON\s+(`?[A-Za-z0-9_]+`?)\s+(.+)$/is',
+            $statement,
+            $match
+        )) {
+            $unique = trim((string)$match[1]) !== '';
+            $index = trim((string)$match[2], '`');
+            $table = trim((string)$match[3], '`');
+            $definition = trim((string)$match[4]);
+
+            if (!$this->indexExists($pdo, $table, $index)) {
+                $pdo->exec(
+                    'CREATE ' . ($unique ? 'UNIQUE ' : '')
+                    . 'INDEX `' . $index . '` ON `' . $table . '` ' . $definition
+                );
+            }
+            return;
+        }
+
+        // Compatibilidade para ALTER TABLE com cláusulas IF NOT EXISTS.
+        if (preg_match(
+            '/^ALTER\s+TABLE\s+(`?[A-Za-z0-9_]+`?)\s+(.+)$/is',
+            $statement,
+            $match
+        ) && stripos((string)$match[2], 'IF NOT EXISTS') !== false) {
+            $table = trim((string)$match[1], '`');
+            $clauses = $this->splitTopLevelComma((string)$match[2]);
+
+            foreach ($clauses as $clause) {
+                $clause = trim($clause);
+                if ($clause === '') {
+                    continue;
+                }
+
+                if (preg_match(
+                    '/^ADD\s+(?:COLUMN\s+)?IF\s+NOT\s+EXISTS\s+(`?[A-Za-z0-9_]+`?)\s+(.+)$/is',
+                    $clause,
+                    $columnMatch
+                )) {
+                    $column = trim((string)$columnMatch[1], '`');
+                    $definition = trim((string)$columnMatch[2]);
+
+                    if (!$this->columnExists($pdo, $table, $column)) {
+                        $pdo->exec(
+                            'ALTER TABLE `' . $table . '` ADD COLUMN `'
+                            . $column . '` ' . $definition
+                        );
+                    }
+                    continue;
+                }
+
+                if (preg_match(
+                    '/^ADD\s+(UNIQUE\s+)?(?:INDEX|KEY)\s+IF\s+NOT\s+EXISTS\s+(`?[A-Za-z0-9_]+`?)\s+(.+)$/is',
+                    $clause,
+                    $indexMatch
+                )) {
+                    $unique = trim((string)$indexMatch[1]) !== '';
+                    $index = trim((string)$indexMatch[2], '`');
+                    $definition = trim((string)$indexMatch[3]);
+
+                    if (!$this->indexExists($pdo, $table, $index)) {
+                        $pdo->exec(
+                            'ALTER TABLE `' . $table . '` ADD '
+                            . ($unique ? 'UNIQUE ' : '')
+                            . 'INDEX `' . $index . '` ' . $definition
+                        );
+                    }
+                    continue;
+                }
+
+                // Cláusula sem sintaxe especial: executa normalmente.
+                $pdo->exec('ALTER TABLE `' . $table . '` ' . $clause);
+            }
+            return;
+        }
+
+        $pdo->exec($statement);
+    }
+
+    /**
+     * Separa cláusulas ALTER TABLE por vírgula sem quebrar ENUM(), índices
+     * compostos ou textos entre aspas.
+     *
+     * @return array<int,string>
+     */
+    private function splitTopLevelComma(string $sql): array
+    {
+        $parts = [];
+        $buffer = '';
+        $depth = 0;
+        $quote = null;
+        $length = strlen($sql);
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $sql[$i];
+
+            if ($quote !== null) {
+                $buffer .= $char;
+
+                if ($char === '\\' && $quote !== '`' && $i + 1 < $length) {
+                    $buffer .= $sql[++$i];
+                    continue;
+                }
+
+                if ($char === $quote) {
+                    if ($i + 1 < $length && $sql[$i + 1] === $quote) {
+                        $buffer .= $sql[++$i];
+                        continue;
+                    }
+                    $quote = null;
+                }
+                continue;
+            }
+
+            if ($char === "'" || $char === '"' || $char === '`') {
+                $quote = $char;
+                $buffer .= $char;
+                continue;
+            }
+
+            if ($char === '(') {
+                $depth++;
+                $buffer .= $char;
+                continue;
+            }
+
+            if ($char === ')') {
+                $depth = max(0, $depth - 1);
+                $buffer .= $char;
+                continue;
+            }
+
+            if ($char === ',' && $depth === 0) {
+                $part = trim($buffer);
+                if ($part !== '') {
+                    $parts[] = $part;
+                }
+                $buffer = '';
+                continue;
+            }
+
+            $buffer .= $char;
+        }
+
+        $part = trim($buffer);
+        if ($part !== '') {
+            $parts[] = $part;
+        }
+
+        return $parts;
     }
 
     private function statementApplied(PDO $pdo, string $file, string $hash): bool
@@ -727,6 +888,17 @@ final class PortalInstaller
              WHERE table_schema=DATABASE() AND table_name=? AND column_name=?'
         );
         $stmt->execute([$table, $column]);
+
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    private function indexExists(PDO $pdo, string $table, string $index): bool
+    {
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.statistics
+             WHERE table_schema=DATABASE() AND table_name=? AND index_name=?'
+        );
+        $stmt->execute([$table, $index]);
 
         return (int)$stmt->fetchColumn() > 0;
     }

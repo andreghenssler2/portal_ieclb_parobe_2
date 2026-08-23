@@ -21,62 +21,9 @@ $metaImageHeight = (int)($post['imagem_capa_altura'] ?? 0);
 $metaImageType = trim((string)($post['imagem_capa_mime'] ?? ''));
 $canonicalUrl = contentUrl('noticia', (string)$post['slug']);
 $metaOgType = 'article';
-$relatedPosts = NewsEngagementService::related($pdo, $post, 4);
 require themeFile($pdo, 'header.php');
 ?>
 <article class="container py-5 content-reading"><div class="mb-4"><div class="text-secondary mb-2"><?php if ($postCategories): ?><?php foreach ($postCategories as $i=>$cat): ?><?= $i ? ' · ' : '' ?><a class="text-reset text-decoration-none" href="<?= e(categoryUrl((string)$cat['slug'])) ?>"><?= e($cat['nome']) ?></a><?php endforeach; ?><?php else: ?>Notícia<?php endif; ?> · <?= e($post['comunidade_nome'] ?: 'Paroquial') ?></div><h1 class="display-5 fw-bold"><?= e($post['titulo']) ?></h1><div class="text-secondary">Publicado em <?= e(formatDateBr($post['publicado_em'] ?: $post['created_at'])) ?><?php if ($post['autor_nome']): ?> · <?= e($post['autor_nome']) ?><?php endif; ?></div></div>
 <?php if ($cover): ?><img class="article-cover mb-4" src="<?= e(mediaUrl($cover)) ?>" alt="<?= e($post['imagem_capa_alt'] ?: $post['titulo']) ?>"><?php endif; ?>
 <?php if ($post['resumo']): ?><p class="lead"><?= e($post['resumo']) ?></p><?php endif; ?><div class="article-body"><?= $post['conteudo'] ?></div></article>
-<?php if ($relatedPosts): ?>
-<section class="container pb-5">
-    <div class="border-top pt-5">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-            <h2 class="h3 fw-bold mb-0">Leia também</h2>
-            <a class="btn btn-sm btn-outline-primary" href="<?= e(url('mais-lidas')) ?>">Ver mais lidas</a>
-        </div>
-
-        <div class="row g-4">
-            <?php foreach ($relatedPosts as $related): ?>
-                <div class="col-md-6 col-xl-3">
-                    <article class="card h-100 border-0 shadow-sm overflow-hidden">
-                        <?php if (!empty($related['imagem_capa_midia'])): ?>
-                            <a href="<?= e(contentUrl('noticia', (string)$related['slug'])) ?>">
-                                <img
-                                    src="<?= e(mediaUrl((string)$related['imagem_capa_midia'])) ?>"
-                                    alt="<?= e((string)($related['imagem_capa_alt'] ?: $related['titulo'])) ?>"
-                                    class="card-img-top"
-                                    style="height:170px;object-fit:cover"
-                                >
-                            </a>
-                        <?php endif; ?>
-
-                        <div class="card-body">
-                            <div class="small text-secondary mb-2">
-                                <?= e($related['comunidade_nome'] ?: 'Paroquial') ?>
-                                ·
-                                <?= e(formatDateOnlyBr((string)($related['publicado_em'] ?: $related['created_at']))) ?>
-                            </div>
-
-                            <h3 class="h5 card-title">
-                                <a
-                                    class="text-reset text-decoration-none"
-                                    href="<?= e(contentUrl('noticia', (string)$related['slug'])) ?>"
-                                >
-                                    <?= e($related['titulo']) ?>
-                                </a>
-                            </h3>
-
-                            <?php if (!empty($related['resumo'])): ?>
-                                <p class="card-text text-secondary small mb-0">
-                                    <?= e(portalExcerpt((string)$related['resumo'], 130)) ?>
-                                </p>
-                            <?php endif; ?>
-                        </div>
-                    </article>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-</section>
-<?php endif; ?>
 <?php require themeFile($pdo, 'footer.php'); ?>
