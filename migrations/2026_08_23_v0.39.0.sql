@@ -1,0 +1,3 @@
+-- Portal IECLB Parobé v0.39.0
+-- Agenda/Calendário
+-- Nenhuma alteração de banco de dados.

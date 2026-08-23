@@ -92,11 +92,6 @@ require themeFile($pdo, 'header.php');
 
     <?php if ($evento['descricao']): ?><div class="article-body"><?= $evento['descricao'] ?></div><?php endif; ?>
 
-    <div class="mt-4 d-flex flex-wrap gap-2">
-        <a class="btn btn-outline-primary" href="<?= e(url('agenda')) ?>">Voltar para a agenda</a>
-        <a class="btn btn-outline-success" href="<?= e(EventCalendarService::eventIcsUrl($evento)) ?>">
-            <i class="bi bi-calendar-plus me-1"></i>Adicionar ao calendário
-        </a>
-    </div>
+    <div class="mt-4"><a class="btn btn-outline-primary" href="<?= e(url('agenda.php')) ?>">Voltar para a agenda</a></div>
 </article>
 <?php require themeFile($pdo, 'footer.php'); ?>

@@ -12,12 +12,10 @@ if (count($segments) === 1) {
     $alias = strtolower(rawurldecode((string)$segments[0]));
     $static = [
         'agenda' => 'agenda.php',
-        'agenda.ics' => 'agenda-ics.php',
         'galerias' => 'galerias.php',
         'comunidades' => 'comunidades.php',
         'grupos' => 'grupos.php',
         'busca' => 'busca.php',
-        'mais-lidas' => 'mais-lidas.php',
         'newsletter' => 'newsletter.php',
         'documentos' => 'documentos.php',
         'liderancas' => 'liderancas.php',
@@ -32,17 +30,6 @@ if (count($segments) === 1) {
     }
 }
 
-// v0.39.0 - exportação iCalendar de evento individual.
-if (count($segments) === 3) {
-    $eventPrefix = permalinkPrefix('evento', $pdo);
-    $first = strtolower(rawurldecode((string)$segments[0]));
-    $last = strtolower(rawurldecode((string)$segments[2]));
-
-    if (($first === $eventPrefix || $first === 'evento') && $last === 'calendario.ics') {
-        require __DIR__ . '/evento-ics.php';
-        exit;
-    }
-}
 // v0.35.0 - download de documento por caminho amigável.
 if (count($segments) === 3) {
     $documentPrefix = permalinkPrefix('documento', $pdo);

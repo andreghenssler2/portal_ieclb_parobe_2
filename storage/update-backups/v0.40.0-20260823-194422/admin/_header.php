@@ -102,7 +102,6 @@ if (Auth::can('comentarios.gerenciar')) {
                             <a class="<?= $isPath('noticias/index.php') && (($_GET['status'] ?? '') !== 'lixeira') ? 'active' : '' ?>" href="<?= e(url('admin/noticias/index.php')) ?>">Todos os Posts</a>
                             <a class="<?= $isPath('noticias/index.php') && (($_GET['status'] ?? '') === 'lixeira') ? 'active' : '' ?>" href="<?= e(url('admin/noticias/index.php?status=lixeira')) ?>">Lixeira</a>
                             <a class="<?= $isPath('noticias/form.php') && !isset($_GET['id']) ? 'active' : '' ?>" href="<?= e(url('admin/noticias/form.php')) ?>">Adicionar Novo</a>
-                            <a class="<?= $isPath('noticias/mais-lidas.php') ? 'active' : '' ?>" href="<?= e(url('admin/noticias/mais-lidas.php')) ?>">Mais Lidas</a>
                             <?php if (Auth::can('wordpress.importar')): ?><a href="<?= e(url('admin/ferramentas/wordpress.php?modulo=posts')) ?>">Importar do WordPress</a><?php endif; ?>
                             <a class="<?= $startsPath('categorias') ? 'active' : '' ?>" href="<?= e(url('admin/categorias/index.php')) ?>">Categorias</a>
                             <?php if (Auth::can('wordpress.importar')): ?><a href="<?= e(url('admin/ferramentas/wordpress.php?modulo=categories')) ?>">Importar Categorias</a><?php endif; ?>

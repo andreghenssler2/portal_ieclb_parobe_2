@@ -6,7 +6,7 @@ $stmt = $pdo->prepare("SELECT p.*, c.nome AS comunidade_nome, u.nome AS autor_no
 $stmt->execute(['slug'=>$slug]);
 $post=$stmt->fetch();
 if (!$post) { http_response_code(404); $metaTitle='Notícia não encontrada'; require __DIR__.'/theme/ieclb/header.php'; echo '<div class="container py-5"><h1>Notícia não encontrada</h1></div>'; require themeFile($pdo, 'footer.php'); exit; }
-NewsAnalyticsService::trackView($pdo, (int)$post['id']);
+$pdo->prepare('UPDATE posts SET visualizacoes=visualizacoes+1 WHERE id=:id')->execute(['id'=>$post['id']]);
 $categoryStmt = $pdo->prepare("SELECT c.nome,c.slug FROM post_categorias pc INNER JOIN categorias c ON c.id=pc.categoria_id WHERE pc.post_id=:id ORDER BY pc.principal DESC,c.nome");
 $categoryStmt->execute(['id'=>$post['id']]);
 $postCategories=$categoryStmt->fetchAll();

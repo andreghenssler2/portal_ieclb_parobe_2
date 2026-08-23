@@ -17,7 +17,6 @@ if (count($segments) === 1) {
         'comunidades' => 'comunidades.php',
         'grupos' => 'grupos.php',
         'busca' => 'busca.php',
-        'mais-lidas' => 'mais-lidas.php',
         'newsletter' => 'newsletter.php',
         'documentos' => 'documentos.php',
         'liderancas' => 'liderancas.php',

@@ -1,0 +1,97 @@
+# BEGIN Really Simple Auto Prepend File
+<IfModule mod_php7.c>
+php_value auto_prepend_file /home1/ieclbp28/public_html/wp-content/advanced-headers.php
+</IfModule>
+<IfModule mod_php.c>
+php_value auto_prepend_file /home1/ieclbp28/public_html/wp-content/advanced-headers.php
+</IfModule>
+<Files ".user.ini">
+<IfModule mod_authz_core.c>
+Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+Order deny,allow
+Deny from all
+</IfModule>
+</Files>
+# END Really Simple Auto Prepend File
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# BEGIN WordPress
+# As diretrizes (linhas) entre "BEGIN WordPress" e "END WordPress" são
+# geradas dinamicamente e só devem ser modificadas através de filtros do WordPress.
+# Quaisquer alterações nas diretivas entre esses marcadores serão sobrescritas.
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+
+# END WordPress
+
+# <IfModule mod_headers.c>
+#   Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+#   Header always set X-Frame-Options "SAMEORIGIN"
+# #   Header always set X-Content-Type-Options "nosniff"
+#   Header always set Referrer-Policy "strict-origin-when-cross-origin"
+#   Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+# #   Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:;"
+# </IfModule>
+
+
+# BEGIN Really Simple Security Disable directory indexing
+# Disable directory indexing to prevent listing of directory contents
+Options -Indexes
+# END Really Simple Security Disable directory indexing
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# Set the “ea-php83” package as the default “PHP” programming language.
+<IfModule mime_module>
+  AddHandler application/x-httpd-ea-php83___lsphp .php .php8 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit
+
+# BEGIN LiteSpeed
+# As diretrizes (linhas) entre "BEGIN LiteSpeed" e "END LiteSpeed" são
+# geradas dinamicamente e só devem ser modificadas através de filtros do WordPress.
+# Quaisquer alterações nas diretivas entre esses marcadores serão sobrescritas.
+<IfModule Litespeed>
+	SetEnv noabort 1
+</IfModule>
+# END LiteSpeed
+
+# BEGIN cPanel-generated php ini directives, do not edit
+# Manual editing of this file may result in unexpected behavior.
+# To make changes to this file, use the cPanel MultiPHP INI Editor (Home >> Software >> MultiPHP INI Editor)
+# For more information, read our documentation (https://go.cpanel.net/EA4ModifyINI)
+<IfModule php8_module>
+   php_flag display_errors Off
+   php_value max_execution_time 1600
+   php_value max_input_time 300
+   php_value max_input_vars 1000
+   php_value memory_limit 512M
+   php_value post_max_size 1024M
+   php_value session.gc_maxlifetime 1440
+   php_value session.save_path "/var/cpanel/php/sessions/ea-php83"
+   php_value upload_max_filesize 1024M
+   php_flag zlib.output_compression Off
+</IfModule>
+<IfModule lsapi_module>
+   php_flag display_errors Off
+   php_value max_execution_time 1600
+   php_value max_input_time 300
+   php_value max_input_vars 1000
+   php_value memory_limit 512M
+   php_value post_max_size 1024M
+   php_value session.gc_maxlifetime 1440
+   php_value session.save_path "/var/cpanel/php/sessions/ea-php83"
+   php_value upload_max_filesize 1024M
+   php_flag zlib.output_compression Off
+</IfModule>
+# END cPanel-generated php ini directives, do not edit

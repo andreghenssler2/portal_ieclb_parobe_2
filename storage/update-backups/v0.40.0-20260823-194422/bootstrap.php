@@ -20,7 +20,6 @@ require_once __DIR__ . '/app/Services/MailService.php';
 require_once __DIR__ . '/app/Services/FormNotificationService.php';
 require_once __DIR__ . '/app/Services/SearchService.php';
 require_once __DIR__ . '/app/Services/EventCalendarService.php';
-require_once __DIR__ . '/app/Services/NewsAnalyticsService.php';
 require_once __DIR__ . '/app/Services/NewsletterService.php';
 require_once __DIR__ . '/app/Services/WordPressImportService.php';
 require_once __DIR__ . '/app/Services/HomeService.php';

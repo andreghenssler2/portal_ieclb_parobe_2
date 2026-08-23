@@ -1,0 +1,9 @@
+# Portal IECLB Parobé v0.30.0
+# Impede acesso HTTP aos arquivos de configuração e seus backups.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
