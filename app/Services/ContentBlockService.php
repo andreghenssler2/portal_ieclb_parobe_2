@@ -1,0 +1,609 @@
+<?php
+
+declare(strict_types=1);
+
+final class ContentBlockService
+{
+    private const TYPES = [
+        'heading',
+        'text',
+        'image',
+        'quote',
+        'button',
+        'video',
+        'columns',
+        'separator',
+    ];
+
+    private static array $schemaReady = [];
+
+    public static function ensureSchema(PDO $pdo): void
+    {
+        $key = spl_object_id($pdo);
+        if (!empty(self::$schemaReady[$key])) {
+            return;
+        }
+
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS conteudo_blocos (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                tipo_conteudo VARCHAR(20) NOT NULL,
+                conteudo_id BIGINT UNSIGNED NOT NULL,
+                tipo_bloco VARCHAR(30) NOT NULL,
+                dados_json LONGTEXT NOT NULL,
+                ordem INT NOT NULL DEFAULT 0,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_conteudo_blocos_item
+                    (tipo_conteudo,conteudo_id,ordem,id)
+            ) ENGINE=InnoDB
+              DEFAULT CHARSET=utf8mb4
+              COLLATE=utf8mb4_unicode_ci"
+        );
+
+        self::$schemaReady[$key] = true;
+    }
+
+    /** @return array<int,array{type:string,data:array<string,mixed>}> */
+    public static function fromJson(PDO $pdo, ?string $json): array
+    {
+        self::ensureSchema($pdo);
+
+        $decoded = json_decode((string)$json, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $blocks = [];
+        foreach (array_slice($decoded, 0, 50) as $raw) {
+            if (!is_array($raw)) continue;
+
+            $type = strtolower(trim((string)($raw['type'] ?? '')));
+            if (!in_array($type, self::TYPES, true)) continue;
+
+            $data = is_array($raw['data'] ?? null) ? $raw['data'] : [];
+            $clean = self::sanitizeBlock($pdo, $type, $data);
+
+            if (!self::blockHasContent($type, $clean)) {
+                continue;
+            }
+
+            $blocks[] = [
+                'type' => $type,
+                'data' => $clean,
+            ];
+        }
+
+        return $blocks;
+    }
+
+    /** @return array<int,array{type:string,data:array<string,mixed>}> */
+    public static function load(PDO $pdo, string $contentType, int $contentId): array
+    {
+        self::ensureSchema($pdo);
+        self::assertContentType($contentType);
+
+        if ($contentId <= 0) return [];
+
+        $stmt = $pdo->prepare(
+            'SELECT tipo_bloco,dados_json
+             FROM conteudo_blocos
+             WHERE tipo_conteudo=:tipo_conteudo
+               AND conteudo_id=:conteudo_id
+             ORDER BY ordem ASC,id ASC'
+        );
+        $stmt->execute([
+            'tipo_conteudo' => $contentType,
+            'conteudo_id' => $contentId,
+        ]);
+
+        $blocks = [];
+        foreach ($stmt->fetchAll() ?: [] as $row) {
+            $type = (string)$row['tipo_bloco'];
+            if (!in_array($type, self::TYPES, true)) continue;
+
+            $data = json_decode((string)$row['dados_json'], true);
+            $blocks[] = [
+                'type' => $type,
+                'data' => is_array($data) ? $data : [],
+            ];
+        }
+
+        return $blocks;
+    }
+
+    /** @return array<int,array{type:string,data:array<string,mixed>}> */
+    public static function loadForEditor(PDO $pdo, string $contentType, int $contentId): array
+    {
+        return self::prepareForEditor(
+            $pdo,
+            self::load($pdo, $contentType, $contentId)
+        );
+    }
+
+    /** @return array<int,array{type:string,data:array<string,mixed>}> */
+    public static function prepareForEditor(PDO $pdo, array $blocks): array
+    {
+        foreach ($blocks as &$block) {
+            if (($block['type'] ?? '') !== 'image') continue;
+
+            $mediaId = (int)($block['data']['media_id'] ?? 0);
+            if ($mediaId <= 0) continue;
+
+            try {
+                $media = MediaService::find($pdo, $mediaId);
+                if ($media && MediaService::isImage($media)) {
+                    $block['data']['preview_url'] = mediaUrl((string)$media['caminho']);
+                    $block['data']['preview_title'] =
+                        (string)($media['titulo'] ?: $media['nome_original'] ?: 'Imagem');
+                }
+            } catch (Throwable $ignored) {
+            }
+        }
+        unset($block);
+
+        return $blocks;
+    }
+
+    public static function save(
+        PDO $pdo,
+        string $contentType,
+        int $contentId,
+        array $blocks
+    ): void {
+        self::ensureSchema($pdo);
+        self::assertContentType($contentType);
+
+        if ($contentId <= 0) {
+            throw new InvalidArgumentException('Conteúdo inválido para salvar blocos.');
+        }
+
+        $pdo->prepare(
+            'DELETE FROM conteudo_blocos
+             WHERE tipo_conteudo=:tipo_conteudo
+               AND conteudo_id=:conteudo_id'
+        )->execute([
+            'tipo_conteudo' => $contentType,
+            'conteudo_id' => $contentId,
+        ]);
+
+        if (!$blocks) return;
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO conteudo_blocos
+                (tipo_conteudo,conteudo_id,tipo_bloco,dados_json,ordem)
+             VALUES
+                (:tipo_conteudo,:conteudo_id,:tipo_bloco,:dados_json,:ordem)'
+        );
+
+        $order = 10;
+        foreach (array_slice($blocks, 0, 50) as $block) {
+            $type = (string)($block['type'] ?? '');
+            $data = is_array($block['data'] ?? null) ? $block['data'] : [];
+
+            if (!in_array($type, self::TYPES, true)) continue;
+
+            $data = self::sanitizeBlock($pdo, $type, $data);
+            if (!self::blockHasContent($type, $data)) continue;
+
+            $stmt->execute([
+                'tipo_conteudo' => $contentType,
+                'conteudo_id' => $contentId,
+                'tipo_bloco' => $type,
+                'dados_json' => json_encode(
+                    $data,
+                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                ),
+                'ordem' => $order,
+            ]);
+            $order += 10;
+        }
+    }
+
+    public static function copy(
+        PDO $pdo,
+        string $contentType,
+        int $sourceId,
+        int $targetId
+    ): void {
+        $blocks = self::load($pdo, $contentType, $sourceId);
+        self::save($pdo, $contentType, $targetId, $blocks);
+    }
+
+    public static function deleteForContent(
+        PDO $pdo,
+        string $contentType,
+        int $contentId
+    ): void {
+        self::ensureSchema($pdo);
+        self::assertContentType($contentType);
+
+        if ($contentId <= 0) return;
+
+        $stmt = $pdo->prepare(
+            'DELETE FROM conteudo_blocos
+             WHERE tipo_conteudo=:tipo_conteudo
+               AND conteudo_id=:conteudo_id'
+        );
+        $stmt->execute([
+            'tipo_conteudo' => $contentType,
+            'conteudo_id' => $contentId,
+        ]);
+    }
+
+    public static function hasContent(array $blocks): bool
+    {
+        foreach ($blocks as $block) {
+            $type = (string)($block['type'] ?? '');
+            $data = is_array($block['data'] ?? null) ? $block['data'] : [];
+            if (self::blockHasContent($type, $data)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static function plainText(array $blocks, int $limit = 1000): string
+    {
+        $parts = [];
+
+        foreach ($blocks as $block) {
+            $type = (string)($block['type'] ?? '');
+            $data = is_array($block['data'] ?? null) ? $block['data'] : [];
+
+            foreach (self::textValues($type, $data) as $value) {
+                $text = trim(preg_replace('/\s+/u', ' ', strip_tags((string)$value)) ?? '');
+                if ($text !== '') {
+                    $parts[] = $text;
+                }
+            }
+        }
+
+        $text = trim(implode(' ', $parts));
+        if ($limit <= 0 || mb_strlen($text) <= $limit) {
+            return $text;
+        }
+
+        return rtrim(mb_substr($text, 0, $limit - 1)) . '…';
+    }
+
+    public static function render(PDO $pdo, string $contentType, int $contentId): string
+    {
+        $blocks = self::load($pdo, $contentType, $contentId);
+        if (!$blocks) return '';
+
+        $html = '<div class="portal-content-blocks mt-4">';
+
+        foreach ($blocks as $block) {
+            $type = (string)$block['type'];
+            $data = is_array($block['data']) ? $block['data'] : [];
+
+            $html .= self::renderBlock($pdo, $type, $data);
+        }
+
+        $html .= '</div>';
+        return $html;
+    }
+
+    private static function sanitizeBlock(PDO $pdo, string $type, array $data): array
+    {
+        return match ($type) {
+            'heading' => [
+                'text' => self::shortText($data['text'] ?? '', 300),
+                'level' => in_array(($data['level'] ?? 'h2'), ['h2','h3','h4'], true)
+                    ? (string)$data['level']
+                    : 'h2',
+            ],
+            'text' => [
+                'text' => self::longText($data['text'] ?? '', 20000),
+            ],
+            'image' => self::sanitizeImage($pdo, $data),
+            'quote' => [
+                'text' => self::longText($data['text'] ?? '', 5000),
+                'author' => self::shortText($data['author'] ?? '', 200),
+            ],
+            'button' => [
+                'text' => self::shortText($data['text'] ?? '', 120),
+                'url' => self::safeUrl((string)($data['url'] ?? '')),
+                'style' => in_array(($data['style'] ?? 'primary'), ['primary','outline'], true)
+                    ? (string)$data['style']
+                    : 'primary',
+            ],
+            'video' => [
+                'url' => self::safeUrl((string)($data['url'] ?? '')),
+                'caption' => self::shortText($data['caption'] ?? '', 300),
+            ],
+            'columns' => [
+                'left' => self::longText($data['left'] ?? '', 12000),
+                'right' => self::longText($data['right'] ?? '', 12000),
+            ],
+            'separator' => [],
+            default => [],
+        };
+    }
+
+    private static function sanitizeImage(PDO $pdo, array $data): array
+    {
+        $mediaId = max(0, (int)($data['media_id'] ?? 0));
+
+        if ($mediaId > 0) {
+            $media = MediaService::find($pdo, $mediaId);
+            if (!$media || !MediaService::isImage($media)) {
+                $mediaId = 0;
+            }
+        }
+
+        return [
+            'media_id' => $mediaId,
+            'alt' => self::shortText($data['alt'] ?? '', 300),
+            'caption' => self::shortText($data['caption'] ?? '', 500),
+        ];
+    }
+
+    private static function blockHasContent(string $type, array $data): bool
+    {
+        return match ($type) {
+            'heading' => trim((string)($data['text'] ?? '')) !== '',
+            'text' => trim((string)($data['text'] ?? '')) !== '',
+            'image' => (int)($data['media_id'] ?? 0) > 0,
+            'quote' => trim((string)($data['text'] ?? '')) !== '',
+            'button' =>
+                trim((string)($data['text'] ?? '')) !== ''
+                && trim((string)($data['url'] ?? '')) !== '',
+            'video' => trim((string)($data['url'] ?? '')) !== '',
+            'columns' =>
+                trim((string)($data['left'] ?? '')) !== ''
+                || trim((string)($data['right'] ?? '')) !== '',
+            'separator' => true,
+            default => false,
+        };
+    }
+
+    private static function renderBlock(PDO $pdo, string $type, array $data): string
+    {
+        return match ($type) {
+            'heading' => self::renderHeading($data),
+            'text' => self::renderText($data),
+            'image' => self::renderImage($pdo, $data),
+            'quote' => self::renderQuote($data),
+            'button' => self::renderButton($data),
+            'video' => self::renderVideo($data),
+            'columns' => self::renderColumns($data),
+            'separator' => '<hr class="my-5">',
+            default => '',
+        };
+    }
+
+    private static function renderHeading(array $data): string
+    {
+        $level = in_array(($data['level'] ?? 'h2'), ['h2','h3','h4'], true)
+            ? (string)$data['level']
+            : 'h2';
+
+        $classes = [
+            'h2' => 'h2',
+            'h3' => 'h3',
+            'h4' => 'h4',
+        ];
+
+        return '<' . $level . ' class="' . $classes[$level] . ' mt-5 mb-3">'
+            . self::escape((string)($data['text'] ?? ''))
+            . '</' . $level . '>';
+    }
+
+    private static function renderText(array $data): string
+    {
+        $text = trim((string)($data['text'] ?? ''));
+        if ($text === '') return '';
+
+        return '<div class="portal-block-text mb-4">'
+            . nl2br(self::escape($text))
+            . '</div>';
+    }
+
+    private static function renderImage(PDO $pdo, array $data): string
+    {
+        $mediaId = (int)($data['media_id'] ?? 0);
+        if ($mediaId <= 0) return '';
+
+        $media = MediaService::find($pdo, $mediaId);
+        if (!$media || !MediaService::isImage($media)) return '';
+
+        $alt = trim((string)($data['alt'] ?? ''))
+            ?: trim((string)($media['alt_text'] ?? ''))
+            ?: trim((string)($media['titulo'] ?? ''))
+            ?: trim((string)($media['nome_original'] ?? ''));
+
+        $caption = trim((string)($data['caption'] ?? ''));
+
+        $html = '<figure class="my-4">';
+        $html .= '<img class="img-fluid rounded w-100" loading="lazy" src="'
+            . self::escape(mediaUrl((string)$media['caminho']))
+            . '" alt="' . self::escape($alt) . '">';
+
+        if ($caption !== '') {
+            $html .= '<figcaption class="small text-secondary mt-2">'
+                . self::escape($caption)
+                . '</figcaption>';
+        }
+
+        $html .= '</figure>';
+        return $html;
+    }
+
+    private static function renderQuote(array $data): string
+    {
+        $text = trim((string)($data['text'] ?? ''));
+        if ($text === '') return '';
+
+        $html = '<blockquote class="border-start border-4 ps-4 py-2 my-4">';
+        $html .= '<p class="fs-5 mb-2">' . nl2br(self::escape($text)) . '</p>';
+
+        $author = trim((string)($data['author'] ?? ''));
+        if ($author !== '') {
+            $html .= '<footer class="blockquote-footer mb-0">'
+                . self::escape($author)
+                . '</footer>';
+        }
+
+        return $html . '</blockquote>';
+    }
+
+    private static function renderButton(array $data): string
+    {
+        $text = trim((string)($data['text'] ?? ''));
+        $url = self::safeUrl((string)($data['url'] ?? ''));
+        if ($text === '' || $url === '') return '';
+
+        $class = ($data['style'] ?? 'primary') === 'outline'
+            ? 'btn btn-outline-primary'
+            : 'btn btn-primary';
+
+        return '<p class="my-4"><a class="' . $class . '" href="'
+            . self::escape(self::resolvedUrl($url))
+            . '">' . self::escape($text) . '</a></p>';
+    }
+
+    private static function renderVideo(array $data): string
+    {
+        $url = self::safeUrl((string)($data['url'] ?? ''));
+        if ($url === '') return '';
+
+        $embed = self::videoEmbedUrl($url);
+        $caption = trim((string)($data['caption'] ?? ''));
+
+        $html = '<figure class="my-4">';
+
+        if ($embed !== '') {
+            $html .= '<div class="ratio ratio-16x9"><iframe src="'
+                . self::escape($embed)
+                . '" title="Vídeo" loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
+        } else {
+            $html .= '<a class="btn btn-outline-secondary" target="_blank" rel="noopener" href="'
+                . self::escape(self::resolvedUrl($url))
+                . '">Abrir vídeo</a>';
+        }
+
+        if ($caption !== '') {
+            $html .= '<figcaption class="small text-secondary mt-2">'
+                . self::escape($caption)
+                . '</figcaption>';
+        }
+
+        return $html . '</figure>';
+    }
+
+    private static function renderColumns(array $data): string
+    {
+        $left = trim((string)($data['left'] ?? ''));
+        $right = trim((string)($data['right'] ?? ''));
+
+        if ($left === '' && $right === '') return '';
+
+        return '<div class="row g-4 my-4">'
+            . '<div class="col-md-6">' . nl2br(self::escape($left)) . '</div>'
+            . '<div class="col-md-6">' . nl2br(self::escape($right)) . '</div>'
+            . '</div>';
+    }
+
+    private static function safeUrl(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') return '';
+
+        if (preg_match('#^(?:https?://|mailto:|tel:|/|#)#i', $value)) {
+            return mb_substr($value, 0, 1500);
+        }
+
+        if (preg_match('#^[a-z0-9][a-z0-9/_\-.?=&%#]*$#i', $value)) {
+            return mb_substr($value, 0, 1500);
+        }
+
+        return '';
+    }
+
+    private static function resolvedUrl(string $value): string
+    {
+        if (preg_match('#^(?:https?://|mailto:|tel:|#)#i', $value)) {
+            return $value;
+        }
+
+        return url(ltrim($value, '/'));
+    }
+
+    private static function videoEmbedUrl(string $url): string
+    {
+        $parts = parse_url($url);
+        if (!is_array($parts)) return '';
+
+        $host = strtolower((string)($parts['host'] ?? ''));
+        $path = (string)($parts['path'] ?? '');
+
+        if (in_array($host, ['youtube.com','www.youtube.com','m.youtube.com'], true)) {
+            parse_str((string)($parts['query'] ?? ''), $query);
+            $id = preg_replace('/[^A-Za-z0-9_-]/', '', (string)($query['v'] ?? ''));
+            return $id !== '' ? 'https://www.youtube-nocookie.com/embed/' . $id : '';
+        }
+
+        if ($host === 'youtu.be') {
+            $id = preg_replace('/[^A-Za-z0-9_-]/', '', trim($path, '/'));
+            return $id !== '' ? 'https://www.youtube-nocookie.com/embed/' . $id : '';
+        }
+
+        if (in_array($host, ['vimeo.com','www.vimeo.com'], true)) {
+            $id = preg_replace('/\D/', '', trim($path, '/'));
+            return $id !== '' ? 'https://player.vimeo.com/video/' . $id : '';
+        }
+
+        return '';
+    }
+
+    /** @return array<int,string> */
+    private static function textValues(string $type, array $data): array
+    {
+        return match ($type) {
+            'heading' => [(string)($data['text'] ?? '')],
+            'text' => [(string)($data['text'] ?? '')],
+            'quote' => [
+                (string)($data['text'] ?? ''),
+                (string)($data['author'] ?? ''),
+            ],
+            'button' => [(string)($data['text'] ?? '')],
+            'video' => [(string)($data['caption'] ?? '')],
+            'columns' => [
+                (string)($data['left'] ?? ''),
+                (string)($data['right'] ?? ''),
+            ],
+            'image' => [
+                (string)($data['alt'] ?? ''),
+                (string)($data['caption'] ?? ''),
+            ],
+            default => [],
+        };
+    }
+
+    private static function shortText(mixed $value, int $limit): string
+    {
+        return mb_substr(trim((string)$value), 0, $limit);
+    }
+
+    private static function longText(mixed $value, int $limit): string
+    {
+        $value = str_replace("\0", '', (string)$value);
+        return mb_substr(trim($value), 0, $limit);
+    }
+
+    private static function escape(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    }
+
+    private static function assertContentType(string $type): void
+    {
+        if (!in_array($type, ['post','pagina'], true)) {
+            throw new InvalidArgumentException('Tipo de conteúdo inválido para blocos.');
+        }
+    }
+}

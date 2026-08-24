@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !Csrf::validate($_POST['_token'] ??
 
 $pdo = Database::connection();
 CategoryService::ensureSchema($pdo);
+ContentBlockService::ensureSchema($pdo);
 $id = (int)($_POST['id'] ?? 0);
 
 try {
@@ -65,6 +66,13 @@ try {
                 $link->execute(['post_id' => $novoId, 'tag_id' => $tagId]);
             }
         }
+
+        ContentBlockService::copy(
+            $pdo,
+            'post',
+            $id,
+            $novoId
+        );
 
         $pdo->commit();
     } catch (Throwable $e) {

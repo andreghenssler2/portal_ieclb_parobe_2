@@ -182,6 +182,19 @@ final class HomeService
         if (!$this->tableExists($table)) return '';
         $cols = $this->columns($table);
 
+        // v0.44.1 - imagem de capa atual do Portal.
+        // Posts e Páginas usam imagem_capa_id; ela precisa ter prioridade
+        // sobre campos legados e sobre imagens encontradas no conteúdo.
+        if (
+            isset($cols['imagem_capa_id'])
+            && !empty($row['imagem_capa_id'])
+        ) {
+            $url = $this->mediaUrl((int)$row['imagem_capa_id']);
+            if ($url !== '') {
+                return $url;
+            }
+        }
+
         // v0.28.2: prioriza a referência da Biblioteca de Mídias. Assim, se o
         // post ainda conservar uma URL antiga/absoluta, a home usa o arquivo
         // local que a v0.27.2 já baixou para o Portal.

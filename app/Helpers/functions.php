@@ -59,6 +59,22 @@ function contentUrl(string $type, string $slug): string
     if ($slug === '' || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug)) {
         throw new InvalidArgumentException('Slug inválida.');
     }
+
+    // v0.43.0 - páginas hierárquicas.
+    if ($type === 'pagina' && class_exists('PageHierarchyService')) {
+        try {
+            $resolved = PageHierarchyService::urlBySlug(
+                Database::connection(),
+                $slug
+            );
+            if ($resolved !== '') {
+                return $resolved;
+            }
+        } catch (Throwable $ignored) {
+            // Fallback para a URL histórica logo abaixo.
+        }
+    }
+
     $prefix = permalinkPrefix($type);
     $path = $prefix === '' ? rawurlencode($slug) : $prefix . '/' . rawurlencode($slug);
     return url($path);

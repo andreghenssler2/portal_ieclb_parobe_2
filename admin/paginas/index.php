@@ -5,6 +5,8 @@ require_once __DIR__ . '/../_search.php';
 Auth::requireLogin();
 Auth::requirePermission('paginas.gerenciar');
 $pdo = Database::connection();
+PageHierarchyService::ensureSchema($pdo);
+ContentBlockService::ensureSchema($pdo);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Csrf::validate($_POST['_token'] ?? null)) {
@@ -45,7 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->beginTransaction();
                 try {
                     RevisionService::deleteForContent($pdo, 'pagina', $id);
+                    ContentBlockService::deleteForContent($pdo, 'pagina', $id);
                     try { $pdo->prepare('DELETE FROM menu_itens WHERE pagina_id = :id')->execute(['id' => $id]); } catch (Throwable $ignored) {}
+                    $pdo->prepare('UPDATE paginas SET parent_id=NULL WHERE parent_id=:id')->execute(['id' => $id]);
                     $pdo->prepare('DELETE FROM paginas WHERE id = :id')->execute(['id' => $id]);
                     $pdo->commit();
                 } catch (Throwable $e) {
@@ -95,9 +99,11 @@ $countStmt->execute($searchParams);
 $totalItems = (int)$countStmt->fetchColumn();
 $pagination = adminPaginationState($totalItems, 50);
 $listSql = "SELECT p.*, u.nome AS autor_nome,
+            parent.titulo AS parent_titulo,
             (SELECT COUNT(*) FROM revisoes r WHERE r.tipo='pagina' AND r.conteudo_id=p.id) AS total_revisoes
      FROM paginas p
      LEFT JOIN usuarios u ON u.id = p.autor_id
+     LEFT JOIN paginas parent ON parent.id=p.parent_id
      WHERE {$where}{$searchSql}
      ORDER BY " . ($view === 'lixeira' ? 'p.lixeira_em DESC, p.id DESC' : 'p.ordem ASC, p.id DESC')
      . " LIMIT " . (int)$pagination['limit'] . " OFFSET " . (int)$pagination['offset'];
@@ -123,7 +129,14 @@ require __DIR__ . '/../_header.php';
 <thead><tr><th>Título</th><th>Slug</th><th>Status</th><th>Menu</th><th><?= $view === 'lixeira' ? 'Excluída em' : 'Publicação' ?></th><th></th></tr></thead><tbody>
 <?php if (!$paginas): ?><tr><td colspan="6" class="text-secondary py-4"><?= $view === 'lixeira' ? 'A Lixeira está vazia.' : 'Nenhuma página cadastrada.' ?></td></tr><?php endif; ?>
 <?php foreach ($paginas as $pagina): ?><tr>
-<td><div class="fw-semibold"><?= e($pagina['titulo']) ?></div><div class="small text-secondary"><?= e($pagina['autor_nome'] ?: '') ?><?php if ((int)$pagina['total_revisoes'] > 0): ?> · <?= (int)$pagina['total_revisoes'] ?> revisões<?php endif; ?></div></td>
+<td>
+    <div class="fw-semibold"><?= e($pagina['titulo']) ?></div>
+    <div class="small text-secondary">
+        <?= e($pagina['autor_nome'] ?: '') ?>
+        <?php if ((int)$pagina['total_revisoes'] > 0): ?> · <?= (int)$pagina['total_revisoes'] ?> revisões<?php endif; ?>
+        <?php if (!empty($pagina['parent_titulo'])): ?> · Subpágina de <?= e((string)$pagina['parent_titulo']) ?><?php endif; ?>
+    </div>
+</td>
 <td><code><?= e($pagina['slug']) ?></code></td>
 <td><span class="badge text-bg-secondary"><?= e($pagina['status']) ?></span><?php if ($view === 'lixeira' && !empty($pagina['status_anterior'])): ?><div class="small text-secondary mt-1">era: <?= e((string)$pagina['status_anterior']) ?></div><?php endif; ?></td>
 <td><?= $pagina['exibir_menu'] ? '<span class="badge text-bg-success">Sim</span>' : '<span class="text-secondary">Não</span>' ?></td>

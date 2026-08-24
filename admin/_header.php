@@ -143,6 +143,14 @@ if (Auth::can('comentarios.gerenciar')) {
                     </div>
                 <?php endif; ?>
 
+                <?php if (Auth::can('paginas.gerenciar') || Auth::can('noticias.gerenciar')): ?>
+                    <a
+                        class="admin-nav-link <?= $startsPath('padroes-conteudo') ? 'active' : '' ?>"
+                        href="<?= e(url('admin/padroes-conteudo/index.php')) ?>"
+                    >
+                        <i class="bi bi-grid-3x3-gap"></i><span>Padrões de conteúdo</span>
+                    </a>
+                <?php endif; ?>
                 <?php if (Auth::can('eventos.gerenciar')): ?>
                     <button class="admin-nav-link admin-nav-toggle <?= $eventsOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuEventos" aria-expanded="<?= $eventsOpen ? 'true' : 'false' ?>">
                         <i class="bi bi-calendar-event"></i><span>Eventos</span><i class="bi bi-chevron-down admin-nav-chevron"></i>

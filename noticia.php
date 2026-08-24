@@ -33,9 +33,18 @@ try {
         }
     }
 }
+$postBlocks = ContentBlockService::load(
+    $pdo,
+    'post',
+    (int)$post['id']
+);
+$postBlockText = ContentBlockService::plainText($postBlocks, 300);
+
 $cover = $post['imagem_capa_midia'] ?: ($post['imagem_capa'] ?? '');
 $metaTitle = trim((string)($post['seo_titulo'] ?? '')) ?: $post['titulo'];
-$metaDescription = trim((string)($post['seo_descricao'] ?? '')) ?: ($post['resumo'] ?: trim(strip_tags(mb_substr((string)$post['conteudo'], 0, 160))));
+$postTextoMeta = trim(strip_tags(mb_substr((string)$post['conteudo'], 0, 160)));
+$metaDescription = trim((string)($post['seo_descricao'] ?? ''))
+    ?: ($post['resumo'] ?: ($postTextoMeta !== '' ? $postTextoMeta : $postBlockText));
 $metaNoindex = (int)($post['seo_noindex'] ?? 0) === 1;
 $metaImage = $cover ? mediaUrl((string)$cover) : '';
 $metaImageAlt = trim((string)($post['imagem_capa_alt'] ?? '')) ?: (string)$post['titulo'];
@@ -49,7 +58,10 @@ require themeFile($pdo, 'header.php');
 ?>
 <article class="container py-5 content-reading"><div class="mb-4"><div class="text-secondary mb-2"><?php if ($postCategories): ?><?php foreach ($postCategories as $i=>$cat): ?><?= $i ? ' · ' : '' ?><a class="text-reset text-decoration-none" href="<?= e(categoryUrl((string)$cat['slug'])) ?>"><?= e($cat['nome']) ?></a><?php endforeach; ?><?php else: ?>Notícia<?php endif; ?> · <?= e($post['comunidade_nome'] ?: 'Paroquial') ?></div><h1 class="display-5 fw-bold"><?= e($post['titulo']) ?></h1><div class="text-secondary">Publicado em <?= e(formatDateBr($post['publicado_em'] ?: $post['created_at'])) ?><?php if ($post['autor_nome']): ?> · <?= e($post['autor_nome']) ?><?php endif; ?></div></div>
 <?php if ($cover): ?><img class="article-cover mb-4" src="<?= e(mediaUrl($cover)) ?>" alt="<?= e($post['imagem_capa_alt'] ?: $post['titulo']) ?>"><?php endif; ?>
-<?php if ($post['resumo']): ?><p class="lead"><?= e($post['resumo']) ?></p><?php endif; ?><div class="article-body"><?= $post['conteudo'] ?></div></article>
+<?php if ($post['resumo']): ?><p class="lead"><?= e($post['resumo']) ?></p><?php endif; ?>
+<?php if (trim((string)$post['conteudo']) !== ''): ?><div class="article-body"><?= $post['conteudo'] ?></div><?php endif; ?>
+<?= ContentBlockService::render($pdo, 'post', (int)$post['id']) ?>
+</article>
 <?php if ($relatedPosts): ?>
 <section class="container pb-5">
     <div class="border-top pt-5">

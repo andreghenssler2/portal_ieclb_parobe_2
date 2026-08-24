@@ -67,6 +67,17 @@ if (count($segments) === 2 && strtolower(rawurldecode((string)$segments[0])) ===
     exit;
 }
 
+// v0.43.0 - páginas hierárquicas com prefixo.
+// Ex.: /pagina/quem-somos/historia ou /institucional/quem-somos/historia.
+$pagePrefix = permalinkPrefix('pagina', $pdo);
+if ($pagePrefix !== '' && count($segments) >= 2) {
+    $first = strtolower(rawurldecode((string)$segments[0]));
+    if ($first === strtolower($pagePrefix) || $first === 'pagina') {
+        require __DIR__ . '/pagina.php';
+        exit;
+    }
+}
+
 if (count($segments) === 2) {
     $prefix = strtolower(rawurldecode((string)$segments[0]));
     $routes = [];
@@ -87,6 +98,12 @@ if (count($segments) === 2) {
         require __DIR__ . '/' . $routes[$prefix];
         exit;
     }
+}
+
+// v0.43.0 - páginas hierárquicas na raiz quando "pagina" usa __root__.
+if ($pagePrefix === '' && count($segments) >= 1) {
+    require __DIR__ . '/pagina.php';
+    exit;
 }
 
 http_response_code(404);

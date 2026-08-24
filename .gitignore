@@ -9,4 +9,5 @@
 .DS_Store
 /lib/*
 !/lib/.htaccess
+/storage/*
 /vendor/

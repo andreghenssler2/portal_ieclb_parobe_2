@@ -6,6 +6,7 @@ Auth::requirePermission('noticias.gerenciar');
 
 $pdo = Database::connection();
 CategoryService::ensureSchema($pdo);
+ContentBlockService::ensureSchema($pdo);
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 $defaultCategory = (int)siteConfig($pdo, 'writing_default_category', '0');
 $defaultStatus = siteConfig($pdo, 'writing_default_status', 'rascunho');
@@ -84,6 +85,15 @@ $popularTags = array_slice($tags, 0, 14);
 $midias = $pdo->query("SELECT id,caminho,titulo,alt_text,nome_original,largura,altura FROM midias WHERE mime_type LIKE 'image/%' ORDER BY id DESC")->fetchAll();
 $imagemCapaAtual = !empty($post['imagem_capa_id']) ? MediaService::find($pdo, (int)$post['imagem_capa_id']) : null;
 
+$contentBlocks = $id
+    ? ContentBlockService::loadForEditor($pdo, 'post', $id)
+    : [];
+// v0.44.0 - padrões reutilizáveis: notícias
+$contentPatterns = ContentPatternService::activeFor(
+    $pdo,
+    'post'
+);
+
 $revisionCount = 0;
 if ($id) {
     try {
@@ -103,6 +113,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $post['destaque'] = isset($_POST['destaque']) ? 1 : 0;
     $post['comentarios_ativos'] = isset($_POST['comentarios_ativos']) ? 1 : 0;
     $post['seo_noindex'] = isset($_POST['seo_noindex']) ? 1 : 0;
+
+    $contentBlocks = ContentBlockService::prepareForEditor(
+        $pdo,
+        ContentBlockService::fromJson(
+            $pdo,
+            (string)($_POST['content_blocks_json'] ?? '[]')
+        )
+    );
 
     $selectedCategories = CategoryService::validIds($pdo, (array)($_POST['categorias'] ?? []));
     $tagInputRaw = trim((string)($_POST['tags_input'] ?? ''));
@@ -132,8 +150,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conteudoTexto = html_entity_decode(strip_tags($conteudo), ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $conteudoTexto = trim(str_replace("\u{00A0}", ' ', $conteudoTexto));
 
-        if ($titulo === '' || $conteudoTexto === '') {
-            $error = 'Título e conteúdo são obrigatórios.';
+        if (
+            $titulo === ''
+            || (
+                $conteudoTexto === ''
+                && !ContentBlockService::hasContent($contentBlocks)
+            )
+        ) {
+            $error = 'Informe o título e pelo menos um conteúdo ou bloco.';
         } else {
             try {
                 $imagemCapaId = ($_POST['imagem_capa_id'] ?? '') !== '' ? (int)$_POST['imagem_capa_id'] : null;
@@ -237,6 +261,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
 
+                    ContentBlockService::save(
+                        $pdo,
+                        'post',
+                        $savedId,
+                        $contentBlocks
+                    );
+
                     $pdo->commit();
                 } catch (Throwable $txe) {
                     if ($pdo->inTransaction()) {
@@ -323,6 +354,10 @@ require __DIR__ . '/../_header.php';
                     </div>
                 </div>
 
+                <?php
+                $contentBlocksTitle = 'Blocos da notícia';
+                require __DIR__ . '/../_content_blocks_editor.php';
+                ?>
                 <section class="card border-0 shadow-sm mt-3">
                     <div class="card-header bg-white fw-semibold py-3">SEO do conteúdo</div>
                     <div class="card-body">
@@ -517,12 +552,15 @@ require __DIR__ . '/../_header.php';
 <?php require __DIR__ . '/../_editor_media_picker.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
 <script src="<?= e(url('public/js/editor-media-picker.js')) ?>"></script>
+<script src="<?= e(url('public/js/content-block-editor.js?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.43.0'))) ?>"></script>
 <script>
 PortalMediaPicker.init({
     modalId: 'portalMediaPickerModal',
     uploadUrl: <?= json_encode(url('admin/midias/upload-editor.php'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>,
     csrfToken: <?= json_encode(Csrf::token(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>
 });
+
+ContentBlockEditor.init();
 
 tinymce.init({
     selector: '#conteudo',

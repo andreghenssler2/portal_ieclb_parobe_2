@@ -3,9 +3,12 @@ require_once __DIR__ . '/../../bootstrap.php';
 Auth::requireLogin();
 Auth::requirePermission('paginas.gerenciar');
 $pdo = Database::connection();
+PageHierarchyService::ensureSchema($pdo);
+ContentBlockService::ensureSchema($pdo);
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 $pagina = [
+    'parent_id' => '',
     'titulo' => '',
     'slug' => '',
     'resumo' => '',
@@ -46,15 +49,33 @@ $imagemCapaAtual = !empty($pagina['imagem_capa_id']) ? MediaService::find($pdo, 
 $revisionCount = 0;
 if ($id) { try { $revisionCount = RevisionService::count($pdo, 'pagina', $id); } catch (Throwable $ignored) { $revisionCount = 0; } }
 
+$pageOptions = PageHierarchyService::options($pdo, $id);
+$contentBlocks = $id
+    ? ContentBlockService::loadForEditor($pdo, 'pagina', $id)
+    : [];
+// v0.44.0 - padrões reutilizáveis: páginas
+$contentPatterns = ContentPatternService::activeFor(
+    $pdo,
+    'pagina'
+);
+
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    foreach (['titulo', 'slug', 'resumo', 'seo_titulo', 'seo_descricao', 'conteudo', 'imagem_capa_id', 'status', 'ordem', 'publicado_em'] as $field) {
+    foreach (['titulo', 'slug', 'resumo', 'seo_titulo', 'seo_descricao', 'conteudo', 'imagem_capa_id', 'parent_id', 'status', 'ordem', 'publicado_em'] as $field) {
         if (array_key_exists($field, $_POST)) {
             $pagina[$field] = $_POST[$field];
         }
     }
     $pagina['exibir_menu'] = isset($_POST['exibir_menu']) ? 1 : 0;
     $pagina['seo_noindex'] = isset($_POST['seo_noindex']) ? 1 : 0;
+
+    $contentBlocks = ContentBlockService::prepareForEditor(
+        $pdo,
+        ContentBlockService::fromJson(
+            $pdo,
+            (string)($_POST['content_blocks_json'] ?? '[]')
+        )
+    );
 
     if (!Csrf::validate($_POST['_token'] ?? null)) {
         $error = 'Token de segurança inválido.';
@@ -64,8 +85,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conteudoTexto = html_entity_decode(strip_tags($conteudo), ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $conteudoTexto = trim(str_replace("\u{00A0}", ' ', $conteudoTexto));
 
-        if ($titulo === '' || $conteudoTexto === '') {
-            $error = 'Título e conteúdo são obrigatórios.';
+        if (
+            $titulo === ''
+            || (
+                $conteudoTexto === ''
+                && !ContentBlockService::hasContent($contentBlocks)
+            )
+        ) {
+            $error = 'Informe o título e pelo menos um conteúdo ou bloco.';
         } else {
             try {
                 $imagemCapaId = ($_POST['imagem_capa_id'] ?? '') !== '' ? (int)$_POST['imagem_capa_id'] : null;
@@ -104,8 +131,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $slugInput = trim((string)($_POST['slug'] ?? ''));
                 $slugBase = $slugInput !== '' ? $slugInput : $titulo;
 
+                $parentId = PageHierarchyService::validateParent(
+                    $pdo,
+                    $id,
+                    ($_POST['parent_id'] ?? '') !== ''
+                        ? (int)$_POST['parent_id']
+                        : null
+                );
+
                 $data = [
-                    'autor_id' => Auth::id(),
+                    'autor_id' => Auth::id(),                    'parent_id' => $parentId,
+
                     'titulo' => $titulo,
                     'slug' => uniqueSlug($pdo, 'paginas', $slugBase, $id),
                     'resumo' => trim((string)($_POST['resumo'] ?? '')) ?: null,
@@ -125,6 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $pdo->prepare(
                         'UPDATE paginas SET
                             autor_id = :autor_id,
+                            parent_id = :parent_id,
                             titulo = :titulo,
                             slug = :slug,
                             resumo = :resumo,
@@ -142,9 +179,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $stmt = $pdo->prepare(
                         'INSERT INTO paginas
-                            (autor_id, titulo, slug, resumo, conteudo, imagem_capa_id, seo_titulo, seo_descricao, seo_noindex, status, exibir_menu, ordem, publicado_em)
+                            (autor_id, parent_id, titulo, slug, resumo, conteudo, imagem_capa_id, seo_titulo, seo_descricao, seo_noindex, status, exibir_menu, ordem, publicado_em)
                          VALUES
-                            (:autor_id, :titulo, :slug, :resumo, :conteudo, :imagem_capa_id, :seo_titulo, :seo_descricao, :seo_noindex, :status, :exibir_menu, :ordem, :publicado_em)'
+                            (:autor_id, :parent_id, :titulo, :slug, :resumo, :conteudo, :imagem_capa_id, :seo_titulo, :seo_descricao, :seo_noindex, :status, :exibir_menu, :ordem, :publicado_em)'
                     );
                 }
 
@@ -155,6 +192,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     $stmt->execute($data);
                     $savedId = $id ?: (int)$pdo->lastInsertId();
+
+                    ContentBlockService::save(
+                        $pdo,
+                        'pagina',
+                        $savedId,
+                        $contentBlocks
+                    );
+
                     $pdo->commit();
                 } catch (Throwable $txe) {
                     if ($pdo->inTransaction()) {
@@ -205,6 +250,30 @@ require __DIR__ . '/../_header.php';
                 <div class="form-text">Ex.: quem-somos. Se vazio, será gerado automaticamente.</div>
             </div>
 
+            <div class="col-lg-6">
+                <label class="form-label">Página superior</label>
+                <select class="form-select" name="parent_id">
+                    <option value="">Nenhuma — página principal</option>
+                    <?php foreach ($pageOptions as $option): ?>
+                        <?php $depth = max(0, (int)($option['depth'] ?? 0)); ?>
+                        <option
+                            value="<?= (int)$option['id'] ?>"
+                            <?= (int)($pagina['parent_id'] ?? 0) === (int)$option['id'] ? 'selected' : '' ?>
+                        >
+                            <?= e(str_repeat('— ', $depth) . (string)$option['titulo']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <div class="form-text">
+                    Crie subpáginas escolhendo uma página superior. A URL usará toda a hierarquia.
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="alert alert-light border h-100 mb-0 small">
+                    Exemplo: <code>/pagina/quem-somos/historia</code>.
+                    Não é permitido criar ciclos entre páginas.
+                </div>
+            </div>
             <div class="col-12">
                 <label class="form-label">Resumo</label>
                 <textarea class="form-control" name="resumo" rows="3" placeholder="Descrição curta da página"><?= e((string)($pagina['resumo'] ?? '')) ?></textarea>
@@ -246,6 +315,12 @@ require __DIR__ . '/../_header.php';
                 <textarea id="conteudo" class="form-control" name="conteudo" rows="16"><?= e((string)$pagina['conteudo']) ?></textarea>
             </div>
 
+            <div class="col-12">
+                <?php
+                $contentBlocksTitle = 'Blocos da página';
+                require __DIR__ . '/../_content_blocks_editor.php';
+                ?>
+            </div>
             <div class="col-12"><div class="border rounded-3 p-3"><div class="fw-semibold mb-3">SEO do conteúdo</div><div class="row g-3"><div class="col-12"><label class="form-label">Título SEO</label><input class="form-control" name="seo_titulo" maxlength="180" value="<?= e((string)($pagina['seo_titulo'] ?? '')) ?>" placeholder="Se vazio, usa o título da página"></div><div class="col-12"><label class="form-label">Meta description</label><textarea class="form-control" name="seo_descricao" maxlength="320" rows="2"><?= e((string)($pagina['seo_descricao'] ?? '')) ?></textarea></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="seo_noindex" id="seoNoindex" <?= !empty($pagina['seo_noindex']) ? 'checked' : '' ?>><label class="form-check-label" for="seoNoindex">Não indexar esta página</label></div></div></div></div></div>
 
             <div class="col-md-3">
@@ -282,12 +357,15 @@ require __DIR__ . '/../_header.php';
 <?php require __DIR__ . '/../_editor_media_picker.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
 <script src="<?= e(url('public/js/editor-media-picker.js')) ?>"></script>
+<script src="<?= e(url('public/js/content-block-editor.js?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.43.0'))) ?>"></script>
 <script>
 PortalMediaPicker.init({
     modalId: 'portalMediaPickerModal',
     uploadUrl: <?= json_encode(url('admin/midias/upload-editor.php'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>,
     csrfToken: <?= json_encode(Csrf::token(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>
 });
+
+ContentBlockEditor.init();
 
 tinymce.init({
     selector:'#conteudo',

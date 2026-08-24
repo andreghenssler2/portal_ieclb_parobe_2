@@ -1,6 +1,0 @@
-[23-Aug-2026 20:07:13 America/Sao_Paulo] PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY000] [1045] Access denied for user 'root'@'localhost' (using password: NO) in /home1/ieclbp28/public_html/mod/db/Database.php:25
-Stack trace:
-#0 /home1/ieclbp28/public_html/mod/db/Database.php(25): PDO->__construct('mysql:host=loca...', 'root', Object(SensitiveParameterValue), Array)
-#1 /home1/ieclbp28/public_html/index.php(3): Database::connection()
-#2 {main}
-  thrown in /home1/ieclbp28/public_html/mod/db/Database.php on line 25
