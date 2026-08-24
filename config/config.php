@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 define('APP_NAME', 'Portal IECLB Parobé');
-define('APP_VERSION', '0.44.1');
+define('APP_VERSION', '0.45.0');
 define('APP_ENV', 'production');
 define('APP_DEBUG', false);
 // define('BASE_URL', 'http://localhost/portal_ieclb_parobe');
