@@ -20,6 +20,7 @@ require_once __DIR__ . '/app/Services/PageHierarchyService.php';
 require_once __DIR__ . '/app/Services/ContentBlockService.php';
 require_once __DIR__ . '/app/Services/DynamicContentBlockService.php';
 require_once __DIR__ . '/app/Services/ContentPatternService.php';
+require_once __DIR__ . '/app/Services/EditorialBulkService.php';
 require_once __DIR__ . '/app/Services/RevisionService.php';
 require_once __DIR__ . '/app/Services/MailService.php';
 require_once __DIR__ . '/app/Services/FormNotificationService.php';

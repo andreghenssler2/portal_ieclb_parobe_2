@@ -8,6 +8,64 @@ $pdo = Database::connection();
 PageHierarchyService::ensureSchema($pdo);
 ContentBlockService::ensureSchema($pdo);
 
+// v0.46.0 - filtros avançados e ações em massa de Páginas.
+// v0.46.0 - ações editoriais em massa.
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+    && isset($_POST['bulk_action'])
+) {
+    if (!Csrf::validate($_POST['_token'] ?? null)) {
+        Session::flash('error', 'Token de segurança inválido.');
+    } else {
+        try {
+            $result = EditorialBulkService::apply(
+                $pdo,
+                'pagina',
+                (array)($_POST['ids'] ?? []),
+                trim((string)($_POST['bulk_action'] ?? '')),
+                (int)Auth::id()
+            );
+
+            $message = $result['processed']
+                . ' conteúdo(s) atualizado(s).';
+
+            if ($result['skipped'] > 0) {
+                $message .= ' '
+                    . $result['skipped']
+                    . ' item(ns) não precisaram de alteração.';
+            }
+
+            Session::flash('success', $message);
+        } catch (Throwable $e) {
+            Session::flash('error', $e->getMessage());
+        }
+    }
+
+    $return = [];
+    foreach (array (
+  0 => 'status',
+  1 => 'superior',
+  2 => 'q',
+) as $filterName) {
+        $value = trim((string)($_POST[$filterName] ?? ''));
+        if ($value !== '') {
+            $return[$filterName] = $value;
+        }
+    }
+
+    $query = http_build_query(
+        $return,
+        '',
+        '&',
+        PHP_QUERY_RFC3986
+    );
+
+    header(
+        'Location: '
+        . url('admin/paginas/index.php' . ($query !== '' ? '?' . $query : ''))
+    );
+    exit;
+}
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Csrf::validate($_POST['_token'] ?? null)) {
         Session::flash('error', 'Token de segurança inválido.');
@@ -70,14 +128,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$view = (string)($_GET['status'] ?? '') === 'lixeira' ? 'lixeira' : 'ativos';
-$activeCount = (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status <> 'lixeira'")->fetchColumn();
-$trashCount = (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status = 'lixeira'")->fetchColumn();
-$where = $view === 'lixeira' ? "p.status = 'lixeira'" : "p.status <> 'lixeira'";
+// v0.45.1 - filtros editoriais de Páginas.
+$allowedViews = ['todos', 'publicados', 'agenda', 'rascunhos', 'lixeira'];
+$view = strtolower(trim((string)($_GET['status'] ?? 'todos')));
+if (!in_array($view, $allowedViews, true)) {
+    $view = 'todos';
+}
+
+$pageCounts = [
+    'todos' => (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status <> 'lixeira'")->fetchColumn(),
+    'publicados' => (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status = 'publicado'")->fetchColumn(),
+    'agenda' => (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status = 'agendado'")->fetchColumn(),
+    'rascunhos' => (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status = 'rascunho'")->fetchColumn(),
+    'lixeira' => (int)$pdo->query("SELECT COUNT(*) FROM paginas WHERE status = 'lixeira'")->fetchColumn(),
+];
+
+$where = match ($view) {
+    'publicados' => "p.status = 'publicado'",
+    'agenda' => "p.status = 'agendado'",
+    'rascunhos' => "p.status = 'rascunho'",
+    'lixeira' => "p.status = 'lixeira'",
+    default => "p.status <> 'lixeira'",
+};
+
+$filterParentRaw = trim((string)($_GET['superior'] ?? ''));
+$filterParentId = ctype_digit($filterParentRaw)
+    ? (int)$filterParentRaw
+    : 0;
+
+$filterSql = '';
+$filterParams = [];
+
+if ($filterParentRaw === 'raiz') {
+    $filterSql = ' AND p.parent_id IS NULL';
+} elseif ($filterParentId > 0) {
+    $filterSql = ' AND p.parent_id=:filter_parent';
+    $filterParams['filter_parent'] = $filterParentId;
+}
+
+$filterPageOptions = PageHierarchyService::options($pdo);
+
 // v0.33.1: pesquisa de páginas + paginação de 50 registros.
 $search = adminSearchTerm();
 $searchSql = '';
-$searchParams = [];
+$searchParams = $filterParams;
 if ($search !== '') {
     $searchSql = " AND (
         p.titulo LIKE :page_q1
@@ -93,7 +187,7 @@ $countStmt = $pdo->prepare(
     "SELECT COUNT(DISTINCT p.id)
      FROM paginas p
      LEFT JOIN usuarios u ON u.id=p.autor_id
-     WHERE {$where}{$searchSql}"
+     WHERE {$where}{$filterSql}{$searchSql}"
 );
 $countStmt->execute($searchParams);
 $totalItems = (int)$countStmt->fetchColumn();
@@ -104,13 +198,23 @@ $listSql = "SELECT p.*, u.nome AS autor_nome,
      FROM paginas p
      LEFT JOIN usuarios u ON u.id = p.autor_id
      LEFT JOIN paginas parent ON parent.id=p.parent_id
-     WHERE {$where}{$searchSql}
-     ORDER BY " . ($view === 'lixeira' ? 'p.lixeira_em DESC, p.id DESC' : 'p.ordem ASC, p.id DESC')
+     WHERE {$where}{$filterSql}{$searchSql}
+     ORDER BY " . ($view === 'lixeira'
+        ? 'p.lixeira_em DESC, p.id DESC'
+        : ($view === 'agenda'
+            ? 'p.publicado_em ASC, p.id DESC'
+            : 'p.ordem ASC, p.id DESC'))
      . " LIMIT " . (int)$pagination['limit'] . " OFFSET " . (int)$pagination['offset'];
 $listStmt = $pdo->prepare($listSql);
 $listStmt->execute($searchParams);
 $paginas = $listStmt->fetchAll();
-$pageTitle = $view === 'lixeira' ? 'Lixeira de Páginas' : 'Páginas';
+$pageTitle = match ($view) {
+    'publicados' => 'Páginas Publicadas',
+    'agenda' => 'Agenda de Páginas',
+    'rascunhos' => 'Rascunhos de Páginas',
+    'lixeira' => 'Lixeira de Páginas',
+    default => 'Páginas',
+};
 require __DIR__ . '/../_header.php';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -118,17 +222,137 @@ require __DIR__ . '/../_header.php';
     <?php if ($view !== 'lixeira'): ?><a class="btn btn-primary" href="<?= e(url('admin/paginas/form.php')) ?>">Nova página</a><?php endif; ?>
 </div>
 
-<ul class="nav nav-pills gap-2 mb-4">
-    <li class="nav-item"><a class="nav-link <?= $view === 'ativos' ? 'active' : '' ?>" href="<?= e(url('admin/paginas/index.php')) ?>">Todas <span class="badge <?= $view === 'ativos' ? 'text-bg-light' : 'text-bg-secondary' ?> ms-1"><?= $activeCount ?></span></a></li>
-    <li class="nav-item"><a class="nav-link <?= $view === 'lixeira' ? 'active' : '' ?>" href="<?= e(url('admin/paginas/index.php?status=lixeira')) ?>">Lixeira <span class="badge <?= $view === 'lixeira' ? 'text-bg-light' : 'text-bg-secondary' ?> ms-1"><?= $trashCount ?></span></a></li>
+<ul class="nav nav-pills gap-2 mb-4 flex-wrap">
+    <?php
+    $pageTabs = [
+        'todos' => 'Todos',
+        'publicados' => 'Publicados',
+        'agenda' => 'Agenda',
+        'rascunhos' => 'Rascunhos',
+        'lixeira' => 'Lixeira',
+    ];
+    ?>
+    <?php foreach ($pageTabs as $tabKey => $tabLabel): ?>
+        <?php
+        $tabUrl = $tabKey === 'todos'
+            ? url('admin/paginas/index.php')
+            : url('admin/paginas/index.php?status=' . rawurlencode($tabKey));
+        $tabActive = $view === $tabKey;
+        ?>
+        <li class="nav-item">
+            <a class="nav-link <?= $tabActive ? 'active' : '' ?>" href="<?= e($tabUrl) ?>">
+                <?= e($tabLabel) ?>
+                <span class="badge <?= $tabActive ? 'text-bg-light' : 'text-bg-secondary' ?> ms-1">
+                    <?= (int)($pageCounts[$tabKey] ?? 0) ?>
+                </span>
+            </a>
+        </li>
+    <?php endforeach; ?>
 </ul>
 
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <?php if ($view !== 'todos'): ?>
+                <input type="hidden" name="status" value="<?= e($view) ?>">
+            <?php endif; ?>
+            <?php if ($search !== ''): ?>
+                <input type="hidden" name="q" value="<?= e($search) ?>">
+            <?php endif; ?>
+
+            <div class="col-md-10">
+                <label class="form-label small">Página superior</label>
+                <select class="form-select" name="superior">
+                    <option value="">Todas as páginas</option>
+                    <option value="raiz" <?= $filterParentRaw === 'raiz' ? 'selected' : '' ?>>
+                        Somente páginas principais
+                    </option>
+                    <?php foreach ($filterPageOptions as $option): ?>
+                        <option
+                            value="<?= (int)$option['id'] ?>"
+                            <?= $filterParentId === (int)$option['id'] ? 'selected' : '' ?>
+                        >
+                            <?= e(str_repeat('— ', max(0, (int)($option['depth'] ?? 0))) . (string)$option['titulo']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-outline-primary">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <?php /* v0.33.1-search-form-pages */ ?>
-<?= adminSearchHtml('admin/paginas/index.php', $search, ['status' => $view === 'lixeira' ? 'lixeira' : null], 'Pesquisar páginas…', $totalItems) ?>
+<?= adminSearchHtml(
+    'admin/paginas/index.php',
+    $search,
+    [
+        'status' => $view !== 'todos' ? $view : null,
+        'superior' => $filterParentRaw !== '' ? $filterParentRaw : null,
+    ],
+    'Pesquisar páginas…',
+    $totalItems
+) ?>
+<form
+    id="bulkPagesForm"
+    method="post"
+    class="card border-0 shadow-sm mb-3"
+    onsubmit="return confirmBulkEditorialAction(this);"
+>
+    <?= Csrf::field() ?>
+    <input type="hidden" name="status" value="<?= e($view !== 'todos' ? $view : '') ?>">
+    <input type="hidden" name="superior" value="<?= e($filterParentRaw) ?>">
+    <input type="hidden" name="q" value="<?= e($search) ?>">
+
+    <div class="card-body py-3">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <strong class="small me-1">Ações em massa</strong>
+            <select class="form-select form-select-sm" name="bulk_action" style="max-width:240px" required>
+                <option value="">Selecione uma ação…</option>
+                <?php if ($view === 'lixeira'): ?>
+                    <option value="restore">Restaurar</option>
+                    <option value="delete">Excluir permanentemente</option>
+                <?php else: ?>
+                    <option value="publish">Publicar</option>
+                    <option value="draft">Mover para rascunho</option>
+                    <option value="archive">Arquivar</option>
+                    <option value="trash">Mover para Lixeira</option>
+                <?php endif; ?>
+            </select>
+            <button class="btn btn-sm btn-primary">Aplicar</button>
+            <span class="small text-secondary ms-auto" data-bulk-selection-count>0 selecionado(s)</span>
+        </div>
+    </div>
+</form>
+
 <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table mb-0 align-middle">
-<thead><tr><th>Título</th><th>Slug</th><th>Status</th><th>Menu</th><th><?= $view === 'lixeira' ? 'Excluída em' : 'Publicação' ?></th><th></th></tr></thead><tbody>
-<?php if (!$paginas): ?><tr><td colspan="6" class="text-secondary py-4"><?= $view === 'lixeira' ? 'A Lixeira está vazia.' : 'Nenhuma página cadastrada.' ?></td></tr><?php endif; ?>
+<thead><tr>
+    <th style="width:42px">
+        <input
+            class="form-check-input"
+            type="checkbox"
+            data-bulk-check-all
+            aria-label="Selecionar todas as páginas desta página"
+        >
+    </th>
+    <th>Título</th><th>Slug</th><th>Status</th><th>Menu</th><th><?= $view === 'lixeira' ? 'Excluída em' : 'Publicação' ?></th><th></th>
+</tr></thead><tbody>
+<?php if (!$paginas): ?><tr><td colspan="7" class="text-secondary py-4"><?= $view === 'lixeira' ? 'A Lixeira está vazia.' : 'Nenhuma página cadastrada.' ?></td></tr><?php endif; ?>
 <?php foreach ($paginas as $pagina): ?><tr>
+<td>
+    <input
+        class="form-check-input"
+        type="checkbox"
+        name="ids[]"
+        value="<?= (int)$pagina['id'] ?>"
+        form="bulkPagesForm"
+        data-bulk-item
+        aria-label="Selecionar <?= e((string)$pagina['titulo']) ?>"
+    >
+</td>
 <td>
     <div class="fw-semibold"><?= e($pagina['titulo']) ?></div>
     <div class="small text-secondary">
@@ -155,5 +379,59 @@ require __DIR__ . '/../_header.php';
 </tr><?php endforeach; ?>
 </tbody></table></div></div>
 <?php /* v0.33.0-pagination-render */ ?>
-<?= adminPaginationHtml('admin/paginas/index.php', $pagination, ['status' => $view === 'lixeira' ? 'lixeira' : null, 'q' => $search]) ?>
+<?= adminPaginationHtml(
+    'admin/paginas/index.php',
+    $pagination,
+    [
+        'status' => $view !== 'todos' ? $view : null,
+        'superior' => $filterParentRaw !== '' ? $filterParentRaw : null,
+        'q' => $search,
+    ]
+) ?>
+
+<script>
+function updateBulkEditorialSelection() {
+    const items = Array.from(document.querySelectorAll('[data-bulk-item]'));
+    const selected = items.filter(item => item.checked);
+    const count = document.querySelector('[data-bulk-selection-count]');
+    const all = document.querySelector('[data-bulk-check-all]');
+
+    if (count) count.textContent = selected.length + ' selecionado(s)';
+    if (all) {
+        all.checked = items.length > 0 && selected.length === items.length;
+        all.indeterminate = selected.length > 0 && selected.length < items.length;
+    }
+}
+
+document.querySelector('[data-bulk-check-all]')?.addEventListener('change', event => {
+    document.querySelectorAll('[data-bulk-item]').forEach(item => {
+        item.checked = event.currentTarget.checked;
+    });
+    updateBulkEditorialSelection();
+});
+
+document.querySelectorAll('[data-bulk-item]').forEach(item => {
+    item.addEventListener('change', updateBulkEditorialSelection);
+});
+
+function confirmBulkEditorialAction(form) {
+    const selected = document.querySelectorAll('[data-bulk-item]:checked').length;
+    if (selected < 1) {
+        alert('Selecione pelo menos um conteúdo.');
+        return false;
+    }
+
+    const action = form.querySelector('[name="bulk_action"]')?.value || '';
+    if (action === 'delete') {
+        return confirm(
+            'Excluir permanentemente ' + selected
+            + ' conteúdo(s)? Esta ação não pode ser desfeita.'
+        );
+    }
+
+    return true;
+}
+
+updateBulkEditorialSelection();
+</script>
 <?php require __DIR__ . '/../_footer.php'; ?>
