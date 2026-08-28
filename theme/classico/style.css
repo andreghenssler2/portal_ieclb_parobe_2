@@ -1,0 +1,9 @@
+/* Tema Clássico Luterano */
+body { font-family: Georgia, "Times New Roman", serif; }
+header .navbar { padding-top: 1.15rem !important; padding-bottom: 1.15rem !important; }
+.navbar-brand { letter-spacing: .01em; }
+h1,h2,h3,h4,h5,h6 { font-family: Georgia, "Times New Roman", serif; }
+.hero { background: linear-gradient(180deg, color-mix(in srgb, var(--portal-primary) 7%, #fff) 0%, var(--portal-bg) 100%); }
+.card { box-shadow: 0 .25rem 1rem rgba(51,42,35,.07) !important; border: 1px solid rgba(80,60,45,.08) !important; }
+.btn-primary { --bs-btn-bg: var(--portal-primary); --bs-btn-border-color: var(--portal-primary); }
+.article-body { font-size: 1.12rem; }

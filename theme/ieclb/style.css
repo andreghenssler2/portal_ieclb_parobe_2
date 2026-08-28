@@ -1,0 +1,9 @@
+/* Tema IECLB Parobé v1.1 */
+:root { --theme-accent: var(--portal-primary, #0b5d4b); }
+a { color: var(--portal-primary); }
+a:hover { color: color-mix(in srgb, var(--portal-primary) 78%, black); }
+.btn-primary { --bs-btn-bg: var(--portal-primary); --bs-btn-border-color: var(--portal-primary); --bs-btn-hover-bg: color-mix(in srgb, var(--portal-primary) 82%, black); --bs-btn-hover-border-color: color-mix(in srgb, var(--portal-primary) 82%, black); }
+.navbar-brand, .navbar .nav-link:hover { color: var(--portal-primary); }
+.article-body img{
+margin:20px
+}

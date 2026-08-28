@@ -1,0 +1,52 @@
+diff --git a/app/Services/HomeService.php b/app/Services/HomeService.php
+--- a/app/Services/HomeService.php
++++ b/app/Services/HomeService.php
+@@
+-        // 3) Último recurso para uploads: elimina qualquer prefixo físico até
+-        // public/uploads, preservando somente o caminho que o navegador entende.
+-        $normalizedLower = strtolower($value);
+-        foreach (['public/uploads/', 'uploads/wordpress/', 'uploads/'] as $marker) {
+-            $pos = strpos($normalizedLower, $marker);
+-            if ($pos !== false) {
+-                $tail = substr($value, $pos);
+-                if (str_starts_with(strtolower($tail), 'uploads/')) {
+-                    $tail = 'public/' . $tail;
+-                }
+-                $value = $tail;
+-                break;
+-            }
+-        }
++        // 3) Compatibilidade de uploads.
++        // O Portal pode ter arquivos tanto em /uploads/ quanto em
++        // /public/uploads/. Não force "public/": detecte onde o arquivo
++        // realmente existe e gere a URL correspondente.
++        $normalizedLower = strtolower($value);
++
++        $uploadPos = strpos($normalizedLower, 'public/uploads/');
++        if ($uploadPos === false) {
++            $uploadPos = strpos($normalizedLower, 'uploads/');
++        }
++
++        if ($uploadPos !== false) {
++            $tail = substr($value, $uploadPos);
++
++            // Trabalha internamente sempre com uploads/...
++            $tail = preg_replace('~^public/~i', '', $tail) ?? $tail;
++            $tail = ltrim($tail, '/');
++
++            $rootCandidate = $root . '/' . $tail;
++            $publicCandidate = $root . '/public/' . $tail;
++
++            if (is_file($rootCandidate)) {
++                // Arquivo em /uploads/...
++                $value = $tail;
++            } elseif (is_file($publicCandidate)) {
++                // Arquivo em /public/uploads/...
++                $value = 'public/' . $tail;
++            } else {
++                // Se o arquivo não puder ser confirmado no disco, mantém
++                // a origem informada em vez de trocar o diretório à força.
++                $originalHadPublic = str_contains($normalizedLower, 'public/uploads/');
++                $value = $originalHadPublic ? 'public/' . $tail : $tail;
++            }
++        }

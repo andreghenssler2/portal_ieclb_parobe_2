@@ -1,0 +1,13 @@
+{
+  "name": "IECLB Parobé",
+  "version": "1.1.0",
+  "description": "Tema principal, moderno e responsivo do Portal IECLB Parobé.",
+  "author": "Portal IECLB",
+  "colors": [
+    "#0b5d4b",
+    "#ffffff",
+    "#1f2937",
+    "#f8f9fa",
+    "#d4af37"
+  ]
+}

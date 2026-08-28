@@ -1,0 +1,2 @@
+-- Portal IECLB Parobé v0.42.2
+-- Sem alteração estrutural de banco.

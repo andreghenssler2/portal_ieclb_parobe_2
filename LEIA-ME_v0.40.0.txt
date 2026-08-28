@@ -1,0 +1,33 @@
+Portal IECLB Parobé v0.40.0
+Mais Lidas / Visualizações de Notícias
+
+REQUISITO
+Portal v0.39.0 ou superior.
+
+INSTALAÇÃO
+1. Extraia o ZIP na raiz do Portal.
+2. Execute:
+   php atualizar_v0.40.0.php
+3. Atualize o navegador com Ctrl+F5.
+
+PÁGINA PÚBLICA
+/mais-lidas
+
+PAINEL
+Posts / Notícias
+→ Mais Lidas
+
+RANKINGS
+- 7 dias
+- 30 dias
+- Todo período
+
+PRIVACIDADE
+Não são armazenados IP, user-agent ou identificadores pessoais.
+O histórico diário guarda somente:
+post_id + data + quantidade.
+
+O contador histórico existente em posts.visualizacoes é preservado.
+O histórico de 7/30 dias começa a ser construído a partir da instalação da v0.40.0.
+
+A mesma sessão só aumenta a mesma notícia novamente depois de 30 minutos.
