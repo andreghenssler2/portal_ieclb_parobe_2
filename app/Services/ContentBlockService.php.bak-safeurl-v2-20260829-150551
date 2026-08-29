@@ -615,58 +615,19 @@ final class ContentBlockService
     private static function safeUrl(string $value): string
     {
         $value = trim($value);
+        if ($value === '') return '';
 
-        if ($value === '') {
-            return '';
-        }
-
-        /*
-         * URL absoluta HTTP/HTTPS.
-         * filter_var evita os regex quebrados que existiam aqui.
-         */
-        if (
-            str_starts_with(strtolower($value), 'http://')
-            || str_starts_with(strtolower($value), 'https://')
-        ) {
-            return filter_var($value, FILTER_VALIDATE_URL) !== false
-                ? mb_substr($value, 0, 1500)
-                : '';
-        }
-
-        /*
-         * Outros destinos aceitos pelo Portal.
-         */
-        $lower = strtolower($value);
-
-        if (
-            str_starts_with($lower, 'mailto:')
-            || str_starts_with($lower, 'tel:')
-            || str_starts_with($value, '/')
-            || str_starts_with($value, '#')
-        ) {
+        if (preg_match('#^(?:https?://|mailto:|tel:|/|#)#i', $value)) {
             return mb_substr($value, 0, 1500);
         }
 
-        /*
-         * Caminhos relativos internos.
-         * Ex.:
-         *   pagina/historia
-         *   noticia/teste?origem=home
-         *   agenda#cultos
-         *
-         * Aqui usamos "~" como delimitador; "#" pode aparecer sem quebrar.
-         */
-        if (
-            preg_match(
-                '~^[a-z0-9][a-z0-9/_\-.?=&%#]*$~i',
-                $value
-            ) === 1
-        ) {
+        if (preg_match('#^[a-z0-9][a-z0-9/_\-.?=&%#]*$#i', $value)) {
             return mb_substr($value, 0, 1500);
         }
 
         return '';
     }
+
     private static function resolvedUrl(string $value): string
     {
         if (preg_match('#^(?:https?://|mailto:|tel:|#)#i', $value)) {
