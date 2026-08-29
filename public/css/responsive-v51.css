@@ -1,0 +1,402 @@
+/* Portal IECLB Parobé v0.51.0 - Responsividade global */
+
+/* Base: nenhum elemento público deve aumentar a largura do viewport. */
+html,
+body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+body,
+body *,
+body *::before,
+body *::after {
+    box-sizing: border-box;
+}
+
+main,
+.portal-header,
+.portal-footer {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.container,
+.container-fluid {
+    width: 100%;
+}
+
+.row > * {
+    min-width: 0;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    height: auto;
+}
+
+iframe {
+    max-width: 100%;
+}
+
+/* Conteúdo de Páginas/Posts: corrige inclusive a margem de 20px do tema IECLB. */
+.content-reading,
+.article-body {
+    width: 100%;
+    min-width: 0;
+}
+
+.article-body {
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+.article-body img {
+    display: block !important;
+    width: auto;
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 1.25rem auto !important;
+}
+
+.article-body figure {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+.article-body iframe,
+.article-body video {
+    width: 100%;
+    max-width: 100%;
+}
+
+.article-body table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.article-body pre {
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.article-body a,
+.article-body code {
+    overflow-wrap: anywhere;
+}
+
+.article-cover {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Blocos criados no editor. */
+.portal-dynamic-block,
+.portal-gallery-embed,
+.portal-video-block,
+.portal-faq-block {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.portal-dynamic-block .row,
+.portal-gallery-embed .row {
+    --bs-gutter-x: 1rem;
+}
+
+.portal-dynamic-block .carousel,
+.portal-gallery-embed .carousel {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.portal-video-block iframe {
+    width: 100%;
+    max-width: 100%;
+}
+
+.portal-dynamic-block .pagination {
+    gap: .2rem;
+}
+
+.portal-dynamic-block .page-link {
+    min-width: 40px;
+    text-align: center;
+}
+
+/* Cabeçalho e menu. */
+.portal-header .navbar-brand {
+    min-width: 0;
+    max-width: calc(100% - 64px);
+    white-space: normal;
+}
+
+.portal-header .site-logo {
+    height: auto;
+    max-width: min(220px, 62vw);
+}
+
+.portal-header .site-brand-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.portal-search-form {
+    max-width: 100%;
+}
+
+/* Cards e áreas públicas antigas também passam a respeitar o viewport. */
+.featured-story,
+.agenda-home-item,
+.card,
+.home-banners,
+.widget-section {
+    max-width: 100%;
+}
+
+.featured-story-image,
+.news-card-image,
+.gallery-card-cover,
+.agenda-card-image {
+    max-width: 100%;
+}
+
+/* Rodapé: evita links/textos longos provocando rolagem horizontal. */
+.portal-footer,
+.portal-footer a,
+.portal-footer p {
+    overflow-wrap: anywhere;
+}
+
+/* Tablet e menu recolhido. */
+@media (max-width: 991.98px) {
+    .portal-header .navbar {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .portal-header .navbar-collapse {
+        width: 100%;
+        padding-top: .75rem;
+    }
+
+    .portal-header .navbar-nav {
+        width: 100%;
+        align-items: stretch !important;
+        gap: 0 !important;
+    }
+
+    .portal-header .nav-item {
+        width: 100%;
+    }
+
+    .portal-header .nav-link {
+        width: 100%;
+        padding: .72rem .25rem;
+        overflow-wrap: anywhere;
+    }
+
+    .portal-header .dropdown-menu {
+        position: static !important;
+        width: 100%;
+        max-width: 100%;
+        margin: 0 0 .4rem;
+        box-shadow: none;
+    }
+
+    .portal-header .dropdown-item {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .portal-search-form {
+        width: 100%;
+        min-width: 0 !important;
+        max-width: none !important;
+        margin: .5rem 0 !important;
+    }
+
+    .portal-search-form .input-group {
+        width: 100%;
+    }
+}
+
+/* Celular. */
+@media (max-width: 767.98px) {
+    .container {
+        --bs-gutter-x: 1.25rem;
+    }
+
+    .content-reading {
+        max-width: 100%;
+    }
+
+    .article-body {
+        font-size: 1rem;
+        line-height: 1.7;
+    }
+
+    .article-body h1,
+    .article-body h2,
+    .article-body h3,
+    .article-body h4,
+    .article-body h5,
+    .article-body h6 {
+        overflow-wrap: anywhere;
+    }
+
+    /* Banners antigos não ficam presos a 360px de altura. */
+    .home-banner-slide {
+        min-height: 0 !important;
+        max-height: none !important;
+    }
+
+    .home-banner-image {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 220px;
+        max-height: none !important;
+        object-fit: cover;
+    }
+
+    .home-banner-caption {
+        left: 1rem !important;
+        right: 1rem !important;
+        bottom: 1rem !important;
+    }
+
+    .home-banner-caption .display-5 {
+        font-size: clamp(1.65rem, 8vw, 2.15rem);
+        line-height: 1.05;
+    }
+
+    .home-banner-caption .lead {
+        font-size: .95rem;
+        line-height: 1.35;
+    }
+
+    .featured-story-image {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+    }
+
+    .news-card-image,
+    .gallery-card-cover,
+    .agenda-card-image {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+    }
+
+    .widget-section > .d-flex.justify-content-between {
+        flex-wrap: wrap;
+        gap: .75rem;
+    }
+
+    /* Grids gerados por blocos ficam confortáveis no telefone. */
+    .portal-dynamic-block .row > [class*="col-"] {
+        min-width: 0;
+    }
+
+    .portal-gallery-embed-grid > [class*="col-"] {
+        flex: 0 0 100%;
+        width: 100%;
+    }
+
+    .portal-gallery-embed-grid img {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 4 / 3;
+        object-fit: cover !important;
+    }
+
+    /* Destaque + 2 dos blocos dinâmicos. */
+    .portal-dynamic-block .row > .col-lg-8 > a[style*="min-height"],
+    .portal-dynamic-block .row > .col-lg-8 > .h-100 > a[style*="min-height"] {
+        min-height: 300px !important;
+    }
+
+    .portal-dynamic-block .col-lg-4 a[style*="min-height"] {
+        min-height: 180px !important;
+    }
+
+    .portal-dynamic-block .carousel-control-prev,
+    .portal-dynamic-block .carousel-control-next {
+        width: 42px !important;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .portal-header .navbar {
+        padding-top: .65rem !important;
+        padding-bottom: .65rem !important;
+    }
+
+    .portal-header .site-logo {
+        max-height: 44px;
+        max-width: min(170px, 58vw);
+    }
+
+    .portal-header .navbar-toggler {
+        padding: .35rem .5rem;
+    }
+
+    .portal-header .site-brand-name {
+        display: none;
+    }
+
+    .article-body {
+        font-size: .98rem;
+    }
+
+    .article-body img {
+        border-radius: .55rem;
+    }
+
+    .portal-dynamic-block.my-5,
+    .portal-gallery-embed.my-5,
+    .portal-faq-block.my-5,
+    .portal-video-block.my-4 {
+        margin-top: 2rem !important;
+        margin-bottom: 2rem !important;
+    }
+
+    .portal-dynamic-block .pagination {
+        justify-content: flex-start !important;
+        overflow-x: auto;
+        flex-wrap: nowrap !important;
+        padding-bottom: .25rem;
+    }
+
+    .portal-dynamic-block .page-link {
+        min-width: 42px;
+    }
+
+    .home-banner-image {
+        min-height: 185px;
+    }
+}

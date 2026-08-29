@@ -1,0 +1,725 @@
+/* Portal IECLB Parobé v0.52.0 - Responsividade do Painel Administrativo */
+
+html,
+body.admin-body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+body.admin-body,
+body.admin-body *,
+body.admin-body *::before,
+body.admin-body *::after {
+    box-sizing: border-box;
+}
+
+.admin-shell,
+.admin-main,
+.admin-content,
+.admin-content > *,
+.admin-content .card,
+.admin-content .card-body,
+.admin-content .card-header,
+.admin-content .row,
+.admin-content .row > * {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.admin-main {
+    width: 100%;
+    overflow: hidden;
+}
+
+.admin-content {
+    width: 100%;
+}
+
+.admin-content img,
+.admin-content video,
+.admin-content canvas,
+.admin-content svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.admin-content iframe {
+    max-width: 100%;
+}
+
+.admin-topbar .container-fluid {
+    min-width: 0;
+}
+
+.admin-topbar .navbar-brand {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.admin-topbar .navbar-brand > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-user-button {
+    max-width: 42vw;
+}
+
+.admin-user-button span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-sidebar,
+.admin-sidebar .offcanvas-body,
+.admin-nav {
+    max-width: 100%;
+}
+
+.admin-nav-link,
+.admin-nav-submenu a,
+.admin-nav-disabled {
+    min-width: 0;
+}
+
+.admin-nav-link > span,
+.admin-nav-submenu a {
+    overflow-wrap: anywhere;
+}
+
+.admin-content h1,
+.admin-content h2,
+.admin-content h3,
+.admin-content h4,
+.admin-content h5,
+.admin-content h6 {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.admin-content > .d-flex,
+.admin-content .card-header.d-flex,
+.admin-content .card-body > .d-flex,
+.admin-content .toolbar,
+.admin-content .page-actions,
+.admin-content .editor-actions,
+.admin-content .wp-editor-toolbar {
+    min-width: 0;
+}
+
+.admin-content input,
+.admin-content select,
+.admin-content textarea,
+.admin-content .form-control,
+.admin-content .form-select,
+.admin-content .input-group,
+.admin-content .btn-group,
+.admin-content .dropdown-menu {
+    max-width: 100%;
+}
+
+.admin-content textarea {
+    resize: vertical;
+}
+
+.admin-content .table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.admin-content table.table {
+    width: 100%;
+    max-width: 100%;
+}
+
+.admin-content table.table th,
+.admin-content table.table td {
+    vertical-align: middle;
+}
+
+.admin-content pre,
+.admin-content code {
+    max-width: 100%;
+}
+
+.admin-content pre {
+    overflow-x: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.admin-content code,
+.admin-content a {
+    overflow-wrap: anywhere;
+}
+
+.admin-content .modal-dialog,
+.modal .modal-dialog {
+    max-width: calc(100vw - 2rem);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.modal .modal-content,
+.modal .modal-body {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.modal .modal-footer {
+    flex-wrap: wrap;
+}
+
+.admin-content .tox-tinymce,
+.admin-content .tox,
+.admin-content .tox-editor-container,
+.admin-content .tox-edit-area,
+.admin-content .tox-sidebar-wrap {
+    max-width: 100% !important;
+}
+
+.admin-content .tox-toolbar-overlord,
+.admin-content .tox-toolbar__primary,
+.admin-content .tox-toolbar__overflow {
+    max-width: 100% !important;
+}
+
+.admin-content .tox-toolbar__primary {
+    overflow-x: auto !important;
+    scrollbar-width: thin;
+}
+
+.wp-post-editor-page,
+.wp-post-editor-shell,
+.wp-post-editor-main,
+.wp-post-editor-canvas,
+.wp-post-title-wrap,
+.wp-post-content-wrap,
+.wp-post-settings {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.wp-post-title-input {
+    max-width: 100%;
+}
+
+.wp-post-permalink-preview {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.wp-post-permalink-preview a {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.wp-property-row,
+.wp-property-control {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.post-editor-page,
+.post-editor-grid,
+.post-editor-main,
+.post-editor-sidebar,
+.post-editor-panel,
+.post-editor-canvas {
+    min-width: 0;
+    max-width: 100%;
+}
+
+#contentBlocksEditor,
+#contentBlocksEditor .card-header,
+#contentBlocksEditor .card-body,
+.content-block-list,
+[data-block-list],
+[data-content-block-editor] {
+    min-width: 0;
+    max-width: 100%;
+}
+
+[data-content-block-editor] .dropdown-menu {
+    max-width: min(92vw, 360px);
+}
+
+[data-content-block-editor] textarea,
+[data-content-block-editor] input,
+[data-content-block-editor] select {
+    max-width: 100%;
+}
+
+.media-picker-grid,
+.gallery-picker-grid {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.media-picker-card,
+.gallery-picker-item {
+    min-width: 0;
+}
+
+.media-picker-card-info strong,
+.media-picker-card-info small {
+    max-width: 100%;
+}
+
+.media-thumb,
+.banner-admin-thumb,
+.banner-form-preview,
+.featured-preview,
+.post-featured-current img,
+.wp-featured-preview img {
+    max-width: 100%;
+}
+
+.theme-editor-file-list,
+.theme-code-editor {
+    max-width: 100%;
+}
+
+.theme-code-editor {
+    overflow-x: auto;
+}
+
+.comment-admin-text,
+.comments-author-cell {
+    max-width: 100%;
+}
+
+.admin-content .pagination {
+    flex-wrap: wrap;
+    gap: .2rem;
+}
+
+.admin-content .pagination .page-link {
+    min-width: 40px;
+    text-align: center;
+}
+
+@media (max-width: 991.98px) {
+    .admin-topbar {
+        min-height: 58px;
+    }
+
+    .admin-topbar .container-fluid {
+        gap: .5rem;
+    }
+
+    .admin-topbar .navbar-brand {
+        font-size: .95rem;
+    }
+
+    .admin-sidebar {
+        --bs-offcanvas-width: min(92vw, 340px) !important;
+        width: min(92vw, 340px) !important;
+        max-width: min(92vw, 340px) !important;
+    }
+
+    .admin-sidebar .offcanvas-body {
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .admin-content {
+        padding: 1.25rem !important;
+    }
+
+    .admin-content > .d-flex,
+    .admin-content .card-header.d-flex,
+    .admin-content .card-body > .d-flex,
+    .admin-content .wp-editor-toolbar {
+        flex-wrap: wrap;
+        gap: .75rem;
+    }
+
+    .admin-content .btn-group,
+    .admin-content .btn-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .admin-content table.table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .admin-content table.table thead,
+    .admin-content table.table tbody,
+    .admin-content table.table tfoot {
+        width: max-content;
+        min-width: 100%;
+    }
+
+    .post-editor-grid,
+    .wp-post-editor-shell {
+        grid-template-columns: 1fr !important;
+    }
+
+    .post-editor-sidebar {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        position: static !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .wp-post-settings {
+        position: static !important;
+        top: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        border-left: 0 !important;
+        border-top: 1px solid var(--bs-border-color);
+    }
+
+    .wp-settings-tabs {
+        position: static !important;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .wp-post-title-wrap,
+    .wp-post-content-wrap {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .admin-content .row > [class*="col-lg-"],
+    .admin-content .row > [class*="col-xl-"] {
+        min-width: 0;
+    }
+
+    .admin-content .input-group {
+        width: 100%;
+    }
+
+    .modal .modal-dialog {
+        width: auto;
+        max-width: calc(100vw - 1.25rem);
+        margin: .625rem auto;
+    }
+
+    .media-picker-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .admin-content {
+        padding: 1rem !important;
+    }
+
+    .admin-topbar .navbar-brand > span:last-child {
+        max-width: 42vw;
+    }
+
+    .post-editor-sidebar {
+        display: flex !important;
+        flex-direction: column;
+    }
+
+    .post-title-wrap,
+    .wp-post-title-wrap {
+        padding: 1rem 1rem .75rem !important;
+    }
+
+    .wp-post-content-wrap {
+        padding: 0 1rem 1.5rem !important;
+    }
+
+    .post-title-input,
+    .wp-post-title-input {
+        font-size: clamp(1.8rem, 8vw, 2.4rem) !important;
+        line-height: 1.08;
+    }
+
+    .tox .tox-toolbar__group {
+        flex-shrink: 0;
+    }
+
+    .admin-content .card-header,
+    .admin-content .card-footer {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .admin-content .card-body {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .admin-content form > .d-flex.gap-2,
+    .admin-content form > .d-flex.gap-3,
+    .admin-content .form-actions {
+        flex-wrap: wrap;
+    }
+
+    .admin-content table.table th,
+    .admin-content table.table td {
+        white-space: nowrap;
+    }
+
+    .admin-content table.table td.text-wrap,
+    .admin-content table.table .comment-admin-text,
+    .admin-content table.table .text-break {
+        white-space: normal;
+    }
+
+    .comment-admin-text {
+        min-width: 220px !important;
+    }
+
+    .theme-code-editor {
+        min-height: 52vh;
+        font-size: .82rem;
+        padding: .85rem;
+        white-space: pre;
+        overflow-x: auto;
+    }
+
+    .media-picker-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .gallery-picker-thumb {
+        height: auto;
+        aspect-ratio: 4 / 3;
+    }
+
+    .admin-content .pagination {
+        justify-content: flex-start !important;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: .25rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .admin-content {
+        padding: .75rem !important;
+    }
+
+    .admin-topbar .container-fluid {
+        padding-left: .65rem !important;
+        padding-right: .65rem !important;
+    }
+
+    .admin-menu-trigger {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+    }
+
+    .admin-brand-mark {
+        width: 28px;
+        height: 28px;
+        flex: 0 0 28px;
+    }
+
+    .admin-topbar .navbar-brand {
+        gap: .4rem;
+    }
+
+    .admin-topbar .navbar-brand > span:last-child {
+        max-width: 34vw;
+        font-size: .88rem;
+    }
+
+    .admin-user-button {
+        max-width: 40px;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .admin-user-button::after {
+        display: none;
+    }
+
+    .admin-user-button i {
+        margin-right: 0 !important;
+    }
+
+    .admin-sidebar {
+        --bs-offcanvas-width: min(94vw, 330px) !important;
+        width: min(94vw, 330px) !important;
+        max-width: min(94vw, 330px) !important;
+    }
+
+    .admin-nav {
+        padding-left: .45rem;
+        padding-right: .45rem;
+    }
+
+    .admin-nav-submenu {
+        margin-left: 2.2rem !important;
+    }
+
+    .admin-content .card {
+        border-radius: .7rem;
+    }
+
+    .admin-content .card-body,
+    .admin-content .card-header,
+    .admin-content .card-footer {
+        padding-left: .85rem;
+        padding-right: .85rem;
+    }
+
+    .admin-content h1,
+    .admin-content .h1 {
+        font-size: clamp(1.55rem, 8vw, 1.95rem);
+    }
+
+    .admin-content h2,
+    .admin-content .h2 {
+        font-size: clamp(1.35rem, 7vw, 1.7rem);
+    }
+
+    .admin-content > .d-flex > .btn,
+    .admin-content > .d-flex > a.btn {
+        max-width: 100%;
+    }
+
+    .admin-content .btn-group {
+        width: 100%;
+    }
+
+    .admin-content .btn-group > .btn {
+        flex: 1 1 auto;
+    }
+
+    .admin-content .dropdown-menu {
+        max-width: calc(100vw - 1.5rem);
+    }
+
+    .admin-content .form-label,
+    .admin-content .form-text {
+        overflow-wrap: anywhere;
+    }
+
+    .admin-content input[type="file"] {
+        font-size: .88rem;
+    }
+
+    .modal .modal-dialog {
+        max-width: calc(100vw - .75rem);
+        margin: .375rem auto;
+    }
+
+    .modal .modal-content {
+        max-height: calc(100vh - .75rem);
+    }
+
+    .modal .modal-header,
+    .modal .modal-body,
+    .modal .modal-footer {
+        padding-left: .9rem;
+        padding-right: .9rem;
+    }
+
+    .wp-editor-toolbar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .wp-editor-toolbar > * {
+        max-width: 100%;
+    }
+
+    .wp-post-title-wrap {
+        padding: 1rem .8rem .65rem !important;
+    }
+
+    .wp-post-content-wrap {
+        padding: 0 .8rem 1.25rem !important;
+    }
+
+    .wp-post-title-input {
+        font-size: clamp(1.75rem, 9vw, 2.2rem) !important;
+    }
+
+    .wp-property-row {
+        grid-template-columns: 1fr !important;
+        gap: .25rem !important;
+        padding: .4rem 0;
+    }
+
+    .wp-settings-section-body {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    [data-content-block-editor] .card-header > div,
+    [data-content-block-editor] .card-header > .d-flex {
+        width: 100%;
+    }
+
+    [data-content-block-editor] .card-header .btn,
+    [data-content-block-editor] .card-header .dropdown {
+        flex: 1 1 auto;
+    }
+
+    [data-content-block-editor] .card-header .dropdown > .btn {
+        width: 100%;
+    }
+
+    [data-content-block-editor] .dropdown-menu {
+        width: min(92vw, 340px);
+    }
+
+    .media-picker-grid {
+        gap: .5rem !important;
+    }
+
+    .media-picker-card-info {
+        padding: .45rem .5rem .55rem;
+    }
+
+    .media-picker-card-info strong {
+        font-size: .78rem;
+    }
+
+    .media-thumb {
+        height: auto;
+        aspect-ratio: 4 / 3;
+    }
+
+    .comments-author-cell {
+        min-width: 150px !important;
+    }
+
+    .comment-admin-text {
+        min-width: 200px !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .admin-topbar .navbar-brand > span:last-child {
+        display: none;
+    }
+
+    .media-picker-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .admin-content {
+        padding: .6rem !important;
+    }
+
+    .admin-content .btn {
+        white-space: normal;
+    }
+}

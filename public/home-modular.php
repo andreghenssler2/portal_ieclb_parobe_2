@@ -19,6 +19,8 @@ $homeTitleKey = static function (string $value): string {
 };
 ?>
 <link rel="stylesheet" href="<?= e(url('public/css/home-modular.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.29.0'))) ?>">
+<?php /* v0.51.0 - responsividade da Home modular */ ?>
+<link rel="stylesheet" href="<?= e(url('public/css/home-responsive-v51.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.51.0'))) ?>">
 <div class="portal-home" id="portalHomeV028" data-home-version="0.29.0">
 <?php foreach ($homeSections as $section): ?>
     <?php

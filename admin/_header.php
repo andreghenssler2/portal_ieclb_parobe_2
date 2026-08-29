@@ -45,6 +45,8 @@ if (Auth::can('comentarios.gerenciar')) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= e(url('public/css/admin.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('public/css/admin-menu-v34.css')) ?>">
+    <?php /* v0.52.0 - responsividade do painel administrativo */ ?>
+    <link rel="stylesheet" href="<?= e(url('public/css/admin-responsive-v52.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.52.0'))) ?>">
     <!-- Bootstrap JS precisa estar disponível antes dos scripts específicos das páginas. -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script defer src="<?= e(url('public/js/admin-menu-v34.js')) ?>"></script>

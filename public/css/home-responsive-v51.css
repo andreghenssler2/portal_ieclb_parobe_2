@@ -1,0 +1,292 @@
+/* Portal IECLB Parobé v0.51.0 - Responsividade da Home modular */
+
+/*
+ * Este arquivo é carregado depois de home-modular.css.
+ * Assim as correções abaixo vencem as dimensões fixas anteriores
+ * sem alterar o layout de desktop.
+ */
+
+.portal-home,
+.portal-home *,
+.portal-home *::before,
+.portal-home *::after {
+    box-sizing: border-box;
+}
+
+.portal-home,
+.portal-home > *,
+.home-block,
+.home-featured,
+.home-featured__lead,
+.home-featured__side,
+.home-featured__small,
+.home-grid,
+.home-card,
+.home-card__image,
+.home-card__body,
+.home-carousel-wrap,
+.home-carousel {
+    min-width: 0;
+    max-width: 100%;
+}
+
+@media (max-width: 767.98px) {
+    .portal-home {
+        width: 100%;
+        max-width: 100%;
+        grid-template-columns: 1fr !important;
+        column-gap: 0;
+        padding: 24px 14px 38px !important;
+        overflow: hidden;
+    }
+
+    .portal-home > .home-block,
+    .portal-home > .home-block--width-half {
+        grid-column: 1 !important;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .home-block {
+        width: 100%;
+        margin-bottom: 40px;
+    }
+
+    .home-block--bg-soft {
+        padding-top: 26px;
+        padding-bottom: 28px;
+    }
+
+    .home-block--width-half.home-block--bg-soft {
+        padding: 16px;
+    }
+
+    .home-block__head {
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        margin-bottom: 16px;
+    }
+
+    .home-block__head h2 {
+        min-width: 0;
+        max-width: 100%;
+        font-size: clamp(1.2rem, 6vw, 1.45rem);
+        overflow-wrap: anywhere;
+    }
+
+    .home-block__more {
+        margin-left: auto;
+        font-size: .9rem;
+    }
+
+    /* Destaque principal + chamadas secundárias: uma coluna no telefone. */
+    .home-featured {
+        display: grid;
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+        height: auto !important;
+    }
+
+    .home-featured__lead {
+        width: 100%;
+        height: auto !important;
+        min-height: 220px;
+        aspect-ratio: 16 / 9;
+    }
+
+    .home-featured__side {
+        display: grid;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: none !important;
+        gap: 12px;
+        width: 100%;
+        height: auto !important;
+    }
+
+    .home-featured__small {
+        width: 100%;
+        height: auto !important;
+        min-height: 160px;
+        aspect-ratio: 16 / 9;
+    }
+
+    .home-featured img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .home-featured__content {
+        left: 14px;
+        right: 14px;
+        bottom: 14px;
+        gap: 4px;
+    }
+
+    .home-featured__content strong {
+        font-size: clamp(1.25rem, 6vw, 1.65rem);
+        line-height: 1.12;
+        overflow-wrap: anywhere;
+    }
+
+    .home-featured__content small {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+
+    .home-featured__content--small {
+        left: 12px;
+        right: 12px;
+        bottom: 11px;
+    }
+
+    .home-featured__content--small strong {
+        font-size: 1rem;
+        line-height: 1.18;
+    }
+
+    /* Grade: uma matéria por linha. */
+    .home-grid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+
+    .home-card {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /*
+     * Flyers/banners com texto estavam sendo muito cortados no 4:3.
+     * Em telas pequenas usamos 16:9, que corresponde melhor às capas.
+     */
+    .home-card__image {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 16 / 9 !important;
+        background: #f5f5f5;
+    }
+
+    .home-card__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .home-card__body {
+        width: 100%;
+    }
+
+    .home-card h3,
+    .home-card h3 a,
+    .home-card p {
+        overflow-wrap: anywhere;
+    }
+
+    /* Carrossel horizontal: um card quase inteiro por vez, sem sair da tela. */
+    .home-carousel-wrap {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .home-carousel {
+        width: 100%;
+        max-width: 100%;
+        gap: 12px;
+        padding: 0 0 6px;
+        scroll-padding-inline: 0;
+        overscroll-behavior-inline: contain;
+    }
+
+    .home-card--carousel {
+        flex: 0 0 88% !important;
+        width: 88%;
+        max-width: 88%;
+    }
+
+    .home-carousel-arrow {
+        top: 50%;
+        width: 36px;
+        height: 36px;
+        transform: translateY(-50%);
+    }
+
+    .home-carousel-arrow--prev {
+        left: 4px !important;
+    }
+
+    .home-carousel-arrow--next {
+        right: 4px !important;
+    }
+
+    .home-agenda-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .home-agenda-card {
+        width: 100%;
+        padding: 14px;
+    }
+
+    .home-agenda-content > strong,
+    .home-agenda-content > span,
+    .home-agenda-content > small {
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (max-width: 480px) {
+    /*
+     * As seções meia-largura tinham cards internos com coluna fixa
+     * de 110px. Em telefones estreitos eles passam a empilhar.
+     */
+    .home-block--width-half.home-block--grid .home-card,
+    .home-block--width-half.home-block--grid .home-card:first-child {
+        display: block !important;
+        grid-template-columns: none !important;
+        width: 100%;
+        min-height: 0;
+        padding: 0 0 12px;
+        overflow: hidden;
+    }
+
+    .home-block--width-half.home-block--grid
+    .home-card:not(:first-child)
+    .home-card__image {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 16 / 9 !important;
+        border-radius: 4px 4px 0 0;
+    }
+
+    .home-block--width-half.home-block--grid
+    .home-card:not(:first-child)
+    .home-card__body {
+        padding: 12px 12px 0 !important;
+    }
+
+    .home-card--carousel {
+        flex-basis: 92% !important;
+        width: 92%;
+        max-width: 92%;
+    }
+
+    .home-agenda-card {
+        gap: 10px;
+    }
+
+    .home-agenda-date {
+        flex-basis: 52px;
+        min-height: 56px;
+        padding-right: 10px;
+    }
+
+    .home-agenda-date strong {
+        font-size: 24px;
+    }
+}

@@ -44,3 +44,8 @@
 !/storage/seguranca/.htaccess
 !/storage/seguranca/.gitkeep
 # END AUTENTICACAO SEGURA V1
+
+php.ini
+ads.txt
+.user.ini
+sitemap_ieclbparobe.xml

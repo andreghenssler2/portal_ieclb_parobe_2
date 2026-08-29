@@ -145,6 +145,8 @@ if (!$menuPrincipal) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= e(url('public/css/site.css')) ?>">
     <?php if ($activeThemeStyle): ?><link rel="stylesheet" href="<?= e($activeThemeStyle) ?>"><?php endif; ?>
+    <?php /* v0.51.0 - responsividade global */ ?>
+    <link rel="stylesheet" href="<?= e(url('public/css/responsive-v51.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.51.0'))) ?>">
     <style>:root{--portal-primary:<?= e($appearancePrimary) ?>;--portal-secondary:<?= e($appearanceSecondary) ?>;--portal-bg:<?= e($appearanceBg) ?>;--portal-text:<?= e($appearanceText) ?>;--portal-footer-bg:<?= e($appearanceFooter) ?>;--portal-footer-text:<?= e($appearanceFooterText) ?>;--portal-container:<?= (int)$appearanceContainer ?>px;--portal-radius:<?= (int)$appearanceRadius ?>px}</style>
 </head>
 <body>
