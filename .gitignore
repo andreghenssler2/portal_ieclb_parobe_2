@@ -17,3 +17,30 @@
 /portal/*
 /privado/*
 /promocao/*
+
+# Logs em qualquer outro local
+*.log
+
+# Backups e temporários
+*.bak
+*.bak-*
+*.backup
+*.tmp
+*.temp
+
+# Dumps de banco gerados na raiz
+/*.sql
+/*.sql.gz
+
+# Pacotes
+*.zip
+
+# Dependências são restauradas por composer install.
+/lib/vendor/
+
+
+# BEGIN AUTENTICACAO SEGURA V1
+/storage/*
+!/storage/seguranca/.htaccess
+!/storage/seguranca/.gitkeep
+# END AUTENTICACAO SEGURA V1
