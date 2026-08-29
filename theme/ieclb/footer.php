@@ -6,6 +6,9 @@ $footerEmail = trim((string)($footerSettings['site_email'] ?? ''));
 $footerPhone = trim((string)($footerSettings['site_telefone'] ?? ''));
 $footerAddress = trim((string)($footerSettings['site_endereco'] ?? ''));
 $newsletterFooterEnabled = (string)($footerSettings['newsletter_enabled'] ?? '1') === '1';
+$analyticsEnabled = (string)($footerSettings['analytics_enabled'] ?? '0') === '1';
+$analyticsMeasurementId = strtoupper(trim((string)($footerSettings['analytics_measurement_id'] ?? '')));
+$analyticsActive = $analyticsEnabled && preg_match('/^G-[A-Z0-9]+$/', $analyticsMeasurementId) === 1;
 $socials = [
     'Instagram' => trim((string)($footerSettings['site_instagram'] ?? '')),
     'YouTube' => trim((string)($footerSettings['site_youtube'] ?? '')),
@@ -47,5 +50,14 @@ try {
     </div>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<?php if ($analyticsActive): ?>
+<script async src="https://www.googletagmanager.com/gtag/js?id=<?= e($analyticsMeasurementId) ?>"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', <?= json_encode($analyticsMeasurementId, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) ?>);
+</script>
+<?php endif; ?>
 </body>
 </html>

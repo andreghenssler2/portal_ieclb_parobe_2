@@ -30,6 +30,150 @@
     return JSON.parse(JSON.stringify(value));
   }
 
+  function videoPreviewEmbedUrl(value) {
+    let raw = String(value || '').trim();
+    if (!raw) return '';
+
+    // Se o usuário colar um iframe, aproveita somente o src.
+    if (/<iframe\b/i.test(raw)) {
+      const match = raw.match(/\bsrc\s*=\s*["']([^"']+)["']/i);
+      raw = match ? match[1].trim() : '';
+      if (!raw) return '';
+    }
+
+    if (raw.startsWith('//')) raw = 'https:' + raw;
+
+    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) {
+      if (
+        /^(?:www\.|m\.|music\.)?(?:youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com|player\.vimeo\.com)\//i.test(raw)
+      ) {
+        raw = 'https://' + raw;
+      }
+    }
+
+    let url;
+    try {
+      url = new URL(raw);
+    } catch (_) {
+      return '';
+    }
+
+    const host = url.hostname.toLowerCase().replace(/^www\./, '');
+    const segments = url.pathname.split('/').filter(Boolean);
+
+    if (
+      host === 'youtube.com'
+      || host === 'm.youtube.com'
+      || host === 'music.youtube.com'
+      || host === 'youtube-nocookie.com'
+    ) {
+      let id = '';
+
+      if (url.pathname === '/watch') {
+        id = url.searchParams.get('v') || '';
+      }
+
+      if (
+        !id
+        && segments.length >= 2
+        && ['shorts', 'live', 'embed', 'v'].includes(segments[0].toLowerCase())
+      ) {
+        id = segments[1];
+      }
+
+      id = String(id).replace(/[^A-Za-z0-9_-]/g, '');
+
+      return id
+        ? 'https://www.youtube-nocookie.com/embed/' + id
+        : '';
+    }
+
+    if (host === 'youtu.be') {
+      const id = String(segments[0] || '').replace(/[^A-Za-z0-9_-]/g, '');
+
+      return id
+        ? 'https://www.youtube-nocookie.com/embed/' + id
+        : '';
+    }
+
+    if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+      let id = '';
+
+      if (
+        host === 'player.vimeo.com'
+        && segments[0] === 'video'
+        && segments[1]
+      ) {
+        id = segments[1];
+      } else {
+        id = segments.find(segment => /^\d+$/.test(segment)) || '';
+      }
+
+      id = String(id).replace(/\D/g, '');
+
+      return id
+        ? 'https://player.vimeo.com/video/' + id
+        : '';
+    }
+
+    return '';
+  }
+
+  function updateVideoPreview(card) {
+    if (!card) return;
+
+    const input = card.querySelector('[data-field="url"]');
+    const preview = card.querySelector('[data-video-preview]');
+    const status = card.querySelector('[data-video-preview-status]');
+
+    if (!input || !preview) return;
+
+    const embed = videoPreviewEmbedUrl(input.value);
+
+    if (!String(input.value || '').trim()) {
+      preview.innerHTML = '';
+      preview.classList.add('d-none');
+      if (status) {
+        status.textContent = 'Cole um link do YouTube ou Vimeo para visualizar.';
+        status.className = 'form-text text-secondary';
+      }
+      return;
+    }
+
+    if (!embed) {
+      preview.innerHTML = '';
+      preview.classList.add('d-none');
+      if (status) {
+        status.textContent = 'Não foi possível reconhecer este link de vídeo.';
+        status.className = 'form-text text-danger';
+      }
+      return;
+    }
+
+    const current = preview.querySelector('iframe')?.getAttribute('src') || '';
+
+    if (current !== embed) {
+      preview.innerHTML = `
+        <div class="ratio ratio-16x9 rounded overflow-hidden border bg-dark">
+          <iframe
+            src="${esc(embed)}"
+            title="Pré-visualização do vídeo"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin"
+          ></iframe>
+        </div>
+      `;
+    }
+
+    preview.classList.remove('d-none');
+
+    if (status) {
+      status.textContent = 'Pré-visualização carregada. O vídeo será exibido assim na publicação.';
+      status.className = 'form-text text-success';
+    }
+  }
   function defaultData(type) {
     switch (type) {
       case 'heading': return {text:'', level:'h2'};
@@ -236,9 +380,26 @@
       case 'video':
         return `
           <label class="form-label small">URL do YouTube ou Vimeo</label>
-          <input class="form-control form-control-sm mb-2" data-field="url" value="${esc(data.url)}" placeholder="https://www.youtube.com/watch?v=…">
+          <input
+            class="form-control form-control-sm mb-1"
+            data-field="url"
+            data-video-url
+            value="${esc(data.url)}"
+            placeholder="https://youtu.be/... ou https://www.youtube.com/watch?v=..."
+          >
+          <div class="form-text text-secondary mb-3" data-video-preview-status>
+            Cole um link do YouTube ou Vimeo para visualizar.
+          </div>
+
+          <div class="mb-3 d-none" data-video-preview></div>
+
           <label class="form-label small">Legenda</label>
-          <input class="form-control form-control-sm" data-field="caption" value="${esc(data.caption)}">`;
+          <input
+            class="form-control form-control-sm"
+            data-field="caption"
+            value="${esc(data.caption)}"
+            placeholder="Legenda opcional"
+          >`;
 
       case 'columns':
         return `
@@ -568,6 +729,21 @@
           el.addEventListener('input', sync);
           el.addEventListener('change', sync);
         });
+
+        if (block.type === 'video') {
+          const videoUrlInput = card.querySelector('[data-video-url]');
+
+          videoUrlInput?.addEventListener('input', () => {
+            updateVideoPreview(card);
+          });
+
+          videoUrlInput?.addEventListener('change', () => {
+            updateVideoPreview(card);
+          });
+
+          // Também exibe a prévia de vídeos já salvos ao abrir o editor.
+          updateVideoPreview(card);
+        }
 
         card.querySelector('[data-dynamic-layout]')?.addEventListener('change', () => {
           updateDynamicLimitConstraint(card);
