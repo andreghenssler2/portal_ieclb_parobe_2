@@ -7,7 +7,6 @@ final class ContentBlockService
     // v0.45.0 - blocos dinâmicos do Portal.
     // v0.46.2 - chave única de paginação por bloco.
     // v0.47.0 - blocos Mais Lidas e Lideranças.
-    // v0.48.0 - galeria incorporada dentro do conteúdo.
     private const TYPES = [
         'heading',
         'text',
@@ -24,7 +23,6 @@ final class ContentBlockService
         'portal_communities',
         'portal_most_read',
         'portal_leadership',
-        'portal_gallery_embed',
     ];
 
     private static array $schemaReady = [];
@@ -349,8 +347,7 @@ final class ContentBlockService
             'portal_galleries',
             'portal_communities',
             'portal_most_read',
-            'portal_leadership',
-            'portal_gallery_embed'
+            'portal_leadership'
                 => DynamicContentBlockService::sanitize($pdo, $type, $data),
             default => [],
         };
@@ -395,8 +392,7 @@ final class ContentBlockService
             'portal_galleries',
             'portal_communities',
             'portal_most_read',
-            'portal_leadership',
-            'portal_gallery_embed' => true,
+            'portal_leadership' => true,
             default => false,
         };
     }
@@ -423,8 +419,7 @@ final class ContentBlockService
             'portal_galleries',
             'portal_communities',
             'portal_most_read',
-            'portal_leadership',
-            'portal_gallery_embed'
+            'portal_leadership'
                 => DynamicContentBlockService::render(
                     $pdo,
                     $type,
@@ -645,8 +640,7 @@ final class ContentBlockService
             'portal_galleries',
             'portal_communities',
             'portal_most_read',
-            'portal_leadership',
-            'portal_gallery_embed'
+            'portal_leadership'
                 => [(string)($data['title'] ?? '')],
             default => [],
         };

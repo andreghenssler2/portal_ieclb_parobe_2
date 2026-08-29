@@ -1,4 +1,4 @@
-/* Portal IECLB Parobé v0.48.0 - importar galeria dentro do conteúdo */
+/* Portal IECLB Parobé v0.47.0 - blocos Mais Lidas e Lideranças */
 (() => {
   const LABELS = {
     heading: 'Título',
@@ -15,8 +15,7 @@
     portal_galleries: 'Galerias',
     portal_communities: 'Comunidades',
     portal_most_read: 'Mais Lidas',
-    portal_leadership: 'Lideranças',
-    portal_gallery_embed: 'Importar Galeria'
+    portal_leadership: 'Lideranças'
   };
 
   function esc(value) {
@@ -48,7 +47,6 @@
       case 'portal_communities': return {title:'Comunidades', limit:4, layout:'cards'};
       case 'portal_most_read': return {title:'Mais Lidas', limit:10, layout:'cards', period:'total', show_date:'1', show_excerpt:'0', show_views:'1'};
       case 'portal_leadership': return {title:'Lideranças', limit:8, layout:'cards', leadership_type:'', community_id:0, show_excerpt:'1'};
-      case 'portal_gallery_embed': return {gallery_id:0, gallery_layout:'grid', columns:4, photo_limit:0, show_title:'1', show_description:'0', show_captions:'1', lightbox:'1', title:''};
       default: return {};
     }
   }
@@ -72,8 +70,6 @@
         case 'portal_most_read':
         case 'portal_leadership':
           return data.title || LABELS[type];
-        case 'portal_gallery_embed':
-          return data.title || 'Galeria incorporada';
         default: return '';
       }
     })();
@@ -365,52 +361,6 @@
               </select>
             </div>
             <div class="col-md-2">${yesNoSelect('show_excerpt', data.show_excerpt, 'Resumo')}</div>
-          </div>`;
-
-      case 'portal_gallery_embed':
-        return `
-          <div class="alert alert-info py-2 small">
-            Escolha uma galeria já publicada. As fotos serão exibidas diretamente dentro desta Página ou Notícia e acompanharão futuras alterações feitas na galeria original.
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-md-8">
-              <label class="form-label small">Galeria</label>
-              <select class="form-select form-select-sm" data-field="gallery_id">
-                ${selectOptions(dynamicOptions?.galleries, data.gallery_id, 'Selecione uma galeria publicada')}
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label small">Layout das fotos</label>
-              <select class="form-select form-select-sm" data-field="gallery_layout">
-                <option value="grid" ${String(data.gallery_layout || 'grid') === 'grid' ? 'selected' : ''}>Grade</option>
-                <option value="carousel" ${String(data.gallery_layout) === 'carousel' ? 'selected' : ''}>Carrossel</option>
-              </select>
-            </div>
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-md-4">
-              <label class="form-label small">Título personalizado</label>
-              <input class="form-control form-control-sm" data-field="title" value="${esc(data.title || '')}" placeholder="Vazio = título da galeria">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label small">Colunas na Grade</label>
-              <select class="form-select form-select-sm" data-field="columns">
-                <option value="2" ${Number(data.columns || 4) === 2 ? 'selected' : ''}>2 colunas</option>
-                <option value="3" ${Number(data.columns || 4) === 3 ? 'selected' : ''}>3 colunas</option>
-                <option value="4" ${Number(data.columns || 4) === 4 ? 'selected' : ''}>4 colunas</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label small">Quantidade de fotos</label>
-              <input class="form-control form-control-sm" type="number" min="0" max="500" data-field="photo_limit" value="${Number(data.photo_limit || 0)}">
-              <div class="form-text">0 = todas as fotos.</div>
-            </div>
-          </div>
-          <div class="row g-2">
-            <div class="col-md-3">${yesNoSelect('show_title', data.show_title, 'Mostrar título')}</div>
-            <div class="col-md-3">${yesNoSelect('show_description', data.show_description, 'Descrição')}</div>
-            <div class="col-md-3">${yesNoSelect('show_captions', data.show_captions, 'Legendas')}</div>
-            <div class="col-md-3">${yesNoSelect('lightbox', data.lightbox, 'Ampliar fotos')}</div>
           </div>`;
 
       default:

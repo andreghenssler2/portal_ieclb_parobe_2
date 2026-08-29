@@ -1,4 +1,4 @@
-            <div class="text-secondary small mt-5 pt-3 border-top">Portal IECLB Parobé · v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.9.0') ?></div>
+            <div class="text-secondary small mt-5 pt-3 border-top">Portal IECLB Parobé · v<?= e(defined('APP_VERSION') ? (string)APP_VERSION : '0.43.0') ?></div>
         </div>
     </main>
 </div>

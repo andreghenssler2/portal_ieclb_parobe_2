@@ -130,7 +130,7 @@ final class SiteHealthService
             'categorias', 'posts', 'post_categorias', 'tags', 'post_tags', 'paginas', 'eventos',
             'evento_categorias', 'configuracoes', 'logs', 'login_tentativas', 'comentarios', 'revisoes',
             'formularios', 'formulario_campos', 'formulario_respostas', 'formulario_resposta_valores',
-            'galerias', 'galeria_midias', 'banners', 'widgets', 'menus', 'menu_itens', 'grupos',
+            'galerias', 'galeria_midias', 'banners', 'widgets', 'menus', 'menu_itens',
             'newsletter_assinantes', 'newsletter_campanhas', 'newsletter_envios', 'email_envios',
             'wordpress_importacoes', 'wordpress_import_map', 'wordpress_import_logs',
             'home_secoes', 'home_post_categorias',

@@ -1,5 +1,5 @@
 <?php
-/** Editor compartilhado de blocos v0.48.0.
+/** Editor compartilhado de blocos v0.47.0.
  * Espera $contentBlocks e opcionalmente $contentBlocksTitle/$contentPatterns.
  */
 $contentBlocks = is_array($contentBlocks ?? null) ? $contentBlocks : [];
@@ -97,7 +97,6 @@ $contentDynamicOptionsJson = json_encode(
                     <li><button class="dropdown-item" type="button" data-block-add="portal_communities"><i class="bi bi-geo-alt me-2"></i>Comunidades</button></li>
                     <li><button class="dropdown-item" type="button" data-block-add="portal_most_read"><i class="bi bi-bar-chart-line me-2"></i>Mais Lidas</button></li>
                     <li><button class="dropdown-item" type="button" data-block-add="portal_leadership"><i class="bi bi-people me-2"></i>Lideranças</button></li>
-                    <li><button class="dropdown-item" type="button" data-block-add="portal_gallery_embed"><i class="bi bi-images me-2"></i>Importar Galeria</button></li>
                 </ul>
             </div>
         </div>
