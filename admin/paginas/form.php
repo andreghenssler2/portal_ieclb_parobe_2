@@ -372,7 +372,32 @@ tinymce.init({
     height:520,
     menubar:false,
     plugins:'link lists table code image media',
-    toolbar:'undo redo | blocks | bold italic | bullist numlist | link portalmedia table | alignleft aligncenter alignright | code',
+    toolbar:'undo redo | blocks | bold italic forecolor backcolor | bullist numlist | link portalmedia table | alignleft aligncenter alignright | code',
+    // v0.52.1 - cores personalizadas do TinyMCE
+    color_cols: 8,
+    custom_colors: true,
+    color_map: [
+        '000000', 'Preto',
+        '333333', 'Cinza escuro',
+        '666666', 'Cinza',
+        '999999', 'Cinza claro',
+        'FFFFFF', 'Branco',
+        'B91C1C', 'Vermelho',
+        'DC2626', 'Vermelho vivo',
+        'EA580C', 'Laranja',
+        'F59E0B', 'Âmbar',
+        'FACC15', 'Amarelo',
+        '15803D', 'Verde',
+        '16A34A', 'Verde vivo',
+        '0F766E', 'Verde petróleo',
+        '0369A1', 'Azul',
+        '2563EB', 'Azul vivo',
+        '4F46E5', 'Índigo',
+        '7E22CE', 'Roxo',
+        'C026D3', 'Magenta',
+        'BE185D', 'Rosa',
+        '7C2D12', 'Marrom'
+    ],
     setup:function(editor){
         editor.ui.registry.addButton('portalmedia', {
             icon: 'image',
