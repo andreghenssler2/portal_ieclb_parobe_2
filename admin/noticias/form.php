@@ -567,8 +567,25 @@ tinymce.init({
     height: 650,
     menubar: false,
     placeholder: 'Digite / para começar a escrever…',
-    plugins: 'link lists table code image media autoresize',
-    toolbar: 'undo redo | blocks | bold italic forecolor backcolor | bullist numlist | link portalmedia table | alignleft aligncenter alignright | blockquote | code',
+    plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table wordcount autoresize',
+    toolbar: 'undo redo | blocks fontfamily fontsize lineheight | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link portalmedia media table charmap | blockquote removeformat | searchreplace visualblocks preview fullscreen code',
+    // v0.53.0 - editor avançado TinyMCE
+    toolbar_mode: 'sliding',
+    browser_spellcheck: true,
+    contextmenu: false,
+    font_family_formats:
+        'Sistema=system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;'
+        + 'Arial=Arial,Helvetica,sans-serif;'
+        + 'Verdana=Verdana,Geneva,sans-serif;'
+        + 'Tahoma=Tahoma,Arial,sans-serif;'
+        + 'Trebuchet MS="Trebuchet MS",Arial,sans-serif;'
+        + 'Georgia=Georgia,serif;'
+        + 'Times New Roman="Times New Roman",Times,serif;'
+        + 'Courier New="Courier New",Courier,monospace;',
+    font_size_formats:
+        '10px 12px 14px 16px 18px 20px 22px 24px 28px 32px 36px 42px 48px 56px 64px',
+    line_height_formats:
+        '1 1.15 1.25 1.5 1.75 2 2.5 3',
     // v0.52.1 - cores personalizadas do TinyMCE
     color_cols: 8,
     custom_colors: true,
