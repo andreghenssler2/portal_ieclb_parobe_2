@@ -52,16 +52,6 @@ final class DynamicContentBlockService
                     ? 'ativo=1'
                     : ''
             ),
-            'galerias' => self::simpleOptions(
-                $pdo,
-                'galerias',
-                'titulo',
-                'id',
-                'titulo ASC,id DESC',
-                self::columnExists($pdo, 'galerias', 'status')
-                    ? "status<>'arquivado'"
-                    : ''
-            ),
         ];
     }
 
@@ -134,34 +124,6 @@ final class DynamicContentBlockService
                 'show_date' => !array_key_exists('show_date', $data)
                     || !empty($data['show_date']),
             ],
-            'portal_gallery' => [
-                'gallery_id' => self::validId(
-                    $pdo,
-                    'galerias',
-                    (int)($data['gallery_id'] ?? 0)
-                ),
-                'title' => self::cut(
-                    trim((string)($data['title'] ?? '')),
-                    180
-                ),
-                'columns' => in_array(
-                    (string)($data['columns'] ?? '3'),
-                    ['2','3','4'],
-                    true
-                )
-                    ? (string)$data['columns']
-                    : '3',
-                'limit' => max(
-                    0,
-                    min(100, (int)($data['limit'] ?? 0))
-                ),
-                'show_title' => !array_key_exists('show_title', $data)
-                    || !empty($data['show_title']),
-                'show_captions' => !array_key_exists('show_captions', $data)
-                    || !empty($data['show_captions']),
-                'show_link' => !array_key_exists('show_link', $data)
-                    || !empty($data['show_link']),
-            ],
             'portal_galleries' => $common + [
                 'show_date' => !array_key_exists('show_date', $data)
                     || !empty($data['show_date']),
@@ -208,11 +170,6 @@ final class DynamicContentBlockService
                     $instanceKey
                 ),
                 'portal_documents' => self::renderDocuments(
-                    $pdo,
-                    $data,
-                    $instanceKey
-                ),
-                'portal_gallery' => self::renderGalleryEmbed(
                     $pdo,
                     $data,
                     $instanceKey
@@ -532,209 +489,6 @@ final class DynamicContentBlockService
         );
     }
 
-    /**
-     * Renderiza as próprias fotos de uma galeria dentro da Página/Notícia.
-     */
-    private static function renderGalleryEmbed(
-        PDO $pdo,
-        array $data,
-        string $instanceKey
-    ): string
-    {
-        if (
-            !self::tableExists($pdo, 'galerias')
-            || !self::tableExists($pdo, 'galeria_midias')
-            || !self::tableExists($pdo, 'midias')
-        ) {
-            return '';
-        }
-
-        $galleryId = max(0, (int)($data['gallery_id'] ?? 0));
-        if ($galleryId <= 0) {
-            return '';
-        }
-
-        $galleryStmt = $pdo->prepare(
-            "SELECT id,titulo,slug,descricao,status,publicado_em
-             FROM galerias
-             WHERE id=:id
-               AND status='publicado'
-               AND (publicado_em IS NULL OR publicado_em<=NOW())
-             LIMIT 1"
-        );
-        $galleryStmt->execute(['id' => $galleryId]);
-        $gallery = $galleryStmt->fetch();
-
-        if (!$gallery) {
-            return '';
-        }
-
-        $limit = max(
-            0,
-            min(100, (int)($data['limit'] ?? 0))
-        );
-
-        $sql =
-            "SELECT gm.id,gm.legenda,gm.ordem,
-                    m.id AS midia_id,
-                    m.caminho,m.alt_text,m.titulo,m.nome_original
-             FROM galeria_midias gm
-             INNER JOIN midias m ON m.id=gm.midia_id
-             WHERE gm.galeria_id=:galeria
-               AND m.mime_type LIKE 'image/%'
-             ORDER BY gm.ordem ASC,gm.id ASC";
-
-        if ($limit > 0) {
-            $sql .= ' LIMIT ' . $limit;
-        }
-
-        $photosStmt = $pdo->prepare($sql);
-        $photosStmt->execute(['galeria' => $galleryId]);
-        $photos = $photosStmt->fetchAll() ?: [];
-
-        if (!$photos) {
-            return '';
-        }
-
-        $columns = (string)($data['columns'] ?? '3');
-
-        $columnClass = match ($columns) {
-            '2' => 'col-md-6',
-            '4' => 'col-6 col-md-4 col-xl-3',
-            default => 'col-sm-6 col-lg-4',
-        };
-
-        $showTitle = !array_key_exists('show_title', $data)
-            || !empty($data['show_title']);
-
-        $showCaptions = !array_key_exists('show_captions', $data)
-            || !empty($data['show_captions']);
-
-        $showLink = !array_key_exists('show_link', $data)
-            || !empty($data['show_link']);
-
-        $customTitle = trim((string)($data['title'] ?? ''));
-
-        $sectionTitle = $customTitle !== ''
-            ? $customTitle
-            : (string)$gallery['titulo'];
-
-        $blockToken = substr(
-            hash(
-                'sha256',
-                $instanceKey . ':' . $galleryId
-            ),
-            0,
-            12
-        );
-
-        $html = '<section class="portal-gallery-embed my-5"'
-            . ' id="galeria-bloco-' . self::e($blockToken) . '">';
-
-        if ($showTitle) {
-            $html .= '<div class="d-flex flex-wrap align-items-center'
-                . ' justify-content-between gap-2 mb-3">';
-
-            if ($sectionTitle !== '') {
-                $html .= '<h2 class="h3 mb-0">'
-                    . self::e($sectionTitle)
-                    . '</h2>';
-            }
-
-            if ($showLink) {
-                $html .= '<a class="btn btn-sm btn-outline-primary" href="'
-                    . self::e(
-                        contentUrl(
-                            'galeria',
-                            (string)$gallery['slug']
-                        )
-                    )
-                    . '">Ver álbum completo</a>';
-            }
-
-            $html .= '</div>';
-        }
-
-        $html .= '<div class="row g-3">';
-
-        foreach ($photos as $photo) {
-            $image = self::imageUrl(
-                (string)($photo['caminho'] ?? '')
-            );
-
-            if ($image === '') {
-                continue;
-            }
-
-            $alt = trim((string)($photo['alt_text'] ?? ''));
-
-            if ($alt === '') {
-                $alt = trim((string)($photo['legenda'] ?? ''));
-            }
-
-            if ($alt === '') {
-                $alt = trim((string)($photo['titulo'] ?? ''));
-            }
-
-            if ($alt === '') {
-                $alt = (string)$gallery['titulo'];
-            }
-
-            $caption = trim(
-                (string)($photo['legenda'] ?? '')
-            );
-
-            $html .= '<div class="'
-                . self::e($columnClass)
-                . '">';
-
-            $html .= '<figure class="mb-0 h-100">';
-
-            $html .= '<a href="'
-                . self::e($image)
-                . '" target="_blank" rel="noopener"'
-                . ' class="d-block rounded-3 overflow-hidden'
-                . ' bg-body-tertiary text-decoration-none">';
-
-            $html .= '<img src="'
-                . self::e($image)
-                . '" alt="'
-                . self::e($alt)
-                . '" loading="lazy"'
-                . ' class="w-100 d-block"'
-                . ' style="height:240px;object-fit:cover">';
-
-            $html .= '</a>';
-
-            if ($showCaptions && $caption !== '') {
-                $html .= '<figcaption'
-                    . ' class="small text-secondary mt-2">'
-                    . self::e($caption)
-                    . '</figcaption>';
-            }
-
-            $html .= '</figure></div>';
-        }
-
-        $html .= '</div>';
-
-        if (!$showTitle && $showLink) {
-            $html .= '<div class="mt-3">'
-                . '<a class="btn btn-sm btn-outline-primary" href="'
-                . self::e(
-                    contentUrl(
-                        'galeria',
-                        (string)$gallery['slug']
-                    )
-                )
-                . '">Ver álbum completo</a>'
-                . '</div>';
-        }
-
-        $html .= '</section>';
-
-        return $html;
-    }
     private static function renderGalleries(
         PDO $pdo,
         array $data,
@@ -1611,7 +1365,6 @@ final class DynamicContentBlockService
             'portal_posts' => 'Últimas Notícias',
             'portal_events' => 'Agenda',
             'portal_documents' => 'Documentos',
-            'portal_gallery' => 'Galeria de fotos',
             'portal_galleries' => 'Galerias',
             'portal_communities' => 'Comunidades',
             default => 'Conteúdo do Portal',

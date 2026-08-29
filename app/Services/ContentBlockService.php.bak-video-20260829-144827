@@ -331,7 +331,7 @@ final class ContentBlockService
                     : 'primary',
             ],
             'video' => [
-                'url' => self::normalizeVideoUrl((string)($data['url'] ?? '')),
+                'url' => self::safeUrl((string)($data['url'] ?? '')),
                 'caption' => self::shortText($data['caption'] ?? '', 300),
             ],
             'columns' => [
@@ -517,7 +517,7 @@ final class ContentBlockService
 
     private static function renderVideo(array $data): string
     {
-        $url = self::normalizeVideoUrl((string)($data['url'] ?? ''));
+        $url = self::safeUrl((string)($data['url'] ?? ''));
         if ($url === '') return '';
 
         $embed = self::videoEmbedUrl($url);
@@ -557,61 +557,6 @@ final class ContentBlockService
             . '</div>';
     }
 
-    /**
-     * Normaliza entradas do bloco Vídeo.
-     */
-    private static function normalizeVideoUrl(string $value): string
-    {
-        $value = trim(
-            html_entity_decode(
-                $value,
-                ENT_QUOTES | ENT_HTML5,
-                'UTF-8'
-            )
-        );
-
-        if ($value === '') {
-            return '';
-        }
-
-        if (str_contains(strtolower($value), '<iframe')) {
-            if (
-                preg_match(
-                    '~\bsrc\s*=\s*(["\'])(.*?)\1~is',
-                    $value,
-                    $match
-                )
-            ) {
-                $value = trim(
-                    html_entity_decode(
-                        (string)($match[2] ?? ''),
-                        ENT_QUOTES | ENT_HTML5,
-                        'UTF-8'
-                    )
-                );
-            } else {
-                return '';
-            }
-        }
-
-        if (str_starts_with($value, '//')) {
-            $value = 'https:' . $value;
-        }
-
-        if (
-            !preg_match('#^[a-z][a-z0-9+.-]*://#i', $value)
-            && preg_match(
-                '~^(?:www\.|m\.|music\.)?'
-                . '(?:youtube\.com|youtu\.be|youtube-nocookie\.com|'
-                . 'vimeo\.com|player\.vimeo\.com)/~i',
-                $value
-            )
-        ) {
-            $value = 'https://' . $value;
-        }
-
-        return self::safeUrl($value);
-    }
     private static function safeUrl(string $value): string
     {
         $value = trim($value);
@@ -639,110 +584,31 @@ final class ContentBlockService
 
     private static function videoEmbedUrl(string $url): string
     {
-        $url = self::normalizeVideoUrl($url);
-        if ($url === '') {
-            return '';
-        }
-
         $parts = parse_url($url);
-        if (!is_array($parts)) {
-            return '';
-        }
+        if (!is_array($parts)) return '';
 
         $host = strtolower((string)($parts['host'] ?? ''));
-        $host = preg_replace('/^www\./', '', $host) ?: $host;
+        $path = (string)($parts['path'] ?? '');
 
-        $path = '/' . ltrim((string)($parts['path'] ?? ''), '/');
-        $segments = array_values(
-            array_filter(
-                explode('/', trim($path, '/')),
-                static fn(string $part): bool => $part !== ''
-            )
-        );
-
-        $youtubeHosts = [
-            'youtube.com',
-            'm.youtube.com',
-            'music.youtube.com',
-            'youtube-nocookie.com',
-        ];
-
-        if (in_array($host, $youtubeHosts, true)) {
-            $id = '';
-
-            if ($path === '/watch') {
-                parse_str(
-                    (string)($parts['query'] ?? ''),
-                    $query
-                );
-                $id = (string)($query['v'] ?? '');
-            }
-
-            if (
-                $id === ''
-                && isset($segments[0], $segments[1])
-                && in_array(
-                    strtolower($segments[0]),
-                    ['shorts', 'live', 'embed', 'v'],
-                    true
-                )
-            ) {
-                $id = (string)$segments[1];
-            }
-
-            $id = preg_replace(
-                '/[^A-Za-z0-9_-]/',
-                '',
-                $id
-            );
-
-            return $id !== ''
-                ? 'https://www.youtube-nocookie.com/embed/' . $id
-                : '';
+        if (in_array($host, ['youtube.com','www.youtube.com','m.youtube.com'], true)) {
+            parse_str((string)($parts['query'] ?? ''), $query);
+            $id = preg_replace('/[^A-Za-z0-9_-]/', '', (string)($query['v'] ?? ''));
+            return $id !== '' ? 'https://www.youtube-nocookie.com/embed/' . $id : '';
         }
 
         if ($host === 'youtu.be') {
-            $id = preg_replace(
-                '/[^A-Za-z0-9_-]/',
-                '',
-                (string)($segments[0] ?? '')
-            );
-
-            return $id !== ''
-                ? 'https://www.youtube-nocookie.com/embed/' . $id
-                : '';
+            $id = preg_replace('/[^A-Za-z0-9_-]/', '', trim($path, '/'));
+            return $id !== '' ? 'https://www.youtube-nocookie.com/embed/' . $id : '';
         }
 
-        if (
-            $host === 'vimeo.com'
-            || $host === 'player.vimeo.com'
-        ) {
-            $id = '';
-
-            if (
-                $host === 'player.vimeo.com'
-                && isset($segments[0], $segments[1])
-                && strtolower($segments[0]) === 'video'
-            ) {
-                $id = (string)$segments[1];
-            } else {
-                foreach ($segments as $segment) {
-                    if (ctype_digit($segment)) {
-                        $id = $segment;
-                        break;
-                    }
-                }
-            }
-
-            $id = preg_replace('/\D/', '', $id);
-
-            return $id !== ''
-                ? 'https://player.vimeo.com/video/' . $id
-                : '';
+        if (in_array($host, ['vimeo.com','www.vimeo.com'], true)) {
+            $id = preg_replace('/\D/', '', trim($path, '/'));
+            return $id !== '' ? 'https://player.vimeo.com/video/' . $id : '';
         }
 
         return '';
     }
+
     /** @return array<int,string> */
     private static function textValues(string $type, array $data): array
     {

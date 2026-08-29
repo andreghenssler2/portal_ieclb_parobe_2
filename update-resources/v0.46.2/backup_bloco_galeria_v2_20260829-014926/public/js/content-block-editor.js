@@ -12,8 +12,7 @@
     portal_posts: 'Últimas Notícias',
     portal_events: 'Agenda / Eventos',
     portal_documents: 'Documentos',
-    portal_gallery: 'Galeria de fotos',
-    portal_galleries: 'Galerias recentes',
+    portal_galleries: 'Galerias',
     portal_communities: 'Comunidades'
   };
 
@@ -42,7 +41,6 @@
       case 'portal_posts': return {title:'Últimas Notícias', limit:4, layout:'cards', category_id:0, show_excerpt:'0', show_date:'1'};
       case 'portal_events': return {title:'Agenda', limit:4, layout:'cards', community_id:0, show_date:'1'};
       case 'portal_documents': return {title:'Documentos', limit:5, layout:'list', category_id:0, show_date:'1'};
-      case 'portal_gallery': return {gallery_id:0, title:'', columns:'3', limit:'0', show_title:'1', show_captions:'1', show_link:'1'};
       case 'portal_galleries': return {title:'Galerias', limit:4, layout:'cards', show_date:'1'};
       case 'portal_communities': return {title:'Comunidades', limit:4, layout:'cards'};
       default: return {};
@@ -63,7 +61,6 @@
         case 'portal_posts':
         case 'portal_events':
         case 'portal_documents':
-        case 'portal_gallery':
         case 'portal_galleries':
         case 'portal_communities':
           return data.title || LABELS[type];
@@ -291,61 +288,6 @@
               </select>
             </div>
             <div class="col-md-4">${yesNoSelect('show_date', data.show_date, 'Mostrar data')}</div>
-          </div>`;
-
-      case 'portal_gallery':
-        return `
-          <div class="alert alert-info py-2 small">
-            Insere as fotos de uma galeria cadastrada diretamente dentro desta postagem ou página.
-          </div>
-
-          <div class="row g-2 mb-2">
-            <div class="col-md-8">
-              <label class="form-label small">Galeria</label>
-              <select class="form-select form-select-sm" data-field="gallery_id">
-                ${selectOptions(dynamicOptions?.galerias, data.gallery_id, 'Selecione uma galeria')}
-              </select>
-            </div>
-
-            <div class="col-md-4">
-              <label class="form-label small">Colunas</label>
-              <select class="form-select form-select-sm" data-field="columns">
-                <option value="2" ${String(data.columns) === '2' ? 'selected' : ''}>2 colunas</option>
-                <option value="3" ${String(data.columns || '3') === '3' ? 'selected' : ''}>3 colunas</option>
-                <option value="4" ${String(data.columns) === '4' ? 'selected' : ''}>4 colunas</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row g-2 mb-2">
-            <div class="col-md-8">
-              <label class="form-label small">Título personalizado</label>
-              <input
-                class="form-control form-control-sm"
-                data-field="title"
-                value="${esc(data.title || '')}"
-                placeholder="Vazio = usa o título da galeria"
-              >
-            </div>
-
-            <div class="col-md-4">
-              <label class="form-label small">Limite de fotos</label>
-              <input
-                class="form-control form-control-sm"
-                type="number"
-                min="0"
-                max="100"
-                data-field="limit"
-                value="${Number(data.limit || 0)}"
-              >
-              <div class="form-text">0 = todas as fotos</div>
-            </div>
-          </div>
-
-          <div class="row g-2">
-            <div class="col-md-4">${yesNoSelect('show_title', data.show_title, 'Mostrar título')}</div>
-            <div class="col-md-4">${yesNoSelect('show_captions', data.show_captions, 'Mostrar legendas')}</div>
-            <div class="col-md-4">${yesNoSelect('show_link', data.show_link, 'Link para álbum completo')}</div>
           </div>`;
 
       case 'portal_galleries':

@@ -10,7 +10,6 @@ $contentDynamicOptions = [
     'categorias' => [],
     'comunidades' => [],
     'documento_categorias' => [],
-    'galerias' => [],
 ];
 
 if (
@@ -94,8 +93,7 @@ $contentDynamicOptionsJson = json_encode(
                     <li><button class="dropdown-item" type="button" data-block-add="portal_posts"><i class="bi bi-newspaper me-2"></i>Últimas Notícias</button></li>
                     <li><button class="dropdown-item" type="button" data-block-add="portal_events"><i class="bi bi-calendar-event me-2"></i>Agenda / Eventos</button></li>
                     <li><button class="dropdown-item" type="button" data-block-add="portal_documents"><i class="bi bi-file-earmark-text me-2"></i>Documentos</button></li>
-                    <li><button class="dropdown-item" type="button" data-block-add="portal_gallery"><i class="bi bi-images me-2"></i>Galeria existente</button></li>
-                    <li><button class="dropdown-item" type="button" data-block-add="portal_galleries"><i class="bi bi-collection me-2"></i>Galerias recentes</button></li>
+                    <li><button class="dropdown-item" type="button" data-block-add="portal_galleries"><i class="bi bi-images me-2"></i>Galerias</button></li>
                     <li><button class="dropdown-item" type="button" data-block-add="portal_communities"><i class="bi bi-geo-alt me-2"></i>Comunidades</button></li>
                 </ul>
             </div>
