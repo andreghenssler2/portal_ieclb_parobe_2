@@ -1,4 +1,4 @@
-/* Portal IECLB Parobé v0.50.0 - bloco FAQ / Acordeão */
+/* Portal IECLB Parobé v0.49.0 - correção dos links de vídeo do YouTube */
 (() => {
   const LABELS = {
     heading: 'Título',
@@ -8,7 +8,6 @@
     button: 'Botão / Link',
     video: 'Vídeo',
     columns: 'Duas colunas',
-    faq: 'FAQ / Acordeão',
     separator: 'Separador',
     portal_posts: 'Últimas Notícias',
     portal_events: 'Agenda / Eventos',
@@ -42,11 +41,6 @@
       case 'button': return {text:'Saiba mais', url:'', style:'primary'};
       case 'video': return {url:'', caption:''};
       case 'columns': return {left:'', right:''};
-      case 'faq': return {
-        title:'Perguntas frequentes',
-        first_open:'0',
-        items:[{question:'', answer:''}]
-      };
       case 'portal_posts': return {title:'Últimas Notícias', limit:4, layout:'cards', category_id:0, show_excerpt:'0', show_date:'1'};
       case 'portal_events': return {title:'Agenda', limit:4, layout:'cards', community_id:0, show_date:'1'};
       case 'portal_documents': return {title:'Documentos', limit:5, layout:'list', category_id:0, show_date:'1'};
@@ -69,10 +63,6 @@
         case 'button': return data.text;
         case 'video': return data.caption || data.url;
         case 'columns': return data.left || data.right;
-        case 'faq':
-          return data.title
-            || data.items?.[0]?.question
-            || 'Perguntas frequentes';
         case 'separator': return 'Linha de separação';
         case 'portal_posts':
         case 'portal_events':
@@ -208,58 +198,6 @@
     }
   }
 
-  function faqItemsHtml(data) {
-    const items = Array.isArray(data.items) && data.items.length
-      ? data.items
-      : [{question:'', answer:''}];
-
-    return items.map((item, index) => `
-      <div class="border rounded p-3 bg-body-tertiary" data-faq-item>
-        <div class="d-flex align-items-center gap-2 mb-2">
-          <strong class="small flex-grow-1">Pergunta ${index + 1}</strong>
-          <button class="btn btn-sm btn-light border" type="button" data-faq-up title="Mover pergunta para cima">
-            <i class="bi bi-arrow-up"></i>
-          </button>
-          <button class="btn btn-sm btn-light border" type="button" data-faq-down title="Mover pergunta para baixo">
-            <i class="bi bi-arrow-down"></i>
-          </button>
-          <button class="btn btn-sm btn-outline-danger" type="button" data-faq-remove title="Remover pergunta">
-            <i class="bi bi-trash"></i>
-          </button>
-        </div>
-
-        <label class="form-label small">Pergunta</label>
-        <input
-          class="form-control form-control-sm mb-2"
-          data-faq-question
-          value="${esc(item?.question || '')}"
-          placeholder="Digite a pergunta"
-        >
-
-        <label class="form-label small">Resposta</label>
-        <textarea
-          class="form-control"
-          rows="4"
-          data-faq-answer
-          placeholder="Digite a resposta"
-        >${esc(item?.answer || '')}</textarea>
-      </div>
-    `).join('');
-  }
-
-  function collectFaqItems(card) {
-    return Array.from(
-      card.querySelectorAll('[data-faq-item]')
-    ).map(item => ({
-      question: String(
-        item.querySelector('[data-faq-question]')?.value || ''
-      ),
-      answer: String(
-        item.querySelector('[data-faq-answer]')?.value || ''
-      )
-    }));
-  }
-
   function fields(type, data, dynamicOptions) {
     switch (type) {
       case 'heading':
@@ -337,44 +275,6 @@
           <div class="row g-3">
             <div class="col-md-6"><label class="form-label small">Coluna esquerda</label><textarea class="form-control" rows="5" data-field="left">${esc(data.left)}</textarea></div>
             <div class="col-md-6"><label class="form-label small">Coluna direita</label><textarea class="form-control" rows="5" data-field="right">${esc(data.right)}</textarea></div>
-          </div>`;
-
-      case 'faq':
-        return `
-          <div class="row g-2 mb-3">
-            <div class="col-md-8">
-              <label class="form-label small">Título do bloco</label>
-              <input
-                class="form-control form-control-sm"
-                data-field="title"
-                value="${esc(data.title || '')}"
-                placeholder="Perguntas frequentes"
-              >
-            </div>
-            <div class="col-md-4">
-              <label class="form-label small">Primeira pergunta aberta</label>
-              <select class="form-select form-select-sm" data-field="first_open">
-                <option value="0" ${String(data.first_open || '0') === '0' ? 'selected' : ''}>Não</option>
-                <option value="1" ${String(data.first_open || '0') === '1' ? 'selected' : ''}>Sim</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="d-grid gap-2" data-faq-items>
-            ${faqItemsHtml(data)}
-          </div>
-
-          <button
-            class="btn btn-sm btn-outline-primary mt-3"
-            type="button"
-            data-faq-add
-          >
-            <i class="bi bi-plus-lg me-1"></i>
-            Adicionar pergunta
-          </button>
-
-          <div class="form-text mt-2">
-            Cada FAQ pode ter até 50 perguntas. Pergunta e resposta são obrigatórias para o item ser publicado.
           </div>`;
 
       case 'separator':
@@ -575,11 +475,6 @@
         if (key === 'media_id') data[key] = Number(field.value || 0);
         else data[key] = field.value;
       });
-
-      if (block.type === 'faq') {
-        data.items = collectFaqItems(card);
-      }
-
       delete data.preview_url;
       delete data.preview_title;
       return {type:block.type, data};
@@ -740,56 +635,6 @@
         });
 
         updateDynamicLimitConstraint(card);
-
-        if (block.type === 'faq') {
-          const refreshFaq = (mutate) => {
-            syncBlocksFromDom();
-            const current = blocks[index];
-            if (!current) return;
-
-            if (!Array.isArray(current.data.items)) {
-              current.data.items = [];
-            }
-
-            mutate(current.data.items);
-            render();
-          };
-
-          card.querySelector('[data-faq-add]')?.addEventListener('click', () => {
-            refreshFaq(items => {
-              if (items.length >= 50) {
-                alert('O limite é de 50 perguntas por FAQ.');
-                return;
-              }
-              items.push({question:'', answer:''});
-            });
-          });
-
-          card.querySelectorAll('[data-faq-item]').forEach((faqItem, faqIndex) => {
-            faqItem.querySelector('[data-faq-remove]')?.addEventListener('click', () => {
-              refreshFaq(items => {
-                items.splice(faqIndex, 1);
-                if (!items.length) {
-                  items.push({question:'', answer:''});
-                }
-              });
-            });
-
-            faqItem.querySelector('[data-faq-up]')?.addEventListener('click', () => {
-              refreshFaq(items => {
-                if (faqIndex <= 0) return;
-                [items[faqIndex - 1], items[faqIndex]] = [items[faqIndex], items[faqIndex - 1]];
-              });
-            });
-
-            faqItem.querySelector('[data-faq-down]')?.addEventListener('click', () => {
-              refreshFaq(items => {
-                if (faqIndex >= items.length - 1) return;
-                [items[faqIndex + 1], items[faqIndex]] = [items[faqIndex], items[faqIndex + 1]];
-              });
-            });
-          });
-        }
 
         const mediaButton = card.querySelector('[data-block-media]');
         if (mediaButton) {

@@ -9,7 +9,6 @@ final class ContentBlockService
     // v0.47.0 - blocos Mais Lidas e Lideranças.
     // v0.48.0 - galeria incorporada dentro do conteúdo.
     // v0.49.0 - correção e ampliação dos links de vídeo do YouTube.
-    // v0.50.0 - bloco FAQ / Acordeão.
     private const TYPES = [
         'heading',
         'text',
@@ -19,7 +18,6 @@ final class ContentBlockService
         'video',
         'columns',
         'separator',
-        'faq',
         'portal_posts',
         'portal_events',
         'portal_documents',
@@ -351,7 +349,6 @@ final class ContentBlockService
                 'right' => self::longText($data['right'] ?? '', 12000),
             ],
             'separator' => [],
-            'faq' => self::sanitizeFaq($data),
             'portal_posts',
             'portal_events',
             'portal_documents',
@@ -363,68 +360,6 @@ final class ContentBlockService
                 => DynamicContentBlockService::sanitize($pdo, $type, $data),
             default => [],
         };
-    }
-
-    /**
-     * @return array{
-     *   title:string,
-     *   first_open:bool,
-     *   items:array<int,array{question:string,answer:string}>
-     * }
-     */
-    private static function sanitizeFaq(array $data): array
-    {
-        $rawItems = is_array($data['items'] ?? null)
-            ? $data['items']
-            : [];
-
-        $items = [];
-
-        foreach (
-            array_slice(
-                $rawItems,
-                0,
-                50
-            )
-            as $rawItem
-        ) {
-            if (!is_array($rawItem)) {
-                continue;
-            }
-
-            $question = self::shortText(
-                $rawItem['question'] ?? '',
-                500
-            );
-
-            $answer = self::longText(
-                $rawItem['answer'] ?? '',
-                12000
-            );
-
-            if (
-                trim($question) === ''
-                || trim($answer) === ''
-            ) {
-                continue;
-            }
-
-            $items[] = [
-                'question' => $question,
-                'answer' => $answer,
-            ];
-        }
-
-        return [
-            'title' => self::shortText(
-                $data['title'] ?? '',
-                250
-            ),
-            'first_open' => !empty(
-                $data['first_open']
-            ),
-            'items' => $items,
-        ];
     }
 
     private static function sanitizeImage(PDO $pdo, array $data): array
@@ -460,7 +395,6 @@ final class ContentBlockService
                 trim((string)($data['left'] ?? '')) !== ''
                 || trim((string)($data['right'] ?? '')) !== '',
             'separator' => true,
-            'faq' => !empty($data['items']),
             'portal_posts',
             'portal_events',
             'portal_documents',
@@ -489,10 +423,6 @@ final class ContentBlockService
             'video' => self::renderVideo($data),
             'columns' => self::renderColumns($data),
             'separator' => '<hr class="my-5">',
-            'faq' => self::renderFaq(
-                $data,
-                $instanceKey
-            ),
             'portal_posts',
             'portal_events',
             'portal_documents',
@@ -509,131 +439,6 @@ final class ContentBlockService
                 ),
             default => '',
         };
-    }
-
-    private static function renderFaq(
-        array $data,
-        string $instanceKey
-    ): string {
-        $items = is_array($data['items'] ?? null)
-            ? $data['items']
-            : [];
-
-        if (!$items) {
-            return '';
-        }
-
-        $token = substr(
-            hash(
-                'sha256',
-                $instanceKey !== ''
-                    ? $instanceKey
-                    : json_encode(
-                        $items,
-                        JSON_UNESCAPED_UNICODE
-                        | JSON_UNESCAPED_SLASHES
-                    )
-            ),
-            0,
-            12
-        );
-
-        $accordionId =
-            'portalFaq-' . $token;
-
-        $title = trim(
-            (string)($data['title'] ?? '')
-        );
-
-        $firstOpen = !empty(
-            $data['first_open']
-        );
-
-        $html = '<section class="portal-faq-block my-5">';
-
-        if ($title !== '') {
-            $html .= '<h2 class="h3 mb-3">'
-                . self::escape($title)
-                . '</h2>';
-        }
-
-        $html .= '<div class="accordion" id="'
-            . self::escape($accordionId)
-            . '">';
-
-        foreach ($items as $index => $item) {
-            if (!is_array($item)) {
-                continue;
-            }
-
-            $question = trim(
-                (string)($item['question'] ?? '')
-            );
-            $answer = trim(
-                (string)($item['answer'] ?? '')
-            );
-
-            if (
-                $question === ''
-                || $answer === ''
-            ) {
-                continue;
-            }
-
-            $itemNumber = $index + 1;
-            $headingId =
-                $accordionId
-                . '-heading-'
-                . $itemNumber;
-            $collapseId =
-                $accordionId
-                . '-collapse-'
-                . $itemNumber;
-
-            $open =
-                $firstOpen
-                && $index === 0;
-
-            $html .= '<div class="accordion-item">'
-                . '<h3 class="accordion-header" id="'
-                . self::escape($headingId)
-                . '">'
-                . '<button class="accordion-button'
-                . ($open ? '' : ' collapsed')
-                . '" type="button"'
-                . ' data-bs-toggle="collapse"'
-                . ' data-bs-target="#'
-                . self::escape($collapseId)
-                . '"'
-                . ' aria-expanded="'
-                . ($open ? 'true' : 'false')
-                . '"'
-                . ' aria-controls="'
-                . self::escape($collapseId)
-                . '">'
-                . self::escape($question)
-                . '</button></h3>'
-                . '<div id="'
-                . self::escape($collapseId)
-                . '" class="accordion-collapse collapse'
-                . ($open ? ' show' : '')
-                . '"'
-                . ' aria-labelledby="'
-                . self::escape($headingId)
-                . '"'
-                . ' data-bs-parent="#'
-                . self::escape($accordionId)
-                . '">'
-                . '<div class="accordion-body">'
-                . nl2br(
-                    self::escape($answer)
-                )
-                . '</div></div></div>';
-        }
-
-        $html .= '</div></section>';
-
-        return $html;
     }
 
     private static function renderHeading(array $data): string
@@ -1070,42 +875,6 @@ final class ContentBlockService
         return 0;
     }
 
-    /**
-     * @return array<int,string>
-     */
-    private static function faqTextValues(array $data): array
-    {
-        $values = [];
-
-        $title = trim(
-            (string)($data['title'] ?? '')
-        );
-
-        if ($title !== '') {
-            $values[] = $title;
-        }
-
-        foreach (
-            is_array($data['items'] ?? null)
-                ? $data['items']
-                : []
-            as $item
-        ) {
-            if (!is_array($item)) {
-                continue;
-            }
-
-            $values[] = (string)(
-                $item['question'] ?? ''
-            );
-            $values[] = (string)(
-                $item['answer'] ?? ''
-            );
-        }
-
-        return $values;
-    }
-
     /** @return array<int,string> */
     private static function textValues(string $type, array $data): array
     {
@@ -1122,7 +891,6 @@ final class ContentBlockService
                 (string)($data['left'] ?? ''),
                 (string)($data['right'] ?? ''),
             ],
-            'faq' => self::faqTextValues($data),
             'image' => [
                 (string)($data['alt'] ?? ''),
                 (string)($data['caption'] ?? ''),
