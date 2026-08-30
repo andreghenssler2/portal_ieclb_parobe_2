@@ -14,6 +14,7 @@ require_once __DIR__ . '/mod/security/Csrf.php';
 require_once __DIR__ . '/mod/auth/Auth.php';
 require_once __DIR__ . '/app/Helpers/functions.php';
 require_once __DIR__ . '/app/Services/SecurityHeadersService.php';
+require_once __DIR__ . '/app/Services/CspReportService.php';
 require_once __DIR__ . '/app/Services/CacheService.php';
 require_once __DIR__ . '/app/Services/MediaService.php';
 require_once __DIR__ . '/app/Services/ImageOptimizationService.php';

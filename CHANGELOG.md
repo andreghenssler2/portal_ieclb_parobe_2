@@ -13,6 +13,17 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.76.0 — Relatórios CSP
+
+- Novo `CspReportService`.
+- Endpoint `csp-report.php`.
+- `report-uri` integrado à CSP.
+- Nova tabela `security_csp_reports`.
+- Deduplicação e contador de ocorrências.
+- Retenção configurável.
+- Nenhum IP, query string ou `script-sample` armazenado.
+- Nova tela `Admin > Configurações > Relatórios CSP`.
 ## 0.75.0 — Cabeçalhos HTTP e CSP
 
 - Novo `SecurityHeadersService`.

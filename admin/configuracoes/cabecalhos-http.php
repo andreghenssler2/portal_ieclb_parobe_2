@@ -67,6 +67,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $settings['security_csp_mode'] =
                 $mode;
 
+            $settings['security_csp_report_enabled'] =
+                isset(
+                    $_POST['security_csp_report_enabled']
+                )
+                    ? '1'
+                    : '0';
+
+            $settings['security_csp_report_retention_days'] =
+                (string)max(
+                    1,
+                    min(
+                        365,
+                        (int)(
+                            $_POST['security_csp_report_retention_days']
+                            ?? 30
+                        )
+                    )
+                );
+
             $settings['security_hsts_enabled'] =
                 isset(
                     $_POST['security_hsts_enabled']
@@ -191,6 +210,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'security_csp_mode' =>
                     'texto',
 
+                'security_csp_report_enabled' =>
+                    'booleano',
+
+                'security_csp_report_retention_days' =>
+                    'numero',
+
                 'security_hsts_enabled' =>
                     'booleano',
 
@@ -297,13 +322,23 @@ require __DIR__ . '/../_header.php';
         </p>
     </div>
 
-    <a
-        class="btn btn-outline-secondary"
-        href="<?= e(url('admin/configuracoes/seguranca.php')) ?>"
-    >
-        <i class="bi bi-arrow-left me-1"></i>
-        Segurança
-    </a>
+    <div class="d-flex flex-wrap gap-2">
+        <a
+            class="btn btn-outline-primary"
+            href="<?= e(url('admin/configuracoes/csp-relatorios.php')) ?>"
+        >
+            <i class="bi bi-activity me-1"></i>
+            Relatórios CSP
+        </a>
+
+        <a
+            class="btn btn-outline-secondary"
+            href="<?= e(url('admin/configuracoes/seguranca.php')) ?>"
+        >
+            <i class="bi bi-arrow-left me-1"></i>
+            Segurança
+        </a>
+    </div>
 </div>
 
 <?php if ($error): ?>
@@ -464,6 +499,48 @@ require __DIR__ . '/../_header.php';
                 <div class="form-text">
                     O modo Enforce deve ser ativado apenas depois de testar
                     Home, Admin, formulários, Analytics e conteúdos incorporados.
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-check form-switch mb-3">
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
+                        name="security_csp_report_enabled"
+                        id="cspReportEnabled"
+                        <?= $settings['security_csp_report_enabled'] === '1' ? 'checked' : '' ?>
+                    >
+
+                    <label
+                        class="form-check-label fw-semibold"
+                        for="cspReportEnabled"
+                    >
+                        Coletar violações CSP no Portal
+                    </label>
+                </div>
+
+                <label class="form-label">
+                    Reter relatórios por
+                </label>
+
+                <div class="input-group">
+                    <input
+                        class="form-control"
+                        type="number"
+                        min="1"
+                        max="365"
+                        name="security_csp_report_retention_days"
+                        value="<?= e($settings['security_csp_report_retention_days']) ?>"
+                    >
+
+                    <span class="input-group-text">
+                        dias
+                    </span>
+                </div>
+
+                <div class="form-text">
+                    Não são armazenados IP, query strings nem conteúdo de scripts inline.
                 </div>
             </div>
 

@@ -455,6 +455,10 @@ $adminPendingTotal =
                                 class="<?= $isPath('configuracoes/cabecalhos-http.php') ? 'active' : '' ?>"
                                 href="<?= e(url('admin/configuracoes/cabecalhos-http.php')) ?>"
                             >Cabeçalhos HTTP</a>
+                            <a
+                                class="<?= $isPath('configuracoes/csp-relatorios.php') ? 'active' : '' ?>"
+                                href="<?= e(url('admin/configuracoes/csp-relatorios.php')) ?>"
+                            >Relatórios CSP</a>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>

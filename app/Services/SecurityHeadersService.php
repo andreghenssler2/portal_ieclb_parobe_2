@@ -5,9 +5,10 @@ declare(strict_types=1);
 /**
  * Cabeçalhos HTTP de segurança do Portal.
  *
- * A política CSP começa em Report-Only para permitir homologação sem
- * interromper scripts/estilos existentes. O administrador pode promover
- * para modo enforce depois dos testes.
+ * v0.76:
+ * - CSP continua em Report-Only por padrão;
+ * - pode enviar report-uri para o coletor local de violações;
+ * - relatórios não armazenam IP nem query strings.
  */
 final class SecurityHeadersService
 {
@@ -19,6 +20,8 @@ final class SecurityHeadersService
         return [
             'security_headers_enabled' => '1',
             'security_csp_mode' => 'report-only',
+            'security_csp_report_enabled' => '1',
+            'security_csp_report_retention_days' => '30',
             'security_hsts_enabled' => '0',
             'security_hsts_max_age' => '15552000',
             'security_hsts_include_subdomains' => '0',
@@ -40,10 +43,21 @@ final class SecurityHeadersService
                 siteConfigAll($pdo)
             );
 
-        $settings['security_headers_enabled'] =
-            ($settings['security_headers_enabled'] ?? '1') === '1'
-                ? '1'
-                : '0';
+        foreach (
+            [
+                'security_headers_enabled',
+                'security_csp_report_enabled',
+                'security_hsts_enabled',
+                'security_hsts_include_subdomains',
+                'security_permissions_policy_enabled',
+            ]
+            as $booleanKey
+        ) {
+            $settings[$booleanKey] =
+                ($settings[$booleanKey] ?? '0') === '1'
+                    ? '1'
+                    : '0';
+        }
 
         $mode =
             strtolower(
@@ -72,20 +86,17 @@ final class SecurityHeadersService
         $settings['security_csp_mode'] =
             $mode;
 
-        $settings['security_hsts_enabled'] =
-            ($settings['security_hsts_enabled'] ?? '0') === '1'
-                ? '1'
-                : '0';
-
-        $settings['security_hsts_include_subdomains'] =
-            ($settings['security_hsts_include_subdomains'] ?? '0') === '1'
-                ? '1'
-                : '0';
-
-        $settings['security_permissions_policy_enabled'] =
-            ($settings['security_permissions_policy_enabled'] ?? '1') === '1'
-                ? '1'
-                : '0';
+        $settings['security_csp_report_retention_days'] =
+            (string)max(
+                1,
+                min(
+                    365,
+                    (int)(
+                        $settings['security_csp_report_retention_days']
+                        ?? 30
+                    )
+                )
+            );
 
         $settings['security_hsts_max_age'] =
             (string)max(
@@ -305,38 +316,30 @@ final class SecurityHeadersService
 
         $items = [
             [
-                'header' =>
-                    'X-Content-Type-Options',
-                'value' =>
-                    'nosniff',
-                'active' =>
-                    $enabled,
+                'header' => 'X-Content-Type-Options',
+                'value' => 'nosniff',
+                'active' => $enabled,
                 'note' =>
                     'Impede interpretação de MIME diferente do declarado.',
             ],
             [
-                'header' =>
-                    'X-Frame-Options',
+                'header' => 'X-Frame-Options',
                 'value' =>
                     $settings['security_frame_policy'],
-                'active' =>
-                    $enabled,
+                'active' => $enabled,
                 'note' =>
                     'Reduz risco de clickjacking.',
             ],
             [
-                'header' =>
-                    'Referrer-Policy',
+                'header' => 'Referrer-Policy',
                 'value' =>
                     $settings['security_referrer_policy'],
-                'active' =>
-                    $enabled,
+                'active' => $enabled,
                 'note' =>
                     'Limita dados enviados no cabeçalho Referer.',
             ],
             [
-                'header' =>
-                    'Permissions-Policy',
+                'header' => 'Permissions-Policy',
                 'value' =>
                     self::permissionsPolicy(),
                 'active' =>
@@ -377,7 +380,7 @@ final class SecurityHeadersService
                 && $cspMode !== 'off',
             'note' =>
                 $cspMode === 'report-only'
-                    ? 'Somente monitora violações; não bloqueia recursos.'
+                    ? 'Monitora violações sem bloquear recursos.'
                     : (
                         $cspMode === 'enforce'
                             ? 'Política aplicada e bloqueante.'
@@ -404,12 +407,9 @@ final class SecurityHeadersService
         }
 
         $items[] = [
-            'header' =>
-                'Strict-Transport-Security',
-            'value' =>
-                $hstsValue,
-            'active' =>
-                $hstsActive,
+            'header' => 'Strict-Transport-Security',
+            'value' => $hstsValue,
+            'active' => $hstsActive,
             'note' =>
                 !self::isHttps()
                     ? 'HSTS só é enviado em HTTPS.'
@@ -424,13 +424,6 @@ final class SecurityHeadersService
     }
 
     /**
-     * CSP compatível com a estrutura atual do Portal.
-     *
-     * O projeto ainda possui scripts/estilos inline em telas públicas e
-     * administrativas, por isso `unsafe-inline` permanece nesta etapa.
-     * A política limita origens externas conhecidas e prepara a remoção de
-     * inline scripts em versões futuras.
-     *
      * @param array<string,string> $settings
      */
     public static function contentSecurityPolicy(
@@ -452,6 +445,25 @@ final class SecurityHeadersService
             "worker-src 'self' blob:",
             "manifest-src 'self'",
         ];
+
+        if (
+            ($settings['security_csp_report_enabled'] ?? '1')
+            === '1'
+        ) {
+            try {
+                $reportUri =
+                    url(
+                        'csp-report.php'
+                    );
+
+                if ($reportUri !== '') {
+                    $directives[] =
+                        'report-uri '
+                        . $reportUri;
+                }
+            } catch (Throwable $ignored) {
+            }
+        }
 
         return
             implode(
