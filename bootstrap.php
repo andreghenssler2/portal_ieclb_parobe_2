@@ -24,6 +24,7 @@ require_once __DIR__ . '/app/Services/ContentPatternService.php';
 require_once __DIR__ . '/app/Services/EditorialBulkService.php';
 require_once __DIR__ . '/app/Services/RevisionService.php';
 require_once __DIR__ . '/app/Services/MailService.php';
+require_once __DIR__ . '/app/Services/TwoFactorService.php';
 require_once __DIR__ . '/app/Services/FormNotificationService.php';
 require_once __DIR__ . '/app/Services/SearchService.php';
 require_once __DIR__ . '/app/Services/EventCalendarService.php';
