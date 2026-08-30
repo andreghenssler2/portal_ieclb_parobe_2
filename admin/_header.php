@@ -451,6 +451,10 @@ $adminPendingTotal =
                         <?php endif; ?>
                         <?php if (Auth::can('seguranca.gerenciar')): ?>
                             <a class="<?= $isPath('configuracoes/seguranca.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/seguranca.php')) ?>">Segurança</a>
+                            <a
+                                class="<?= $isPath('configuracoes/cabecalhos-http.php') ? 'active' : '' ?>"
+                                href="<?= e(url('admin/configuracoes/cabecalhos-http.php')) ?>"
+                            >Cabeçalhos HTTP</a>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>

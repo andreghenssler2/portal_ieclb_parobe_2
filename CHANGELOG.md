@@ -12,6 +12,20 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.75.0 — Cabeçalhos HTTP e CSP
+
+- Novo `SecurityHeadersService`.
+- `X-Content-Type-Options`.
+- `X-Frame-Options`.
+- `Referrer-Policy`.
+- `Permissions-Policy`.
+- `Cross-Origin-Opener-Policy`.
+- Content Security Policy em `Report-Only` por padrão.
+- CSP pode ser desativada ou promovida para `Enforce`.
+- HSTS opcional e somente em HTTPS.
+- Nova tela `Admin > Configurações > Cabeçalhos HTTP`.
+- Nenhuma alteração estrutural no banco.
 ## 0.74.0 — Monitoramento automático da mídia
 
 - Verificação automática diária da integridade da Biblioteca.
