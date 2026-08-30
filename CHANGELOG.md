@@ -8,6 +8,17 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.71.0 — Uso seguro da Biblioteca de Mídia
+
+- Novo `MediaUsageService`.
+- Tela de detalhes da mídia reformulada.
+- Lista notícias, páginas, eventos e documentos que utilizam a mídia.
+- Detecta FOREIGN KEYs adicionais para `midias.id`.
+- Verifica existência e tamanho do arquivo físico.
+- `MediaService::delete()` bloqueia exclusão de mídia em uso.
+- Proteção vale para exclusão individual e em massa.
+- Nenhuma alteração no banco de dados.
 ## 0.70.0 — Biblioteca de Mídia 2.0
 
 - Paginação com 24 itens por página.

@@ -146,6 +146,10 @@ final class MediaService
             return false;
         }
 
+        if (class_exists('MediaUsageService')) {
+            MediaUsageService::assertCanDelete($pdo, $id);
+        }
+
         $stmt = $pdo->prepare('DELETE FROM midias WHERE id = :id');
         $stmt->execute(['id' => $id]);
 
