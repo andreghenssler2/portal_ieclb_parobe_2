@@ -231,6 +231,10 @@ $adminPendingTotal =
                                 class="<?= $isPath('midias/integridade.php') ? 'active' : '' ?>"
                                 href="<?= e(url('admin/midias/integridade.php')) ?>"
                             >Integridade</a>
+                            <a
+                                class="<?= $isPath('midias/monitoramento.php') ? 'active' : '' ?>"
+                                href="<?= e(url('admin/midias/monitoramento.php')) ?>"
+                            >Monitoramento</a>
 <a href="<?= e(url('admin/midias/index.php#adicionar-novo')) ?>">Adicionar Novo</a>
                             <?php if (Auth::can('wordpress.importar')): ?><a href="<?= e(url('admin/ferramentas/wordpress.php?modulo=media')) ?>">Importar do WordPress</a><?php endif; ?>
                         <?php endif; ?>

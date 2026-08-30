@@ -17,6 +17,7 @@ require_once __DIR__ . '/app/Services/CacheService.php';
 require_once __DIR__ . '/app/Services/MediaService.php';
 require_once __DIR__ . '/app/Services/ImageOptimizationService.php';
 require_once __DIR__ . '/app/Services/MediaIntegrityService.php';
+require_once __DIR__ . '/app/Services/MediaIntegrityReportService.php';
 require_once __DIR__ . '/app/Services/MediaUsageService.php';
 require_once __DIR__ . '/app/Services/CategoryService.php';
 require_once __DIR__ . '/app/Services/PageHierarchyService.php';

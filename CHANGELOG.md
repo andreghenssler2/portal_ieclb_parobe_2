@@ -11,6 +11,17 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.74.0 — Monitoramento automático da mídia
+
+- Verificação automática diária da integridade da Biblioteca.
+- Limpeza segura semanal de variantes/derivados órfãos.
+- Nova tabela `midia_integridade_relatorios`.
+- Histórico de até 120 execuções.
+- Nova tela `Admin > Mídia > Monitoramento`.
+- Integração com `SchedulerService`.
+- Integração com Central de Pendências.
+- Arquivos originais órfãos continuam sem exclusão automática.
 ## 0.73.0 — Integridade do armazenamento de mídia
 
 - Diagnóstico entre banco e pasta `uploads/`.

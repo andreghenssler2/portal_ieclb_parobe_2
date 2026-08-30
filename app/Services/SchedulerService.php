@@ -38,7 +38,21 @@ final class SchedulerService
                 'enabled' => true,
                 'priority' => 40,
             ],
-        ];
+                    'verificar_integridade_midia' => [
+                'name' => 'Verificar integridade da mídia',
+                'description' => 'Compara diariamente registros da Biblioteca de Mídia com os arquivos físicos e salva um relatório operacional.',
+                'interval' => 1440,
+                'enabled' => true,
+                'priority' => 50,
+            ],
+            'limpar_derivados_midia' => [
+                'name' => 'Limpeza segura da mídia',
+                'description' => 'Remove semanalmente apenas registros de variantes quebrados e derivados WebP órfãos; arquivos originais nunca são apagados automaticamente.',
+                'interval' => 10080,
+                'enabled' => true,
+                'priority' => 60,
+            ],
+];
     }
 
     public static function ensureRegistry(PDO $pdo): void
@@ -276,7 +290,8 @@ final class SchedulerService
             'limpar_cache_expirado' => self::cleanupExpiredCache($pdo),
             'limpar_logs_email' => self::cleanupMailLogs($pdo),
             'limpar_logs_auditoria' => self::cleanupAuditLogs($pdo),
-            default => throw new RuntimeException('Handler da tarefa não encontrado: ' . $slug),
+            'verificar_integridade_midia' => self::verifyMediaIntegrity($pdo),
+            'limpar_derivados_midia' => self::cleanupMediaDerivedFiles($pdo),            default => throw new RuntimeException('Handler da tarefa não encontrado: ' . $slug),
         };
     }
 
@@ -380,7 +395,78 @@ final class SchedulerService
     }
 
 
-    private static function finishExecution(
+        /** @return array{status:string,message:string} */
+    private static function verifyMediaIntegrity(PDO $pdo): array
+    {
+        if (
+            !class_exists('MediaIntegrityReportService')
+            || !class_exists('MediaIntegrityService')
+        ) {
+            return [
+                'status' => 'ignorado',
+                'message' => 'Serviços de integridade da mídia não estão disponíveis.',
+            ];
+        }
+
+        $result =
+            MediaIntegrityReportService::run(
+                $pdo,
+                dirname(__DIR__, 2),
+                'scheduler',
+                false
+            );
+
+        return [
+            'status' =>
+                ($result['status'] ?? 'ok') === 'erro'
+                    ? 'ok'
+                    : 'ok',
+            'message' =>
+                'Integridade da mídia: '
+                . (string)($result['message'] ?? 'verificação concluída.'),
+        ];
+    }
+
+    /** @return array{status:string,message:string} */
+    private static function cleanupMediaDerivedFiles(PDO $pdo): array
+    {
+        if (
+            !class_exists('MediaIntegrityReportService')
+            || !class_exists('MediaIntegrityService')
+        ) {
+            return [
+                'status' => 'ignorado',
+                'message' => 'Serviços de integridade da mídia não estão disponíveis.',
+            ];
+        }
+
+        $result =
+            MediaIntegrityReportService::run(
+                $pdo,
+                dirname(__DIR__, 2),
+                'scheduler-cleanup',
+                true
+            );
+
+        $generated =
+            (array)(
+                $result['cleaned_generated']
+                ?? []
+            );
+
+        return [
+            'status' => 'ok',
+            'message' =>
+                'Manutenção segura da mídia: '
+                . (int)($result['cleaned_variant_records'] ?? 0)
+                . ' registro(s) inválido(s) e '
+                . (int)($generated['removed'] ?? 0)
+                . ' derivado(s) órfão(s) removido(s); estado atual: '
+                . (string)($result['message'] ?? 'verificado.'),
+        ];
+    }
+
+private static function finishExecution(
         PDO $pdo,
         int $executionId,
         string $status,

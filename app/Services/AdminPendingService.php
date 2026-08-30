@@ -201,6 +201,32 @@ final class AdminPendingService
             }
         }
 
+        if (
+            Auth::can('midias.gerenciar')
+            && class_exists('MediaIntegrityReportService')
+        ) {
+            try {
+                $mediaIntegrityCount =
+                    MediaIntegrityReportService::reviewCount(
+                        $pdo
+                    );
+
+                if ($mediaIntegrityCount > 0) {
+                    $items[] = self::item(
+                        'integridade_midia',
+                        'Biblioteca de Mídia precisa de revisão',
+                        $mediaIntegrityCount,
+                        'O último diagnóstico encontrou arquivos ausentes, divergências ou arquivos físicos sem registro.',
+                        'bi-hdd-stack',
+                        'warning',
+                        'admin/midias/monitoramento.php',
+                        25
+                    );
+                }
+            } catch (Throwable $ignored) {
+            }
+        }
+
         usort(
             $items,
             static fn(array $a, array $b): int =>
