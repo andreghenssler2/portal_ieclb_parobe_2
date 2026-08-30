@@ -4,6 +4,18 @@ Este arquivo passa a ser o histórico consolidado do projeto a partir da
 v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 `docs/releases/`.
 
+
+## 0.67.0 — Dashboard personalizado por perfil
+
+- Dashboard reformulado para mostrar somente módulos permitidos ao usuário.
+- Nova saudação com nome e perfil.
+- Prioridades integradas à Central de Pendências.
+- Atalhos rápidos montados conforme permissões.
+- Indicadores por perfil.
+- Conteúdo recente, agenda, comentários, formulários e auditoria aparecem
+  somente quando o usuário possui acesso.
+- Consultas extraídas para `AdminDashboardService`.
+- Nenhuma alteração no banco de dados.
 ## 0.66.0 — Organização do repositório
 
 - README completamente atualizado.
