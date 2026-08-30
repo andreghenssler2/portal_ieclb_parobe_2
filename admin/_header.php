@@ -75,12 +75,11 @@ $adminPendingTotal =
     <title><?= e($pageTitle ?? 'Painel') ?> - <?= e(APP_NAME) ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="<?= e(url('public/css/admin.css')) ?>">
-    <link rel="stylesheet" href="<?= e(url('public/css/admin-menu-v34.css')) ?>">
-    <?php /* v0.52.0 - responsividade do painel administrativo */ ?>
-    <link rel="stylesheet" href="<?= e(url('public/css/admin-responsive-v52.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.52.0'))) ?>">
-        <?php /* correção do menu lateral durante a rolagem */ ?>
-    <link rel="stylesheet" href="<?= e(url('public/css/admin-sidebar-scroll-fix-v54.css?v=1')) ?>">
+    <?php /* v0.64.0 - CSS administrativo consolidado */ ?>
+    <link
+        rel="stylesheet"
+        href="<?= e(url('public/css/admin-v64.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.64.0'))) ?>"
+    >
 <!-- Bootstrap JS precisa estar disponível antes dos scripts específicos das páginas. -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script defer src="<?= e(url('public/js/admin-menu-v34.js')) ?>"></script>
@@ -388,7 +387,11 @@ $adminPendingTotal =
                             <a class="<?= $isPath('ferramentas/wordpress.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/wordpress.php')) ?>">Importar WordPress</a>
                         <?php endif; ?>
                         <?php if (Auth::can('saude.visualizar')): ?>
-                            <a class="<?= $isPath('ferramentas/saude.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/saude.php')) ?>">Saúde do Portal</a>
+                                                        <a
+                                class="<?= $isPath('ferramentas/diagnostico.php') ? 'active' : '' ?>"
+                                href="<?= e(url('admin/ferramentas/diagnostico.php')) ?>"
+                            >Central de Diagnóstico</a>
+<a class="<?= $isPath('ferramentas/saude.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/saude.php')) ?>">Saúde do Portal</a>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
