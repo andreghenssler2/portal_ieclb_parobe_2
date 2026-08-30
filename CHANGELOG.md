@@ -1,0 +1,76 @@
+# Changelog — Portal IECLB Parobé
+
+Este arquivo passa a ser o histórico consolidado do projeto a partir da
+v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
+`docs/releases/`.
+
+## 0.66.0 — Organização do repositório
+
+- README completamente atualizado.
+- Removidas do README credenciais administrativas padrão.
+- Criado `CHANGELOG.md` consolidado.
+- Criada documentação de arquitetura, atualização e organização do Git.
+- `.gitignore` reorganizado e documentado.
+- Atualizado `config/config.example.php`.
+- Arquivos históricos `CHANGELOG_v*`, `LEIA-ME_v*` e `MANIFEST_v*` podem ser
+  arquivados automaticamente em `docs/releases/`.
+- Limpeza segura de duplicatas antigas em `admin/admin/documentos` e
+  `admin/app/Services/DocumentService.php` quando forem byte a byte idênticas
+  às cópias canônicas.
+- Nenhuma alteração no banco de dados.
+
+## 0.65.0 — Qualidade automática
+
+- Criado `tests/run.php`.
+- GitHub Actions em PHP 8.2 e 8.3.
+- Validação de sintaxe, estrutura, Composer, CSS consolidado e componentes
+  críticos antes de deploy.
+
+## 0.64.0 — CSS administrativo consolidado
+
+- Consolidação dos CSS administrativos em `public/css/admin-v64.css`.
+- Preservação dos CSS anteriores para rollback.
+- Correção R2 para resíduos `">` no topo do painel.
+
+## 0.63.0 — Central de Diagnóstico
+
+- Nova visão operacional para produção.
+- Disco, banco, uploads, cache, backups, tarefas, SMTP e alertas reunidos.
+- Integração com a Saúde do Portal.
+
+## 0.62.0 — Central de Pendências
+
+- Central administrativa de itens que exigem atenção.
+- Sino com contador.
+- Integração com revisão, comentários, formulários, agenda e auditoria.
+
+## 0.61.0 — Fluxo editorial
+
+- Rascunho → revisão → ajustes/aprovação → publicação.
+- Novas permissões para revisar e publicar.
+- Hash da versão aprovada para impedir publicação de conteúdo diferente do
+  revisado.
+
+## 0.60.0 — Autenticação em dois fatores
+
+- 2FA TOTP por usuário.
+- Códigos de recuperação.
+- Integração ao login e à Minha Conta.
+- Auditoria das ações de 2FA.
+
+## 0.59 e anteriores
+
+O Portal evoluiu incrementalmente com:
+
+- notícias, páginas e eventos;
+- categorias, tags e menus;
+- mídia e documentos;
+- usuários e permissões;
+- formulários, newsletter e comentários;
+- SEO, sitemap, cache e backups;
+- temas, widgets e blocos de conteúdo;
+- importação WordPress;
+- analytics, busca e tarefas agendadas.
+
+Consulte `docs/releases/` e o histórico do Git para detalhes das versões
+anteriores.

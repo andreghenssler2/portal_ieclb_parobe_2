@@ -1,59 +1,176 @@
-# Portal IECLB Parobé v0.2.0
+# Portal IECLB Parobé
 
-CMS próprio em PHP + MySQL, inspirado no fluxo de administração do WordPress.
+CMS próprio em PHP + MySQL/MariaDB para gerenciamento do portal da IECLB Parobé.
+
+**Versão atual: 0.66.0**
+
+## Principais recursos
+
+O Portal possui painel administrativo inspirado em fluxos de CMS, com:
+
+- notícias e categorias hierárquicas;
+- páginas institucionais;
+- eventos e agenda;
+- biblioteca de mídia;
+- documentos e downloads;
+- comentários;
+- formulários e respostas;
+- newsletter;
+- menus hierárquicos;
+- temas, personalização e widgets;
+- blocos e padrões de conteúdo;
+- SEO, sitemap e Open Graph;
+- busca;
+- analytics e notícias mais lidas;
+- importação de conteúdo do WordPress;
+- usuários, perfis e permissões;
+- auditoria administrativa;
+- cache;
+- backups;
+- tarefas agendadas;
+- modo manutenção;
+- autenticação em dois fatores (TOTP);
+- fluxo editorial de revisão/aprovação;
+- Central de Pendências;
+- Central de Diagnóstico;
+- testes automáticos e GitHub Actions.
 
 ## Requisitos
-- PHP 8.2 ou 8.3
-- MySQL 8+ ou MariaDB compatível
-- PDO MySQL e Fileinfo
-- Apache (XAMPP/cPanel)
 
-## Instalação nova
-1. Copie a pasta para `C:\xampp\htdocs\portal_ieclb_parobe`.
-2. Importe `database.sql` no phpMyAdmin.
-3. Ajuste `config/config.php`.
-4. Abra `http://localhost/portal_ieclb_parobe`.
-5. Painel: `http://localhost/portal_ieclb_parobe/admin/login.php`.
+- PHP 8.2 ou superior;
+- MySQL 8+ ou MariaDB compatível;
+- PDO MySQL;
+- Fileinfo;
+- Apache com `mod_rewrite`;
+- Composer 2 para restaurar dependências.
 
-## Atualização da v0.1.0
-1. Faça backup do banco e da pasta atual.
-2. Substitua os arquivos do portal pelos da v0.2.0, preservando seu `config/config.php` se ele já estiver configurado.
-3. Execute uma única vez `migrations/2026_08_18_v0.2.0.sql` no banco existente.
-4. Garanta permissão de gravação na pasta `uploads/`.
+A versão de PHP suportada oficialmente pelo CI é testada em PHP 8.2 e 8.3.
 
-## Primeiro acesso
-- E-mail: `admin@ieclbparobe.com.br`
-- Senha: `Admin@123`
+## Instalação
 
-Troque a senha antes de colocar em produção.
+### 1. Copie o projeto
 
-## Novidades da v0.2.0
-- Biblioteca de Mídia no painel
-- Upload múltiplo de arquivos
-- Imagens JPG, PNG, WEBP e GIF
-- PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX e TXT
-- Validação do MIME real do arquivo
-- Limite padrão de 10 MB por arquivo
-- Organização automática em `uploads/AAAA/MM/`
-- Nomes aleatórios para arquivos no servidor
-- Bloqueio de execução de scripts dentro de `uploads`
-- Edição de título e texto alternativo da mídia
-- Exclusão de mídia
-- URL copiável da mídia
-- Seleção de imagem destacada na notícia
-- Upload direto de uma nova imagem destacada no formulário da notícia
-- Exibição das imagens na página inicial e na notícia
-- Contador de mídias no dashboard
-- Registro básico das ações de mídia/notícia em `logs`
-- Migração SQL da v0.1.0 para v0.2.0
+Exemplo para XAMPP:
 
-## Próximos módulos sugeridos
-1. Páginas institucionais
-2. Eventos e cultos
-3. Usuários e permissões granulares
-4. Menus dinâmicos
-5. Configurações pelo painel
-6. Galerias
-7. SEO, sitemap e Open Graph
-8. Logs administrativos com tela de consulta
-9. Instalador web
+```text
+C:\xampp\htdocs\portal_ieclb_parobe
+```
+
+### 2. Instale as dependências
+
+Na raiz:
+
+```bash
+composer install --no-dev --optimize-autoloader
+```
+
+O projeto usa `lib/` como diretório de dependências Composer.
+
+### 3. Crie a configuração local
+
+Copie:
+
+```text
+config/config.example.php
+```
+
+para:
+
+```text
+config/config.php
+```
+
+Depois ajuste URL, banco, ambiente e demais valores da instalação.
+
+`config/config.php` não deve ser enviado ao Git.
+
+### 4. Banco de dados
+
+Em uma instalação nova, importe o SQL base disponível no projeto e depois
+aplique as migrações necessárias para a versão atual.
+
+Em uma instalação existente, use sempre os atualizadores/migrações de versão
+em ordem, mantendo backup do banco e dos arquivos.
+
+### 5. Permissões
+
+Garanta escrita para o processo do PHP nas pastas usadas pelo Portal, em
+especial `uploads/` e `storage/`.
+
+## Segurança
+
+Para produção:
+
+- use `APP_ENV=production`;
+- desative `APP_DEBUG`;
+- nunca versione `config/config.php`;
+- use senha forte para todos os usuários;
+- ative autenticação em dois fatores para contas administrativas;
+- configure limite de tentativas de login;
+- mantenha backups recentes;
+- revise periodicamente Auditoria e Central de Diagnóstico.
+
+Credenciais administrativas não são documentadas no repositório. Em uma
+instalação nova, crie ou redefina a conta administrativa por um procedimento
+seguro antes de publicar o Portal.
+
+## Atualizações
+
+Consulte:
+
+- [`docs/ATUALIZACAO.md`](docs/ATUALIZACAO.md)
+- [`CHANGELOG.md`](CHANGELOG.md)
+
+Regra principal: **backup primeiro, atualização depois**.
+
+## Testes
+
+Antes de commit/deploy:
+
+```bash
+php tests/run.php
+```
+
+O GitHub também executa automaticamente o workflow:
+
+```text
+Portal PHP Quality
+```
+
+em `push` e `pull_request` para `main`.
+
+Mais informações:
+
+- [`TESTES.md`](TESTES.md)
+
+## Estrutura resumida
+
+```text
+admin/                 painel administrativo
+app/Helpers/           funções auxiliares
+app/Services/          serviços de domínio
+config/                configuração de exemplo e proteção
+docs/                  documentação do projeto
+migrations/            migrações incrementais
+mod/                    infraestrutura de banco, sessão e segurança
+public/                 CSS, JS e recursos públicos
+storage/                dados locais, cache, backups e arquivos privados
+tests/                  verificações automáticas
+uploads/                mídia enviada pelo painel
+```
+
+Detalhes:
+
+- [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)
+- [`docs/REPOSITORIO.md`](docs/REPOSITORIO.md)
+
+## Histórico
+
+O histórico consolidado fica em [`CHANGELOG.md`](CHANGELOG.md).
+
+Notas históricas de versões antigas podem ser mantidas em `docs/releases/`.
+
+## Licença
+
+Projeto de uso próprio da IECLB Parobé. Consulte `composer.json` e as regras
+internas do projeto para distribuição e implantação.

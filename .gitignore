@@ -1,24 +1,43 @@
+# ----------------------------------------------------------------------
+# Portal IECLB Parobé
+# Arquivos locais, dados mutáveis e artefatos de atualização.
+# ----------------------------------------------------------------------
+
+# Configuração e segredos locais
 /config/config.php
 /config/config/*
-/uploads/*
-!uploads/.gitkeep
-/public/uploads/*
-/storage/backups/*
-!/public/uploads/.gitkeep
-*.log
-.DS_Store
+php.ini
+.user.ini
+chaves.txt
+
+# Dependências
+/vendor/
 /lib/*
 !/lib/.htaccess
+/lib/vendor/
+
+# Uploads
+/uploads/*
+!/uploads/.gitkeep
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Storage / runtime
 /storage/*
-/vendor/
+!/storage/seguranca/
+!/storage/seguranca/.htaccess
+!/storage/seguranca/.gitkeep
+
+# Diretórios locais/privados históricos
 /link/*
 /ieclb_config/*
 /ieclb-mail/*
 /portal/*
 /privado/*
 /promocao/*
+/extras/*
 
-# Logs em qualquer outro local
+# Logs
 *.log
 
 # Backups e temporários
@@ -28,36 +47,26 @@
 *.tmp
 *.temp
 
-# Dumps de banco gerados na raiz
+# Dumps de banco gerados localmente
 /*.sql
 /*.sql.gz
 
-# Pacotes
+# Pacotes/artefatos
 *.zip
-
-# Dependências são restauradas por composer install.
-/lib/vendor/
-
-
-# BEGIN AUTENTICACAO SEGURA V1
-/storage/*
-!/storage/seguranca/.htaccess
-!/storage/seguranca/.gitkeep
-# END AUTENTICACAO SEGURA V1
-
-php.ini
-ads.txt
-.user.ini
-sitemap_ieclbparobe.xml
-chaves.txt
-nota
-notas
-
-cgi-bin
 _update_*
 /*_v0.*.php
+/LEIA-ME_v*.txt
+/MANIFEST_v*.txt
+/SHA256SUMS.txt
 
-/extras/*
-
-!/update-resources/*
+# Recursos de atualização explicitamente versionados, quando usados
+!/update-resources/
 /update-resources/*
+
+# Arquivos locais diversos
+.DS_Store
+ads.txt
+sitemap_ieclbparobe.xml
+nota
+notas
+cgi-bin
