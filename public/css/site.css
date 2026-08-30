@@ -114,3 +114,53 @@ body { background: var(--portal-bg); color: var(--portal-text); font-family: sys
 .comment-public-text { line-height: 1.7; overflow-wrap: anywhere; }
 .comment-form textarea { min-height: 150px; }
 .comment-honeypot { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
+
+
+/* v0.54.0 - submenus públicos em profundidade ilimitada */
+.portal-header .dropdown-submenu {
+    position: relative;
+}
+
+.portal-header .dropdown-submenu > .dropdown-toggle::after {
+    float: right;
+    margin-top: .55em;
+}
+
+@media (min-width: 992px) {
+    .portal-header .dropdown-submenu > .dropdown-menu {
+        top: -.5rem;
+        left: calc(100% - .15rem);
+        margin-left: 0;
+        display: none;
+    }
+
+    .portal-header .dropdown-submenu:hover > .dropdown-menu,
+    .portal-header .dropdown-submenu:focus-within > .dropdown-menu {
+        display: block;
+    }
+
+    .portal-header .dropdown-submenu > .dropdown-toggle::after {
+        transform: rotate(-90deg);
+    }
+}
+
+@media (max-width: 991.98px) {
+    .portal-header .dropdown-menu .dropdown-menu {
+        position: static !important;
+        display: block;
+        margin: 0 0 0 .75rem;
+        padding: 0 0 0 .5rem;
+        border: 0;
+        box-shadow: none;
+        background: transparent;
+    }
+
+    .portal-header .dropdown-menu .dropdown-menu .dropdown-item {
+        padding-left: 1rem;
+        white-space: normal;
+    }
+
+    .portal-header .dropdown-submenu > .dropdown-toggle::after {
+        transform: rotate(0deg);
+    }
+}

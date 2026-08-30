@@ -164,21 +164,7 @@ if (!$menuPrincipal) {
         <div id="menu" class="collapse navbar-collapse">
             <ul class="navbar-nav ms-auto gap-lg-2 align-items-lg-center">
                 <?php if ($menuPrincipal): ?>
-                    <?php foreach ($menuPrincipal as $menuItem): ?>
-                        <?php $children = $menuItem['children'] ?? []; $href = menuItemUrl($menuItem); $newTab = (int)($menuItem['nova_aba'] ?? 0) === 1; ?>
-                        <?php if ($children): ?>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="<?= e($href) ?>" role="button" data-bs-toggle="dropdown" aria-expanded="false" <?= $newTab ? 'target="_blank" rel="noopener"' : '' ?>><?= e($menuItem['titulo']) ?></a>
-                                <ul class="dropdown-menu">
-                                    <?php foreach ($children as $child): $childNewTab = (int)($child['nova_aba'] ?? 0) === 1; ?>
-                                        <li><a class="dropdown-item" href="<?= e(menuItemUrl($child)) ?>" <?= $childNewTab ? 'target="_blank" rel="noopener"' : '' ?>><?= e($child['titulo']) ?></a></li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </li>
-                        <?php else: ?>
-                            <li class="nav-item"><a class="nav-link" href="<?= e($href) ?>" <?= $newTab ? 'target="_blank" rel="noopener"' : '' ?>><?= e($menuItem['titulo']) ?></a></li>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
+                    <?= renderPublicMenuItems($menuPrincipal) ?>
                 <?php else: ?>
                     <li class="nav-item"><a class="nav-link" href="<?= e(url()) ?>">Início</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= e(url('agenda.php')) ?>">Agenda</a></li>

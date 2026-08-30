@@ -7,6 +7,14 @@ $stmt = $pdo->prepare("SELECT p.*, c.nome AS comunidade_nome, u.nome AS autor_no
 $stmt->execute(['slug'=>$slug]);
 $post=$stmt->fetch();
 if (!$post) { http_response_code(404); $metaTitle='Notícia não encontrada'; require __DIR__.'/theme/ieclb/header.php'; echo '<div class="container py-5"><h1>Notícia não encontrada</h1></div>'; require themeFile($pdo, 'footer.php'); exit; }
+/*
+ * Redireciona URLs antigas para o formato canônico configurado.
+ */
+redirectCanonicalContent(
+    'noticia',
+    (string)$post['slug']
+);
+
 NewsAnalyticsService::trackView($pdo, (int)$post['id']);
 // v0.42.0-r1 - categorias com fallback legado.
 $postCategories = [];

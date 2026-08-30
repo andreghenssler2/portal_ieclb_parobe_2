@@ -1,0 +1,162 @@
+/* Portal IECLB Parobé v0.54.0 - Submenus recursivos */
+
+/* Nível principal com link + botão separado para abrir o submenu. */
+.portal-menu-root-parent {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.portal-menu-root-parent > .portal-menu-root-link {
+    padding-right: .25rem;
+}
+
+.portal-menu-root-parent > .portal-menu-root-toggle {
+    padding-left: .35rem;
+    padding-right: .55rem;
+    min-width: 28px;
+}
+
+.portal-menu-root-toggle::after {
+    margin-left: 0;
+}
+
+/* Submenus internos. */
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu > .portal-submenu-row {
+    display: flex;
+    align-items: stretch;
+    min-width: 220px;
+}
+
+.dropdown-submenu > .portal-submenu-row > .dropdown-item {
+    min-width: 0;
+    white-space: normal;
+}
+
+.portal-submenu-toggle {
+    flex: 0 0 38px;
+    width: 38px;
+    border: 0;
+    border-left: 1px solid var(--bs-border-color);
+    background: transparent;
+    color: inherit;
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.portal-submenu-toggle:hover,
+.portal-submenu-toggle:focus {
+    background: var(--bs-tertiary-bg);
+}
+
+.portal-submenu-toggle .portal-submenu-arrow {
+    display: inline-block;
+    transition: transform .15s ease;
+}
+
+.portal-submenu-toggle[aria-expanded="true"]
+.portal-submenu-arrow {
+    transform: rotate(90deg);
+}
+
+.portal-submenu {
+    min-width: 220px;
+}
+
+/* Desktop: cada nível abre lateralmente. */
+@media (min-width: 992px) {
+    .dropdown-submenu > .dropdown-menu {
+        top: -.5rem;
+        left: 100%;
+        right: auto;
+        margin-left: .1rem;
+    }
+
+    .dropdown-submenu:hover > .dropdown-menu,
+    .dropdown-submenu:focus-within > .dropdown-menu,
+    .dropdown-submenu > .dropdown-menu.show {
+        display: block;
+    }
+
+    .dropdown-submenu.portal-submenu-left
+    > .dropdown-menu {
+        left: auto;
+        right: 100%;
+        margin-left: 0;
+        margin-right: .1rem;
+    }
+
+    .dropdown-submenu.portal-submenu-left
+    > .portal-submenu-row
+    > .portal-submenu-toggle
+    .portal-submenu-arrow {
+        transform: rotate(180deg);
+    }
+
+    .dropdown-submenu.portal-submenu-left
+    > .portal-submenu-row
+    > .portal-submenu-toggle[aria-expanded="true"]
+    .portal-submenu-arrow {
+        transform: rotate(90deg);
+    }
+}
+
+/* Tablet/celular: os níveis abrem verticalmente no próprio menu. */
+@media (max-width: 991.98px) {
+    .portal-menu-root-parent {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        width: 100%;
+    }
+
+    .portal-menu-root-parent > .portal-menu-root-link,
+    .portal-menu-root-parent > .portal-menu-root-toggle {
+        width: auto !important;
+    }
+
+    .portal-menu-root-parent > .dropdown-menu {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .dropdown-submenu > .portal-submenu-row {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .dropdown-submenu > .dropdown-menu {
+        position: static !important;
+        inset: auto !important;
+        transform: none !important;
+        width: 100%;
+        min-width: 0;
+        margin: 0 !important;
+        padding: .15rem 0 .15rem .85rem;
+        border: 0;
+        border-left: 2px solid
+            color-mix(
+                in srgb,
+                var(--portal-primary) 22%,
+                transparent
+            );
+        border-radius: 0;
+        box-shadow: none !important;
+    }
+
+    .dropdown-submenu > .dropdown-menu:not(.show) {
+        display: none;
+    }
+
+    .dropdown-submenu > .dropdown-menu.show {
+        display: block;
+    }
+
+    .portal-submenu-toggle {
+        flex-basis: 44px;
+        width: 44px;
+    }
+}

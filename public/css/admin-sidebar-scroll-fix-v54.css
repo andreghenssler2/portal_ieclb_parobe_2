@@ -1,0 +1,108 @@
+/*
+ * Portal IECLB Parobé
+ * Correção do menu lateral administrativo.
+ *
+ * Mantém o menu lateral preso à viewport no desktop e permite que somente
+ * a área de navegação role internamente quando o menu for maior que a tela.
+ */
+
+@media (min-width: 992px) {
+
+    /*
+     * "hidden" em um ancestral pode impedir position: sticky de trabalhar
+     * corretamente. "clip" corta o excesso horizontal sem criar um novo
+     * contêiner de rolagem.
+     */
+    html,
+    body.admin-body {
+        overflow-x: clip !important;
+        overflow-y: visible !important;
+    }
+
+    /*
+     * Barra superior permanece no topo enquanto a página rola.
+     */
+    .admin-topbar {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 1040 !important;
+    }
+
+    /*
+     * O flex container não deve virar área de recorte do sticky.
+     */
+    .admin-shell {
+        overflow: visible !important;
+        align-items: flex-start !important;
+        min-height: calc(100dvh - var(--admin-topbar-height, 64px));
+    }
+
+    /*
+     * Sidebar ocupa exatamente a altura disponível abaixo da topbar.
+     * Ela fica visível durante toda a rolagem do conteúdo principal.
+     */
+    .admin-sidebar {
+        position: sticky !important;
+        top: var(--admin-topbar-height, 64px) !important;
+        align-self: flex-start !important;
+
+        height: calc(100dvh - var(--admin-topbar-height, 64px)) !important;
+        max-height: calc(100dvh - var(--admin-topbar-height, 64px)) !important;
+
+        overflow: hidden !important;
+    }
+
+    /*
+     * A estrutura interna precisa permitir que .admin-nav encolha,
+     * caso contrário o conteúdo pode ultrapassar a altura da sidebar.
+     */
+    .admin-sidebar .offcanvas-body {
+        height: 100% !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    /*
+     * Somente os itens de navegação rolam.
+     * O rodapé do menu permanece acessível.
+     */
+    .admin-nav {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .admin-sidebar-footer {
+        flex: 0 0 auto !important;
+    }
+
+    /*
+     * Evita que regras de overflow do conteúdo principal interfiram
+     * no posicionamento da sidebar.
+     */
+    .admin-main {
+        align-self: stretch !important;
+    }
+}
+
+/*
+ * Fallback para navegadores sem suporte a dvh.
+ */
+@supports not (height: 100dvh) {
+    @media (min-width: 992px) {
+        .admin-shell {
+            min-height: calc(100vh - var(--admin-topbar-height, 64px));
+        }
+
+        .admin-sidebar {
+            height: calc(100vh - var(--admin-topbar-height, 64px)) !important;
+            max-height: calc(100vh - var(--admin-topbar-height, 64px)) !important;
+        }
+    }
+}

@@ -67,10 +67,11 @@ if ($selectedMenuId > 0) {
          LEFT JOIN paginas p ON p.id = mi.pagina_id
          LEFT JOIN menu_itens pai ON pai.id = mi.parent_id
          WHERE mi.menu_id = :menu_id
-         ORDER BY COALESCE(mi.parent_id, mi.id), mi.parent_id IS NOT NULL, mi.ordem, mi.id"
+         ORDER BY mi.ordem ASC, mi.id ASC"
     );
     $stmt->execute(['menu_id' => $selectedMenuId]);
     $items = $stmt->fetchAll();
+    $items = menuFlattenTree(menuBuildTree($items));
 }
 
 $pageTitle = 'Menus';
@@ -142,9 +143,10 @@ require __DIR__ . '/../_header.php';
                         <tr>
                             <td><?= (int)$item['ordem'] ?></td>
                             <td>
-                                <?php if ($item['parent_id']): ?><span class="text-secondary me-1">↳</span><?php endif; ?>
+                                <?php $depth = max(0, (int)($item['_depth'] ?? 0)); ?>
+                                <?php if ($depth > 0): ?><span class="text-secondary me-1"><?= e(str_repeat('↳ ', $depth)) ?></span><?php endif; ?>
                                 <strong><?= e($item['titulo']) ?></strong>
-                                <?php if ($item['parent_titulo']): ?><div class="small text-secondary">Subitem de <?= e($item['parent_titulo']) ?></div><?php endif; ?>
+                                <?php if ($item['parent_titulo']): ?><div class="small text-secondary">Nível <?= $depth + 1 ?> · Subitem de <?= e($item['parent_titulo']) ?></div><?php endif; ?>
                             </td>
                             <td>
                                 <?php if ($item['tipo'] === 'pagina'): ?>

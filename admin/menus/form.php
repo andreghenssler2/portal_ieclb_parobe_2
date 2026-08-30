@@ -37,9 +37,7 @@ if ($menuId <= 0 && $menus) {
 }
 
 $paginas = $pdo->query("SELECT id, titulo, slug, status FROM paginas ORDER BY titulo")->fetchAll();
-$stmt = $pdo->prepare('SELECT id, titulo FROM menu_itens WHERE menu_id = :menu_id AND parent_id IS NULL ORDER BY ordem, titulo');
-$stmt->execute(['menu_id' => $menuId]);
-$parents = $stmt->fetchAll();
+$parents = menuParentOptions($pdo, $menuId, $id);
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -84,10 +82,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new RuntimeException('Um item não pode ser subitem dele mesmo.');
             }
             if ($parentId !== null) {
-                $parentCheck = $pdo->prepare('SELECT COUNT(*) FROM menu_itens WHERE id = :id AND menu_id = :menu_id AND parent_id IS NULL');
+                $parentCheck = $pdo->prepare('SELECT id FROM menu_itens WHERE id = :id AND menu_id = :menu_id LIMIT 1');
                 $parentCheck->execute(['id' => $parentId, 'menu_id' => $menuId]);
-                if ((int)$parentCheck->fetchColumn() === 0) {
-                    throw new RuntimeException('O item pai selecionado é inválido.');
+                if (!$parentCheck->fetchColumn()) {
+                    throw new RuntimeException('O item pai selecionado é inválido ou pertence a outro menu.');
+                }
+
+                if ($id) {
+                    $allItemsStmt = $pdo->prepare('SELECT id, parent_id FROM menu_itens WHERE menu_id = :menu_id');
+                    $allItemsStmt->execute(['menu_id' => $menuId]);
+                    $descendantIds = menuDescendantIds($allItemsStmt->fetchAll(), $id);
+                    if (in_array($parentId, $descendantIds, true)) {
+                        throw new RuntimeException('Não é possível mover este item para dentro de um dos seus próprios subitens.');
+                    }
                 }
             }
 
@@ -129,6 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+/* v0.54.0: recalcula a árvore de possíveis pais */
+$parents = menuParentOptions($pdo, (int)$menuId, $id);
 $pageTitle = $id ? 'Editar item de menu' : 'Novo item de menu';
 require __DIR__ . '/../_header.php';
 ?>
@@ -193,11 +202,11 @@ require __DIR__ . '/../_header.php';
                         <option value="">Item principal</option>
                         <?php foreach ($parents as $parent): ?>
                             <?php if (!$id || (int)$parent['id'] !== $id): ?>
-                                <option value="<?= (int)$parent['id'] ?>" <?= (string)($item['parent_id'] ?? '') === (string)$parent['id'] ? 'selected' : '' ?>><?= e($parent['titulo']) ?></option>
+                                <option value="<?= (int)$parent['id'] ?>" <?= (string)($item['parent_id'] ?? '') === (string)$parent['id'] ? 'selected' : '' ?>><?= e(str_repeat('— ', max(0, (int)($parent['_depth'] ?? 0))) . (string)$parent['titulo']) ?></option>
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </select>
-                    <div class="form-text">O tema atual aceita um nível de dropdown.</div>
+                    <div class="form-text">Submenus podem conter outros submenus em profundidade ilimitada.</div>
                 </div>
 
                 <div class="col-12 d-flex flex-wrap gap-4">

@@ -374,7 +374,7 @@ $listSql = "SELECT p.*, c.nome AS comunidade_nome,
         ? 'p.lixeira_em DESC,p.id DESC'
         : ($view === 'agenda'
             ? 'p.publicado_em ASC,p.id DESC'
-            : 'p.id DESC'))
+            : 'COALESCE(p.publicado_em, p.created_at) DESC, p.id DESC'))
      . " LIMIT " . (int)$pagination['limit']
      . " OFFSET " . (int)$pagination['offset'];
 $listStmt = $pdo->prepare($listSql);

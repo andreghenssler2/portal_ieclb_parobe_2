@@ -26,6 +26,15 @@ if (count($segments) === 1) {
         require __DIR__ . '/' . $static[$alias];
         exit;
     }
+    /*
+     * Notícias na raiz: /minha-noticia
+     * As rotas estáticas acima continuam tendo prioridade.
+     */
+    if (permalinkPrefix('noticia', $pdo) === '') {
+        require __DIR__ . '/noticia.php';
+        exit;
+    }
+
     if (permalinkPrefix('pagina', $pdo) === '') {
         require __DIR__ . '/pagina.php';
         exit;
@@ -90,6 +99,27 @@ if (count($segments) === 2) {
         if ($configured !== '') {
             $routes[$configured] = $type . '.php';
         }
+
+        if ($type === 'noticia' && $configured === '') {
+            $legacyNewsPrefix = trim(
+                siteConfig(
+                    $pdo,
+                    'permalink_noticia_prefix',
+                    'noticia'
+                )
+            );
+
+            if (
+                $legacyNewsPrefix !== ''
+                && preg_match(
+                    '/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                    $legacyNewsPrefix
+                )
+            ) {
+                $routes[strtolower($legacyNewsPrefix)] = 'noticia.php';
+            }
+        }
+
         // Prefixos históricos continuam reconhecidos para redirecionamento canônico.
         $routes[$type] = $type . '.php';
     }

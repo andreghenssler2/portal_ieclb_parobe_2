@@ -36,7 +36,10 @@ function permalinkPrefix(string $type, ?PDO $pdo = null): string
         $pdo ??= Database::connection();
         $key = 'permalink_' . $type;
         $configured = trim(siteConfig($pdo, $key, $defaults[$type]));
-        if ($type === 'pagina' && $configured === '__root__') {
+        if (
+            in_array($type, ['noticia', 'pagina'], true)
+            && $configured === '__root__'
+        ) {
             return '';
         }
         if ($configured !== '' && preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $configured)) {
@@ -110,13 +113,50 @@ function routeSlug(string $type): string
     $prefix = permalinkPrefix($type);
     $slug = '';
 
-    if ($prefix === '' && $type === 'pagina' && count($segments) === 1) {
+    if (
+        $prefix === ''
+        && in_array($type, ['noticia', 'pagina'], true)
+        && count($segments) === 1
+    ) {
         $slug = (string)$segments[0];
-    } elseif ($prefix !== '' && count($segments) === 2 && strtolower((string)$segments[0]) === $prefix) {
+
+    } elseif (
+        $prefix !== ''
+        && count($segments) === 2
+        && strtolower((string)$segments[0]) === strtolower($prefix)
+    ) {
         $slug = (string)$segments[1];
-    } elseif (count($segments) === 2 && strtolower((string)$segments[0]) === $type) {
-        // Compatibilidade com URLs das versões anteriores.
+
+    } elseif (
+        count($segments) === 2
+        && strtolower((string)$segments[0]) === strtolower($type)
+    ) {
+        // Compatibilidade histórica.
         $slug = (string)$segments[1];
+
+    } elseif (
+        $type === 'noticia'
+        && $prefix === ''
+        && count($segments) === 2
+    ) {
+        try {
+            $legacyPrefix = trim(
+                siteConfig(
+                    Database::connection(),
+                    'permalink_noticia_prefix',
+                    'noticia'
+                )
+            );
+        } catch (Throwable $ignored) {
+            $legacyPrefix = 'noticia';
+        }
+
+        if (
+            $legacyPrefix !== ''
+            && strtolower((string)$segments[0]) === strtolower($legacyPrefix)
+        ) {
+            $slug = (string)$segments[1];
+        }
     }
 
     $slug = strtolower(rawurldecode($slug));
@@ -497,8 +537,233 @@ function mediaDocumentsAllowed(?PDO $pdo = null): bool
 
 
 /**
- * Carrega o menu público e organiza itens em até um nível de submenu.
+ * Carrega o menu público e organiza itens em profundidade ilimitada.
  */
+
+/* v0.54.0 - helpers de hierarquia ilimitada do Menu Principal */
+
+/**
+ * Constrói uma árvore de itens de menu com profundidade ilimitada.
+ * Itens órfãos ou ciclos antigos são mantidos visíveis como raízes, sem loop infinito.
+ */
+function menuBuildTree(array $rows): array
+{
+    $byId = [];
+    foreach ($rows as $row) {
+        $id = (int)($row['id'] ?? 0);
+        if ($id <= 0) {
+            continue;
+        }
+        $row['children'] = [];
+        $byId[$id] = $row;
+    }
+
+    if (!$byId) {
+        return [];
+    }
+
+    $childrenByParent = [];
+    $rootIds = [];
+
+    foreach ($byId as $id => $row) {
+        $parentId = (int)($row['parent_id'] ?? 0);
+        if ($parentId > 0 && $parentId !== $id && isset($byId[$parentId])) {
+            $childrenByParent[$parentId][] = $id;
+        } else {
+            $rootIds[] = $id;
+        }
+    }
+
+    $build = function (int $id, array $trail = []) use (&$build, $byId, $childrenByParent): ?array {
+        if (!isset($byId[$id]) || isset($trail[$id])) {
+            return null;
+        }
+
+        $trail[$id] = true;
+        $node = $byId[$id];
+        $node['children'] = [];
+
+        foreach ($childrenByParent[$id] ?? [] as $childId) {
+            $child = $build((int)$childId, $trail);
+            if ($child !== null) {
+                $node['children'][] = $child;
+            }
+        }
+
+        return $node;
+    };
+
+    $result = [];
+    $included = [];
+
+    $remember = function (array $node) use (&$remember, &$included): void {
+        $id = (int)($node['id'] ?? 0);
+        if ($id > 0) {
+            $included[$id] = true;
+        }
+        foreach ($node['children'] ?? [] as $child) {
+            $remember($child);
+        }
+    };
+
+    foreach ($rootIds as $rootId) {
+        $node = $build((int)$rootId);
+        if ($node !== null) {
+            $result[] = $node;
+            $remember($node);
+        }
+    }
+
+    // Também recupera estruturas antigas sem raiz válida (inclusive ciclos).
+    foreach (array_keys($byId) as $id) {
+        if (isset($included[$id])) {
+            continue;
+        }
+        $node = $build((int)$id);
+        if ($node !== null) {
+            $result[] = $node;
+            $remember($node);
+        }
+    }
+
+    return $result;
+}
+
+/**
+ * Achata a árvore preservando profundidade e caminho, útil no painel administrativo.
+ */
+function menuFlattenTree(array $tree, int $depth = 0, string $parentPath = ''): array
+{
+    $flat = [];
+
+    foreach ($tree as $node) {
+        $title = trim((string)($node['titulo'] ?? ''));
+        $path = $parentPath !== '' ? $parentPath . ' › ' . $title : $title;
+
+        $node['_depth'] = $depth;
+        $node['_path'] = $path;
+        $children = is_array($node['children'] ?? null) ? $node['children'] : [];
+        $flat[] = $node;
+
+        if ($children) {
+            array_push($flat, ...menuFlattenTree($children, $depth + 1, $path));
+        }
+    }
+
+    return $flat;
+}
+
+/**
+ * Retorna todos os descendentes de um item para impedir ciclos ao editar o pai.
+ */
+function menuDescendantIds(array $rows, int $itemId): array
+{
+    if ($itemId <= 0) {
+        return [];
+    }
+
+    $children = [];
+    foreach ($rows as $row) {
+        $id = (int)($row['id'] ?? 0);
+        $parentId = (int)($row['parent_id'] ?? 0);
+        if ($id > 0 && $parentId > 0) {
+            $children[$parentId][] = $id;
+        }
+    }
+
+    $result = [];
+    $seen = [$itemId => true];
+    $stack = $children[$itemId] ?? [];
+
+    while ($stack) {
+        $id = (int)array_pop($stack);
+        if ($id <= 0 || isset($seen[$id])) {
+            continue;
+        }
+
+        $seen[$id] = true;
+        $result[] = $id;
+
+        foreach ($children[$id] ?? [] as $childId) {
+            $stack[] = (int)$childId;
+        }
+    }
+
+    return $result;
+}
+
+/**
+ * Itens que podem ser escolhidos como pai no formulário.
+ * O próprio item e todos os seus descendentes são removidos da lista.
+ */
+function menuParentOptions(PDO $pdo, int $menuId, ?int $excludeItemId = null): array
+{
+    if ($menuId <= 0) {
+        return [];
+    }
+
+    $stmt = $pdo->prepare(
+        'SELECT id, menu_id, parent_id, titulo, ordem
+         FROM menu_itens
+         WHERE menu_id = :menu_id
+         ORDER BY ordem ASC, titulo ASC, id ASC'
+    );
+    $stmt->execute(['menu_id' => $menuId]);
+    $rows = $stmt->fetchAll();
+
+    $blocked = [];
+    if ($excludeItemId !== null && $excludeItemId > 0) {
+        $blocked[$excludeItemId] = true;
+        foreach (menuDescendantIds($rows, $excludeItemId) as $descendantId) {
+            $blocked[(int)$descendantId] = true;
+        }
+    }
+
+    return array_values(array_filter(
+        menuFlattenTree(menuBuildTree($rows)),
+        static fn(array $row): bool => !isset($blocked[(int)($row['id'] ?? 0)])
+    ));
+}
+
+/**
+ * Renderiza o menu público recursivamente.
+ */
+function renderPublicMenuItems(array $items, int $depth = 0): string
+{
+    $html = '';
+
+    foreach ($items as $item) {
+        $children = is_array($item['children'] ?? null) ? $item['children'] : [];
+        $href = e(menuItemUrl($item));
+        $title = e((string)($item['titulo'] ?? ''));
+        $newTab = (int)($item['nova_aba'] ?? 0) === 1;
+        $target = $newTab ? ' target="_blank" rel="noopener"' : '';
+
+        if ($depth === 0) {
+            if ($children) {
+                $html .= '<li class="nav-item dropdown">';
+                $html .= '<a class="nav-link dropdown-toggle" href="' . $href . '" role="button" data-bs-toggle="dropdown" aria-expanded="false"' . $target . '>' . $title . '</a>';
+                $html .= '<ul class="dropdown-menu">' . renderPublicMenuItems($children, $depth + 1) . '</ul>';
+                $html .= '</li>';
+            } else {
+                $html .= '<li class="nav-item"><a class="nav-link" href="' . $href . '"' . $target . '>' . $title . '</a></li>';
+            }
+            continue;
+        }
+
+        if ($children) {
+            $html .= '<li class="dropdown-submenu">';
+            $html .= '<a class="dropdown-item dropdown-toggle" href="' . $href . '" aria-haspopup="true" aria-expanded="false"' . $target . '>' . $title . '</a>';
+            $html .= '<ul class="dropdown-menu">' . renderPublicMenuItems($children, $depth + 1) . '</ul>';
+            $html .= '</li>';
+        } else {
+            $html .= '<li><a class="dropdown-item" href="' . $href . '"' . $target . '>' . $title . '</a></li>';
+        }
+    }
+
+    return $html;
+}
+
 function publicMenu(PDO $pdo, string $location = 'principal'): array
 {
     try {
@@ -527,34 +792,9 @@ function publicMenu(PDO $pdo, string $location = 'principal'): array
         return [];
     }
 
-    $parents = [];
-    $children = [];
-    foreach ($rows as $row) {
-        $row['children'] = [];
-        $parentId = (int)($row['parent_id'] ?? 0);
-        if ($parentId > 0) {
-            $children[$parentId][] = $row;
-        } else {
-            $parents[(int)$row['id']] = $row;
-        }
-    }
-
-    foreach ($parents as $id => &$parent) {
-        $parent['children'] = $children[$id] ?? [];
-    }
-    unset($parent);
-
-    // Se um item filho perdeu o pai, mantém o link visível no nível principal.
-    foreach ($children as $parentId => $orphanChildren) {
-        if (!isset($parents[$parentId])) {
-            foreach ($orphanChildren as $child) {
-                $parents[(int)$child['id']] = $child;
-            }
-        }
-    }
-
-    return array_values($parents);
+    return menuBuildTree($rows);
 }
+
 
 function menuItemUrl(array $item): string
 {
