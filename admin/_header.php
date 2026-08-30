@@ -28,12 +28,44 @@ $leadershipOpen = $startsPath('liderancas');
 $documentsOpen = $startsPath('documentos');
 $newsletterOpen = $startsPath('newsletter');
 $accountOpen = $isPath('minha-conta.php');
+$pendingCenterOpen = $isPath('pendencias.php');
 
 $canAppearance = Auth::can('home.gerenciar') || Auth::can('aparencia.gerenciar') || Auth::can('tema_editor.gerenciar') || Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') || Auth::can('configuracoes.gerenciar');
 $pendingComments = 0;
 if (Auth::can('comentarios.gerenciar')) {
     try { $pendingComments = (int)Database::connection()->query("SELECT COUNT(*) FROM comentarios co INNER JOIN posts p ON p.id=co.post_id WHERE co.status='pendente' AND p.status <> 'lixeira'")->fetchColumn(); } catch (Throwable $e) {}
 }
+
+$canSeePendingCenter =
+    Auth::can('noticias.gerenciar')
+    || Auth::can('noticias.revisar')
+    || Auth::can('noticias.publicar')
+    || Auth::can('comentarios.gerenciar')
+    || Auth::can('formularios.gerenciar')
+    || Auth::can('auditoria.visualizar')
+    || Auth::isAdmin();
+
+$adminPendingOverview = [
+    'total' => 0,
+    'items' => [],
+];
+
+if ($canSeePendingCenter) {
+    try {
+        $adminPendingOverview =
+            AdminPendingService::overview(
+                Database::connection()
+            );
+    } catch (Throwable $ignored) {
+        $adminPendingOverview = [
+            'total' => 0,
+            'items' => [],
+        ];
+    }
+}
+
+$adminPendingTotal =
+    (int)($adminPendingOverview['total'] ?? 0);
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -69,6 +101,24 @@ if (Auth::can('comentarios.gerenciar')) {
             </a>
         </div>
 
+        <?php if ($canSeePendingCenter): ?>
+            <a
+                class="btn btn-sm admin-user-button position-relative me-2"
+                href="<?= e(url('admin/pendencias.php')) ?>"
+                title="Central de Pendências"
+                aria-label="Central de Pendências<?= $adminPendingTotal > 0 ? ': ' . (int)$adminPendingTotal . ' item(s)' : '' ?>"
+            >
+                <i class="bi bi-bell"></i>
+
+                <?php if ($adminPendingTotal > 0): ?>
+                    <span
+                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger"
+                    >
+                        <?= $adminPendingTotal > 99 ? '99+' : (int)$adminPendingTotal ?>
+                    </span>
+                <?php endif; ?>
+            </a>
+        <?php endif; ?>
         <div class="dropdown">
             <button class="btn btn-sm admin-user-button dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-person-circle me-1"></i>
@@ -97,6 +147,22 @@ if (Auth::can('comentarios.gerenciar')) {
                     <i class="bi bi-speedometer2"></i><span>Dashboard</span>
                 </a>
 
+                <?php if ($canSeePendingCenter): ?>
+                    <a
+                        class="admin-nav-link <?= $pendingCenterOpen ? 'active' : '' ?>"
+                        href="<?= e(url('admin/pendencias.php')) ?>"
+                    >
+                        <i class="bi bi-bell"></i>
+                        <span>Pendências</span>
+
+                        <?php if ($adminPendingTotal > 0): ?>
+                            <span class="badge text-bg-danger ms-auto">
+                                <?= $adminPendingTotal > 99 ? '99+' : (int)$adminPendingTotal ?>
+                            </span>
+                        <?php endif; ?>
+                    </a>
+                <?php endif; ?>
+
                 <?php if (Auth::can('noticias.gerenciar') || Auth::can('comentarios.gerenciar')): ?>
                     <button class="admin-nav-link admin-nav-toggle <?= $postOpen ? 'active' : '' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#menuPosts" aria-expanded="<?= $postOpen ? 'true' : 'false' ?>">
                         <i class="bi bi-file-earmark-text"></i><span>Posts / Notícias</span><i class="bi bi-chevron-down admin-nav-chevron"></i>
@@ -104,6 +170,17 @@ if (Auth::can('comentarios.gerenciar')) {
                     <div class="collapse admin-nav-submenu <?= $postOpen ? 'show' : '' ?>" id="menuPosts">
                         <?php if (Auth::can('noticias.gerenciar')): ?>
                             <a class="<?= $isPath('noticias/index.php') && (($_GET['status'] ?? '') !== 'lixeira') ? 'active' : '' ?>" href="<?= e(url('admin/noticias/index.php')) ?>">Todos os Posts</a>
+                            <?php if (
+                                Auth::can('noticias.gerenciar')
+                                || Auth::can('noticias.revisar')
+                                || Auth::can('noticias.publicar')
+                                || Auth::isAdmin()
+                            ): ?>
+                                <a
+                                    class="<?= $isPath('noticias/revisao.php') ? 'active' : '' ?>"
+                                    href="<?= e(url('admin/noticias/revisao.php')) ?>"
+                                >Fila de revisão</a>
+                            <?php endif; ?>
                             <a class="<?= $isPath('noticias/index.php') && (($_GET['status'] ?? '') === 'lixeira') ? 'active' : '' ?>" href="<?= e(url('admin/noticias/index.php?status=lixeira')) ?>">Lixeira</a>
                             <a class="<?= $isPath('noticias/form.php') && !isset($_GET['id']) ? 'active' : '' ?>" href="<?= e(url('admin/noticias/form.php')) ?>">Adicionar Novo</a>
                             <a class="<?= $isPath('noticias/mais-lidas.php') ? 'active' : '' ?>" href="<?= e(url('admin/noticias/mais-lidas.php')) ?>">Mais Lidas</a>

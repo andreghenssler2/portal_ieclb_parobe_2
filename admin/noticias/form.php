@@ -184,7 +184,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $status = 'rascunho';
                 }
 
-                $publicadoEm = trim((string)($_POST['publicado_em'] ?? ''));
+                
+                // v0.61.0 - publicação de novos conteúdos passa pelo workflow editorial.
+                EditorialWorkflowService::assertStatusTransitionAllowed(
+                    $pdo,
+                    $id,
+                    $status,
+                    (string)($post['status'] ?? 'rascunho')
+                );
+$publicadoEm = trim((string)($_POST['publicado_em'] ?? ''));
                 if ($publicadoEm !== '') {
                     $publicadoEm = (new DateTime($publicadoEm))->format('Y-m-d H:i:s');
                 } elseif ($status === 'publicado') {
@@ -276,7 +284,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw $txe;
                 }
 
-                logAction($pdo, $id ? 'noticia.editar' : 'noticia.criar', 'posts', $savedId, $titulo);
+                                EditorialWorkflowService::syncAfterSave(
+                    $pdo,
+                    $savedId,
+                    $status
+                );
+logAction($pdo, $id ? 'noticia.editar' : 'noticia.criar', 'posts', $savedId, $titulo);
                 Session::flash('success', $id ? 'Notícia atualizada.' : 'Notícia criada.');
                 header('Location: ' . url('admin/noticias/index.php'));
                 exit;
@@ -287,6 +300,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+$workflowStatus = $id
+    ? EditorialWorkflowService::status($pdo, $id)
+    : EditorialWorkflowService::DRAFT;
+
+$workflowLabel =
+    EditorialWorkflowService::label($workflowStatus);
+
+$workflowBadge =
+    EditorialWorkflowService::badgeClass($workflowStatus);
+
+$workflowCanSubmit =
+    $id
+    && EditorialWorkflowService::canSubmit($pdo, $id)
+    && in_array(
+        $workflowStatus,
+        [
+            EditorialWorkflowService::DRAFT,
+            EditorialWorkflowService::CHANGES,
+            EditorialWorkflowService::APPROVED,
+        ],
+        true
+    );
 $pageTitle = $id ? 'Editar notícia' : 'Nova notícia';
 $authUser = Auth::user() ?? [];
 $authorName = (string)($authUser['nome'] ?? 'Usuário');
@@ -313,7 +348,33 @@ require __DIR__ . '/../_header.php';
                     <i class="bi bi-clock-history me-1"></i>Revisões (<?= (int)$revisionCount ?>)
                 </a>
             <?php endif; ?>
-            <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('admin/noticias/index.php')) ?>">Todos os Posts</a>
+                        <?php if ($id): ?>
+                <span
+                    class="badge text-bg-<?= e($workflowBadge) ?> align-self-center"
+                >
+                    <?= e($workflowLabel) ?>
+                </span>
+
+                <?php if ($workflowCanSubmit): ?>
+                    <button
+                        class="btn btn-outline-warning btn-sm"
+                        type="submit"
+                        form="workflowSubmitForm"
+                    >
+                        <i class="bi bi-send me-1"></i>
+                        Enviar para revisão
+                    </button>
+                <?php endif; ?>
+            <?php endif; ?>
+
+            <a
+                class="btn btn-outline-secondary btn-sm"
+                href="<?= e(url('admin/noticias/revisao.php')) ?>"
+            >
+                <i class="bi bi-clipboard-check me-1"></i>
+                Fila de revisão
+            </a>
+<a class="btn btn-outline-secondary btn-sm" href="<?= e(url('admin/noticias/index.php')) ?>">Todos os Posts</a>
             <button class="btn btn-primary btn-sm px-3" type="submit" form="postEditorForm">
                 <i class="bi bi-check2 me-1"></i><?= $id ? 'Atualizar' : 'Salvar' ?>
             </button>
@@ -549,6 +610,20 @@ require __DIR__ . '/../_header.php';
     <?php endif; ?>
 </div>
 
+
+<?php if ($id): ?>
+    <form
+        id="workflowSubmitForm"
+        method="post"
+        action="<?= e(url('admin/noticias/workflow.php')) ?>"
+        class="d-none"
+    >
+        <?= Csrf::field() ?>
+        <input type="hidden" name="id" value="<?= (int)$id ?>">
+        <input type="hidden" name="action" value="submit">
+        <input type="hidden" name="return" value="editor">
+    </form>
+<?php endif; ?>
 <?php require __DIR__ . '/../_editor_media_picker.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
 <script src="<?= e(url('public/js/editor-media-picker.js')) ?>"></script>

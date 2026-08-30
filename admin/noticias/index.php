@@ -18,13 +18,33 @@ if (
         Session::flash('error', 'Token de segurança inválido.');
     } else {
         try {
+            $bulkAction =
+                trim((string)($_POST['bulk_action'] ?? ''));
+
+            $bulkIds =
+                (array)($_POST['ids'] ?? []);
+
+            if ($bulkAction === 'publish') {
+                EditorialWorkflowService::assertBulkPublishAllowed(
+                    $pdo,
+                    $bulkIds
+                );
+            }
+
             $result = EditorialBulkService::apply(
                 $pdo,
                 'post',
-                (array)($_POST['ids'] ?? []),
-                trim((string)($_POST['bulk_action'] ?? '')),
+                $bulkIds,
+                $bulkAction,
                 (int)Auth::id()
             );
+
+            if ($bulkAction === 'publish') {
+                EditorialWorkflowService::markBulkPublished(
+                    $pdo,
+                    $bulkIds
+                );
+            }
 
             $message = $result['processed']
                 . ' conteúdo(s) atualizado(s).';
@@ -388,7 +408,14 @@ require __DIR__ . '/../_header.php';
         <h1 class="h3 mb-1">Notícias</h1>
         <p class="text-secondary mb-0">Conteúdo publicado no portal.</p>
     </div>
-    <?php if ($view !== 'lixeira'): ?>
+        <a
+        class="btn btn-outline-primary me-2"
+        href="<?= e(url('admin/noticias/revisao.php')) ?>"
+    >
+        <i class="bi bi-clipboard-check me-1"></i>
+        Fila de revisão
+    </a>
+<?php if ($view !== 'lixeira'): ?>
         <a class="btn btn-primary" href="<?= e(url('admin/noticias/form.php')) ?>">Nova notícia</a>
     <?php endif; ?>
 </div>
@@ -550,6 +577,32 @@ require __DIR__ . '/../_header.php';
 </td>
 <td>
     <span class="badge text-bg-secondary"><?= e($post['status']) ?></span>
+
+    <?php
+    $rowWorkflowStatus =
+        (string)($post['workflow_status'] ?? 'rascunho');
+    ?>
+
+    <?php if (
+        $view !== 'lixeira'
+        && $rowWorkflowStatus !== EditorialWorkflowService::PUBLISHED
+    ): ?>
+        <div class="mt-1">
+            <span
+                class="badge text-bg-<?= e(
+                    EditorialWorkflowService::badgeClass(
+                        $rowWorkflowStatus
+                    )
+                ) ?>"
+            >
+                <?= e(
+                    EditorialWorkflowService::label(
+                        $rowWorkflowStatus
+                    )
+                ) ?>
+            </span>
+        </div>
+    <?php endif; ?>
     <?php if ($view === 'lixeira' && !empty($post['status_anterior'])): ?>
         <div class="small text-secondary mt-1">era: <?= e((string)$post['status_anterior']) ?></div>
     <?php endif; ?>

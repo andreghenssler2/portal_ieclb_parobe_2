@@ -38,3 +38,11 @@ A v0.61.0 introduz uma fila de aprovação editorial para novos conteúdos.
 A primeira versão do workflow controla principalmente conteúdos ainda não
 publicados. Notícias que já estavam publicadas continuam podendo ser editadas
 como nas versões anteriores, evitando quebrar o processo editorial existente.
+
+
+## Revisão R2 do instalador
+
+- Permite continuar uma instalação v0.61.0 que parou após a migração do banco.
+- Localização mais tolerante dos pontos de alteração em `admin/noticias/form.php`.
+- Corrigido o hash dos Blocos de Conteúdo usando os campos reais de `conteudo_blocos`.
+- Com revisão obrigatória, conteúdos novos são publicados pela Fila de revisão.

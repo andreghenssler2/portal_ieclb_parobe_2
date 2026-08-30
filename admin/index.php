@@ -97,6 +97,17 @@ if (Auth::can('auditoria.visualizar')) {
     }
 }
 
+
+$pendingOverview = [
+    'total' => 0,
+    'items' => [],
+];
+
+try {
+    $pendingOverview =
+        AdminPendingService::overview($pdo);
+} catch (Throwable $ignored) {
+}
 $pageTitle = 'Dashboard';
 require __DIR__ . '/_header.php';
 ?>
@@ -129,6 +140,83 @@ require __DIR__ . '/_header.php';
 </div>
 <?php endif; ?>
 
+
+<?php /* dashboard-pending-center-v062 */ ?>
+<?php if (!empty($pendingOverview['items'])): ?>
+<div class="card border-0 shadow-sm mb-4 overflow-hidden">
+    <div class="card-body p-4">
+        <div class="d-flex flex-column flex-xl-row justify-content-between gap-4">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span
+                        class="rounded-circle bg-danger-subtle text-danger d-inline-flex align-items-center justify-content-center"
+                        style="width:42px;height:42px"
+                    >
+                        <i class="bi bi-bell-fill"></i>
+                    </span>
+
+                    <div>
+                        <div class="small text-secondary text-uppercase fw-semibold">
+                            Central de Pendências
+                        </div>
+
+                        <div class="h4 mb-0">
+                            <?= (int)$pendingOverview['total'] ?>
+                            item(ns) aguardando atenção
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-secondary mb-0">
+                    Revisões, comentários, formulários, segurança e agendamentos.
+                </p>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <?php foreach (array_slice((array)$pendingOverview['items'], 0, 4) as $pendingItem): ?>
+                    <a
+                        class="btn btn-sm btn-outline-<?= e((string)$pendingItem['class']) ?>"
+                        href="<?= e(url((string)$pendingItem['url'])) ?>"
+                    >
+                        <?= e((string)$pendingItem['label']) ?>
+                        <span class="badge text-bg-<?= e((string)$pendingItem['class']) ?> ms-1">
+                            <?= (int)$pendingItem['count'] ?>
+                        </span>
+                    </a>
+                <?php endforeach; ?>
+
+                <a
+                    class="btn btn-primary btn-sm"
+                    href="<?= e(url('admin/pendencias.php')) ?>"
+                >
+                    Ver todas
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<?php elseif (
+    Auth::can('noticias.gerenciar')
+    || Auth::can('comentarios.gerenciar')
+    || Auth::can('formularios.gerenciar')
+    || Auth::can('auditoria.visualizar')
+    || Auth::isAdmin()
+): ?>
+<div class="alert alert-success d-flex justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <strong>Sem pendências.</strong>
+        Os módulos aos quais você possui acesso não têm itens aguardando atenção.
+    </div>
+
+    <a
+        class="btn btn-sm btn-outline-success"
+        href="<?= e(url('admin/pendencias.php')) ?>"
+    >
+        Abrir Central
+    </a>
+</div>
+<?php endif; ?>
 <?php if ($cards): ?>
 <div class="row g-3 mb-4">
     <?php foreach ($cards as [$label, $value]): ?>

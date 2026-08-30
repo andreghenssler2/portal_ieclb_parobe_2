@@ -411,9 +411,8 @@ final class EditorialWorkflowService
         }
 
         /*
-         * Evita quebrar o fluxo atual de edição de uma notícia que já
-         * está publicada. Um fluxo de "nova revisão de conteúdo publicado"
-         * pode ser adicionado em versão posterior.
+         * Notícias que já estavam publicadas antes do workflow continuam
+         * editáveis para preservar compatibilidade com o portal existente.
          */
         if ($currentPublicStatus === 'publicado') {
             return;
@@ -421,18 +420,15 @@ final class EditorialWorkflowService
 
         self::requirePublisher();
 
-        if (
-            self::requiresReview($pdo)
-            && (
-                !$postId
-                || !self::isApprovalCurrent(
-                    $pdo,
-                    $postId
-                )
-            )
-        ) {
+        /*
+         * Com revisão obrigatória, a publicação de um conteúdo novo deve
+         * ocorrer pela Fila de revisão. Assim a versão publicada é
+         * exatamente a mesma versão cujo hash foi aprovado.
+         */
+        if (self::requiresReview($pdo)) {
             throw new RuntimeException(
-                'Antes de publicar ou agendar, envie a notícia para revisão e obtenha aprovação.'
+                'Com a revisão editorial obrigatória, salve como rascunho, '
+                . 'envie para revisão e publique pela Fila de revisão.'
             );
         }
     }
@@ -636,9 +632,9 @@ final class EditorialWorkflowService
         $blocks = [];
         try {
             $st = $pdo->prepare(
-                'SELECT tipo,ordem,configuracao
+                'SELECT tipo_bloco,ordem,dados_json
                  FROM conteudo_blocos
-                 WHERE conteudo_tipo=:tipo
+                 WHERE tipo_conteudo=:tipo
                    AND conteudo_id=:id
                  ORDER BY ordem,id'
             );
