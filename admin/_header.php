@@ -223,6 +223,14 @@ $adminPendingTotal =
                     <div class="collapse admin-nav-submenu <?= $mediaOpen ? 'show' : '' ?>" id="menuMidia">
                         <?php if (Auth::can('midias.gerenciar')): ?>
                             <a class="<?= $isPath('midias/index.php') ? 'active' : '' ?>" href="<?= e(url('admin/midias/index.php')) ?>">Biblioteca</a>
+                            <a
+                                class="<?= $isPath('midias/otimizar.php') ? 'active' : '' ?>"
+                                href="<?= e(url('admin/midias/otimizar.php')) ?>"
+                            >Otimizar imagens</a>
+                            <a
+                                class="<?= $isPath('midias/integridade.php') ? 'active' : '' ?>"
+                                href="<?= e(url('admin/midias/integridade.php')) ?>"
+                            >Integridade</a>
 <a href="<?= e(url('admin/midias/index.php#adicionar-novo')) ?>">Adicionar Novo</a>
                             <?php if (Auth::can('wordpress.importar')): ?><a href="<?= e(url('admin/ferramentas/wordpress.php?modulo=media')) ?>">Importar do WordPress</a><?php endif; ?>
                         <?php endif; ?>

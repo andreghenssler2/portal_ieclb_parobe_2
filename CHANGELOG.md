@@ -10,6 +10,17 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.73.0 — Integridade do armazenamento de mídia
+
+- Diagnóstico entre banco e pasta `uploads/`.
+- Detecta originais ausentes.
+- Detecta divergência de tamanho.
+- Detecta variantes ausentes.
+- Detecta arquivos físicos órfãos.
+- Limpeza segura de registros/derivados da v0.72.
+- Arquivos originais órfãos não são apagados automaticamente.
+- Nenhuma alteração estrutural no banco.
 ## 0.72.0 — Otimização automática de imagens
 
 - Redimensionamento opcional do original.
