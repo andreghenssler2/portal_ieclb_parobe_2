@@ -7,6 +7,17 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.70.0 — Biblioteca de Mídia 2.0
+
+- Paginação com 24 itens por página.
+- Pesquisa por título, arquivo, texto alternativo e extensão.
+- Filtros de imagens/documentos com contadores.
+- Ordenação por data, nome e tamanho.
+- Visualização em grade ou lista.
+- Seleção da página atual e exclusão em massa.
+- Auditoria preservada nas exclusões.
+- Nenhuma alteração no banco de dados.
 ## 0.69.0 — Favoritos e acessos recentes
 
 - Novo botão `Atalhos` na barra superior do Admin.
