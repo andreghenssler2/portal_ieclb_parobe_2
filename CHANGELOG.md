@@ -6,6 +6,17 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.69.0 — Favoritos e acessos recentes
+
+- Novo botão `Atalhos` na barra superior do Admin.
+- Favoritos por usuário.
+- Histórico de páginas administrativas recentes.
+- Quantidade de acessos e último acesso por rota.
+- Até 60 itens recentes não favoritos por usuário.
+- Favoritos não são podados automaticamente.
+- Gravações protegidas por CSRF.
+- Nova tabela `usuario_admin_atalhos`.
 ## 0.68.0 — Busca Global Administrativa
 
 - Busca rápida no painel com `Ctrl+K` / `Command+K`.

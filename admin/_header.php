@@ -129,6 +129,16 @@ $adminPendingTotal =
             <span class="d-none d-xl-inline ms-1">Buscar</span>
             <span class="d-none d-xxl-inline admin-global-search-shortcut ms-2">Ctrl K</span>
         </button>
+        <button
+            type="button"
+            class="btn btn-sm admin-user-button position-relative me-2"
+            data-admin-shortcuts-open
+            title="Favoritos e recentes"
+            aria-label="Abrir favoritos e acessos recentes"
+        >
+            <i class="bi bi-star"></i>
+            <span class="d-none d-xl-inline ms-1">Atalhos</span>
+        </button>
         <div class="dropdown">
             <button class="btn btn-sm admin-user-button dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-person-circle me-1"></i>

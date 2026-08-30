@@ -1707,3 +1707,21 @@ body.admin-body *::after {
         align-items: flex-start;
     }
 }
+
+/* =====================================================================
+ * ADMIN SHORTCUTS v0.69.0
+ * ===================================================================== */
+
+#adminShortcutsModal .list-group-item {
+    transition:
+        background-color .12s ease,
+        border-color .12s ease;
+}
+
+#adminShortcutsModal .list-group-item:hover {
+    background: var(--bs-tertiary-bg);
+}
+
+#adminShortcutsModal .list-group-item a {
+    min-width: 0;
+}
