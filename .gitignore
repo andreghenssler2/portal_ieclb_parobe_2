@@ -60,3 +60,4 @@ cgi-bin
 /extras/*
 
 !/update-resources/*
+/update-resources/*
