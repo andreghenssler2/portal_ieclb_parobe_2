@@ -123,7 +123,28 @@ final class MediaService
             throw new RuntimeException('Não foi possível recuperar a mídia enviada.');
         }
 
-        return $media;
+                if (
+            self::isImage($media)
+            && class_exists('ImageOptimizationService')
+        ) {
+            try {
+                ImageOptimizationService::process(
+                    $pdo,
+                    $id
+                );
+
+                $media =
+                    self::find(
+                        $pdo,
+                        $id
+                    )
+                    ?: $media;
+            } catch (Throwable $ignored) {
+                // Otimização é complementar; nunca invalida um upload concluído.
+            }
+        }
+
+return $media;
     }
 
     public static function find(PDO $pdo, int $id): ?array
@@ -162,7 +183,17 @@ final class MediaService
             }
         }
 
-        return true;
+                if (class_exists('ImageOptimizationService')) {
+            try {
+                ImageOptimizationService::deleteVariants(
+                    $pdo,
+                    $id
+                );
+            } catch (Throwable $ignored) {
+            }
+        }
+
+return true;
     }
 
     private static function uploadErrorMessage(int $error): string

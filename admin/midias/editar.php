@@ -42,8 +42,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error =
             'Token de segurança inválido.';
     } else {
-        $titulo =
-            trim(
+        if (
+            (string)($_POST['action'] ?? '') === 'regenerate_variants'
+        ) {
+            try {
+                $result =
+                    ImageOptimizationService::process(
+                        $pdo,
+                        $id,
+                        true
+                    );
+
+                logAction(
+                    $pdo,
+                    'midia.otimizar',
+                    'midias',
+                    $id,
+                    (string)($media['nome_original'] ?? '')
+                );
+
+                Session::flash(
+                    'success',
+                    ($result['processed'] ?? false)
+                        ? 'Imagem e variantes reprocessadas.'
+                        : 'A imagem não precisou ou não pôde ser processada.'
+                );
+
+                header(
+                    'Location: '
+                    . url(
+                        'admin/midias/editar.php?id='
+                        . $id
+                    )
+                );
+
+                exit;
+            } catch (Throwable $e) {
+                $error =
+                    'Não foi possível otimizar: '
+                    . $e->getMessage();
+            }
+        } else {
+            $titulo =
+                trim(
                 (string)(
                     $_POST['titulo']
                     ?? ''
@@ -106,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'Não foi possível salvar: '
                 . $e->getMessage();
         }
+        }
     }
 }
 
@@ -126,6 +168,17 @@ try {
             $pdo,
             $id,
             20
+        );
+} catch (Throwable $ignored) {
+}
+
+$variants = [];
+
+try {
+    $variants =
+        ImageOptimizationService::variants(
+            $pdo,
+            $id
         );
 } catch (Throwable $ignored) {
 }
@@ -448,6 +501,99 @@ require __DIR__ . '/../_header.php';
                 </form>
             </div>
         </section>
+
+        <?php if ($isImage): ?>
+            <section class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center gap-3">
+                    <div>
+                        <div class="fw-semibold">
+                            Otimização e variantes
+                        </div>
+
+                        <div class="small text-secondary">
+                            WebP e miniaturas geradas para esta imagem.
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        <?= Csrf::field() ?>
+
+                        <input
+                            type="hidden"
+                            name="action"
+                            value="regenerate_variants"
+                        >
+
+                        <button class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-magic me-1"></i>
+                            Reprocessar
+                        </button>
+                    </form>
+                </div>
+
+                <div class="card-body">
+                    <?php if (!$variants): ?>
+                        <div class="text-secondary">
+                            Nenhuma variante gerada ainda.
+                        </div>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Dimensões</th>
+                                        <th>Tamanho</th>
+                                        <th>Arquivo</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <?php foreach ($variants as $variant): ?>
+                                        <tr>
+                                            <td>
+                                                <span class="badge text-bg-secondary">
+                                                    <?= e((string)$variant['tipo']) ?>
+                                                </span>
+                                            </td>
+
+                                            <td class="text-nowrap">
+                                                <?= (int)$variant['largura'] ?>
+                                                ×
+                                                <?= (int)$variant['altura'] ?>
+                                            </td>
+
+                                            <td class="text-nowrap">
+                                                <?= e(
+                                                    formatBytes(
+                                                        (int)$variant['tamanho']
+                                                    )
+                                                ) ?>
+                                            </td>
+
+                                            <td>
+                                                <?php if (!empty($variant['exists'])): ?>
+                                                    <a
+                                                        href="<?= e((string)$variant['url']) ?>"
+                                                        target="_blank"
+                                                    >
+                                                        Abrir
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="text-danger">
+                                                        ausente
+                                                    </span>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+        <?php endif; ?>
 
         <section
             class="card border-0 shadow-sm mb-4"

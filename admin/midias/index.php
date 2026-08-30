@@ -642,6 +642,14 @@ require __DIR__ . '/../_header.php';
         </a>
 
         <a
+            class="btn btn-outline-primary"
+            href="<?= e(url('admin/midias/otimizar.php')) ?>"
+        >
+            <i class="bi bi-magic me-1"></i>
+            Otimizar imagens
+        </a>
+
+        <a
             class="btn btn-primary"
             href="#adicionar-novo"
         >
@@ -976,7 +984,16 @@ require __DIR__ . '/../_header.php';
 
                         <?php if ($isImage): ?>
                             <img
-                                src="<?= e(mediaUrl((string)$m['caminho'])) ?>"
+                                src="<?= e(
+                                    class_exists('ImageOptimizationService')
+                                        ? ImageOptimizationService::bestUrl(
+                                            $pdo,
+                                            (int)$m['id'],
+                                            ImageOptimizationService::VARIANT_THUMB,
+                                            (string)$m['caminho']
+                                        )
+                                        : mediaUrl((string)$m['caminho'])
+                                ) ?>"
                                 class="card-img-top media-thumb"
                                 alt="<?= e(
                                     (string)(
@@ -1122,7 +1139,16 @@ require __DIR__ . '/../_header.php';
                                     <div class="d-flex align-items-center gap-3">
                                         <?php if ($isImage): ?>
                                             <img
-                                                src="<?= e(mediaUrl((string)$m['caminho'])) ?>"
+                                                src="<?= e(
+                                                    class_exists('ImageOptimizationService')
+                                                        ? ImageOptimizationService::bestUrl(
+                                                            $pdo,
+                                                            (int)$m['id'],
+                                                            ImageOptimizationService::VARIANT_THUMB,
+                                                            (string)$m['caminho']
+                                                        )
+                                                        : mediaUrl((string)$m['caminho'])
+                                                ) ?>"
                                                 alt=""
                                                 loading="lazy"
                                                 style="width:56px;height:56px;object-fit:cover;border-radius:.5rem"

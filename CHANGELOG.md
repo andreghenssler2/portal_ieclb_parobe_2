@@ -9,6 +9,18 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.72.0 — Otimização automática de imagens
+
+- Redimensionamento opcional do original.
+- Geração de WebP.
+- Miniaturas WebP para a Biblioteca.
+- Configuração de qualidade e dimensões.
+- Processamento em lotes da biblioteca existente.
+- Reprocessamento individual.
+- Nova tabela `midia_variantes`.
+- Variantes removidas junto com a mídia.
+- R3: integração robusta com o `MediaService` independente de CRLF/formatação.
 ## 0.71.0 — Uso seguro da Biblioteca de Mídia
 
 - Novo `MediaUsageService`.
