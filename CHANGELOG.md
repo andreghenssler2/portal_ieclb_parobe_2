@@ -5,6 +5,16 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 `docs/releases/`.
 
 
+
+## 0.68.0 — Busca Global Administrativa
+
+- Busca rápida no painel com `Ctrl+K` / `Command+K`.
+- Resultados agrupados por módulo.
+- Navegação com setas e Enter.
+- Pesquisa respeita permissões do usuário.
+- Notícias, páginas, eventos, documentos, mídia, usuários e comunidades.
+- Endpoint JSON autenticado e sem cache.
+- Nenhuma alteração no banco de dados.
 ## 0.67.0 — Dashboard personalizado por perfil
 
 - Dashboard reformulado para mostrar somente módulos permitidos ao usuário.

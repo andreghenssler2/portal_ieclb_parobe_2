@@ -118,6 +118,17 @@ $adminPendingTotal =
                 <?php endif; ?>
             </a>
         <?php endif; ?>
+        <button
+            type="button"
+            class="btn btn-sm admin-user-button admin-global-search-open me-2"
+            data-admin-global-search-open
+            title="Busca global (Ctrl+K)"
+            aria-label="Abrir busca global"
+        >
+            <i class="bi bi-search"></i>
+            <span class="d-none d-xl-inline ms-1">Buscar</span>
+            <span class="d-none d-xxl-inline admin-global-search-shortcut ms-2">Ctrl K</span>
+        </button>
         <div class="dropdown">
             <button class="btn btn-sm admin-user-button dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-person-circle me-1"></i>

@@ -2,6 +2,7 @@
         </div>
     </main>
 </div>
+<?php require __DIR__ . '/_global_search.php'; ?>
 <script>
 (function () {
     const sidebar = document.getElementById('adminSidebar');

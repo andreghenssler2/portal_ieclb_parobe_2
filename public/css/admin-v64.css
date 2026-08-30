@@ -1634,3 +1634,76 @@ body.admin-body *::after {
 /* =====================================================================
  * FIM DO ADMIN CSS CONSOLIDADO - v0.64.0
  * ===================================================================== */
+
+/* =====================================================================
+ * ADMIN GLOBAL SEARCH v0.68.0
+ * ===================================================================== */
+
+.admin-global-search-open {
+    display: inline-flex;
+    align-items: center;
+    gap: .15rem;
+}
+
+.admin-global-search-shortcut {
+    padding: .1rem .35rem;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: .35rem;
+    font-size: .7rem;
+    line-height: 1.25;
+    opacity: .8;
+}
+
+.admin-global-search-dialog {
+    margin-top: min(10vh, 5rem);
+}
+
+.admin-global-search-section {
+    background: var(--bs-tertiary-bg);
+    border-top: 1px solid var(--bs-border-color);
+    border-bottom: 1px solid var(--bs-border-color);
+    letter-spacing: .04em;
+}
+
+.admin-global-search-result {
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+    transition:
+        background-color .12s ease,
+        box-shadow .12s ease;
+}
+
+.admin-global-search-result:hover,
+.admin-global-search-result.is-active {
+    background: var(--bs-primary-bg-subtle);
+    box-shadow: inset 3px 0 0 var(--bs-primary);
+}
+
+.admin-global-search-icon {
+    width: 2.45rem;
+    height: 2.45rem;
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+}
+
+.admin-global-search-result.is-active .admin-global-search-icon,
+.admin-global-search-result:hover .admin-global-search-icon {
+    background: rgba(var(--bs-primary-rgb), .12);
+    color: var(--bs-primary);
+}
+
+.admin-global-search-empty {
+    min-height: 14rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+@media (max-width: 575.98px) {
+    .admin-global-search-dialog {
+        margin: .5rem;
+    }
+
+    #adminGlobalSearchModal .modal-header {
+        align-items: flex-start;
+    }
+}
