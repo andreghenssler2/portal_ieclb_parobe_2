@@ -99,6 +99,7 @@ $contentDynamicOptionsJson = json_encode(
                     <li><button class="dropdown-item" type="button" data-block-add="portal_most_read"><i class="bi bi-bar-chart-line me-2"></i>Mais Lidas</button></li>
                     <li><button class="dropdown-item" type="button" data-block-add="portal_leadership"><i class="bi bi-people me-2"></i>Lideranças</button></li>
                     <li><button class="dropdown-item" type="button" data-block-add="portal_gallery_embed"><i class="bi bi-images me-2"></i>Importar Galeria</button></li>
+                    <li><button class="dropdown-item" type="button" data-block-add="portal_form_embed"><i class="bi bi-ui-checks-grid me-2"></i>Importar Formulário</button></li>
                 </ul>
             </div>
         </div>

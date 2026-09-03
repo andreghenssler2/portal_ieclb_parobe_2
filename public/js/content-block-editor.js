@@ -17,7 +17,8 @@
     portal_communities: 'Comunidades',
     portal_most_read: 'Mais Lidas',
     portal_leadership: 'Lideranças',
-    portal_gallery_embed: 'Importar Galeria'
+    portal_gallery_embed: 'Importar Galeria',
+    portal_form_embed: 'Importar Formulário'
   };
 
   function esc(value) {
@@ -55,6 +56,7 @@
       case 'portal_most_read': return {title:'Mais Lidas', limit:10, layout:'cards', period:'total', show_date:'1', show_excerpt:'0', show_views:'1'};
       case 'portal_leadership': return {title:'Lideranças', limit:8, layout:'cards', leadership_type:'', community_id:0, show_excerpt:'1'};
       case 'portal_gallery_embed': return {gallery_id:0, gallery_layout:'grid', columns:4, photo_limit:0, show_title:'1', show_description:'0', show_captions:'1', lightbox:'1', title:''};
+      case 'portal_form_embed': return {form_id:0, title:'', show_title:'1', show_description:'1', style:'card', submit_label:'Enviar'};
       default: return {};
     }
   }
@@ -84,6 +86,8 @@
           return data.title || LABELS[type];
         case 'portal_gallery_embed':
           return data.title || 'Galeria incorporada';
+        case 'portal_form_embed':
+          return data.title || 'Formulário incorporado';
         default: return '';
       }
     })();
@@ -521,6 +525,59 @@
             <div class="col-md-3">${yesNoSelect('lightbox', data.lightbox, 'Ampliar fotos')}</div>
           </div>`;
 
+      case 'portal_form_embed':
+        return `
+          <div class="alert alert-info py-2 small">
+            Escolha um formulário publicado. As respostas continuarão aparecendo no módulo Formulários e usarão as notificações já configuradas.
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-md-8">
+              <label class="form-label small">Formulário</label>
+              <select class="form-select form-select-sm" data-field="form_id">
+                ${selectOptions(dynamicOptions?.forms, data.form_id, 'Selecione um formulário publicado')}
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label small">Visual</label>
+              <select class="form-select form-select-sm" data-field="style">
+                <option value="card" ${String(data.style || 'card') === 'card' ? 'selected' : ''}>Card</option>
+                <option value="plain" ${String(data.style) === 'plain' ? 'selected' : ''}>Limpo</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-md-7">
+              <label class="form-label small">Título personalizado</label>
+              <input
+                class="form-control form-control-sm"
+                data-field="title"
+                value="${esc(data.title || '')}"
+                placeholder="Vazio = título do formulário"
+              >
+            </div>
+
+            <div class="col-md-5">
+              <label class="form-label small">Texto do botão</label>
+              <input
+                class="form-control form-control-sm"
+                data-field="submit_label"
+                value="${esc(data.submit_label || 'Enviar')}"
+                maxlength="80"
+              >
+            </div>
+          </div>
+
+          <div class="row g-2">
+            <div class="col-md-6">${yesNoSelect('show_title', data.show_title, 'Mostrar título')}</div>
+            <div class="col-md-6">${yesNoSelect('show_description', data.show_description, 'Mostrar descrição')}</div>
+          </div>
+
+          <div class="form-text mt-2">
+            O formulário precisa permanecer publicado e ativo para aparecer no conteúdo público.
+          </div>`;
       default:
         return '';
     }

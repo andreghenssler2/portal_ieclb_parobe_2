@@ -62,6 +62,13 @@ final class DynamicContentBlockService
                 'id',
                 'COALESCE(publicado_em,created_at) DESC,id DESC',
                 "status='publicado'"
+            ),            'forms' => self::simpleOptions(
+                $pdo,
+                'formularios',
+                'titulo',
+                'id',
+                'id DESC',
+                "status='publicado' AND ativo=1 AND (publicado_em IS NULL OR publicado_em<=NOW())"
             ),
         ];
     }
@@ -76,6 +83,88 @@ final class DynamicContentBlockService
         string $type,
         array $data
     ): array {
+        if ($type === 'portal_form_embed') {
+            $formId = max(
+                0,
+                (int)($data['form_id'] ?? 0)
+            );
+
+            if ($formId > 0) {
+                try {
+                    $stmt = $pdo->prepare(
+                        "SELECT id
+                         FROM formularios
+                         WHERE id=:id
+                           AND status='publicado'
+                           AND ativo=1
+                           AND (
+                                publicado_em IS NULL
+                                OR publicado_em<=NOW()
+                           )
+                         LIMIT 1"
+                    );
+
+                    $stmt->execute([
+                        'id' => $formId,
+                    ]);
+
+                    if (!$stmt->fetchColumn()) {
+                        $formId = 0;
+                    }
+                } catch (Throwable $e) {
+                    $formId = 0;
+                }
+            }
+
+            $style =
+                (string)($data['style'] ?? 'card');
+
+            if (
+                !in_array(
+                    $style,
+                    ['card', 'plain'],
+                    true
+                )
+            ) {
+                $style = 'card';
+            }
+
+            return [
+                'form_id' => $formId,
+                'title' => self::cut(
+                    trim(
+                        (string)($data['title'] ?? '')
+                    ),
+                    180
+                ),
+                'show_title' =>
+                    !array_key_exists(
+                        'show_title',
+                        $data
+                    )
+                    || !empty(
+                        $data['show_title']
+                    ),
+                'show_description' =>
+                    !array_key_exists(
+                        'show_description',
+                        $data
+                    )
+                    || !empty(
+                        $data['show_description']
+                    ),
+                'style' => $style,
+                'submit_label' => self::cut(
+                    trim(
+                        (string)(
+                            $data['submit_label']
+                            ?? 'Enviar'
+                        )
+                    ),
+                    80
+                ),
+            ];
+        }
         if ($type === 'portal_gallery_embed') {
             $galleryLayout = (string)($data['gallery_layout'] ?? 'grid');
             if (!in_array($galleryLayout, ['grid', 'carousel'], true)) {
@@ -272,7 +361,15 @@ final class DynamicContentBlockService
                     $pdo,
                     $data,
                     $instanceKey
-                ),
+                ),                'portal_form_embed' =>
+                    class_exists('EmbeddedFormService')
+                        ? EmbeddedFormService::render(
+                            $pdo,
+                            (int)($data['form_id'] ?? 0),
+                            $data,
+                            $instanceKey
+                        )
+                        : '',
                 default => '',
             };
         } catch (Throwable $e) {
@@ -2298,6 +2395,7 @@ final class DynamicContentBlockService
             'portal_most_read' => 'Mais Lidas',
             'portal_leadership' => 'Lideranças',
             'portal_gallery_embed' => 'Galeria',
+            'portal_form_embed' => 'Formulário',
             default => 'Conteúdo do Portal',
         };
     }

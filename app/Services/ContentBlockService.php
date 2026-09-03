@@ -10,6 +10,7 @@ final class ContentBlockService
     // v0.48.0 - galeria incorporada dentro do conteúdo.
     // v0.49.0 - correção e ampliação dos links de vídeo do YouTube.
     // v0.50.0 - bloco FAQ / Acordeão.
+    // v0.77.0 - formulário incorporado.
     private const TYPES = [
         'heading',
         'text',
@@ -28,6 +29,7 @@ final class ContentBlockService
         'portal_most_read',
         'portal_leadership',
         'portal_gallery_embed',
+        'portal_form_embed',
     ];
 
     private static array $schemaReady = [];
@@ -359,7 +361,8 @@ final class ContentBlockService
             'portal_communities',
             'portal_most_read',
             'portal_leadership',
-            'portal_gallery_embed'
+            'portal_gallery_embed',
+            'portal_form_embed'
                 => DynamicContentBlockService::sanitize($pdo, $type, $data),
             default => [],
         };
@@ -469,6 +472,7 @@ final class ContentBlockService
             'portal_most_read',
             'portal_leadership',
             'portal_gallery_embed' => true,
+            'portal_form_embed' => (int)($data['form_id'] ?? 0) > 0,
             default => false,
         };
     }
@@ -500,7 +504,8 @@ final class ContentBlockService
             'portal_communities',
             'portal_most_read',
             'portal_leadership',
-            'portal_gallery_embed'
+            'portal_gallery_embed',
+            'portal_form_embed'
                 => DynamicContentBlockService::render(
                     $pdo,
                     $type,

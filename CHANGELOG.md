@@ -14,6 +14,15 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.77.0 — Bloco Importar Formulário
+
+- Novo bloco dinâmico `portal_form_embed`.
+- Formulários publicados podem ser incorporados em Páginas e Notícias.
+- Respostas e notificações continuam usando o módulo Formulários.
+- Título, descrição, visual e texto do botão são configuráveis.
+- CSRF, honeypot, throttle e validações preservados.
+- Nenhuma alteração estrutural no banco.
 ## 0.76.0 — Relatórios CSP
 
 - Novo `CspReportService`.
