@@ -15,6 +15,16 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.78.0 — Responder mensagens dos formulários
+
+- Resposta por e-mail diretamente na tela da mensagem recebida.
+- Destinatário detectado automaticamente pelo campo de e-mail do formulário.
+- Envio pelo `MailService`/SMTP do Portal.
+- Histórico de respostas manuais.
+- Nova tabela `formulario_resposta_replicas`.
+- Registra administrador, assunto, mensagem, destinatário e status.
+- CSRF e validações preservados.
 ## 0.77.0 — Bloco Importar Formulário
 
 - Novo bloco dinâmico `portal_form_embed`.
