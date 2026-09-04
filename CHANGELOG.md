@@ -16,6 +16,18 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.79.0 — Respostas recebidas por e-mail
+
+- Respostas dos contatos voltam ao Portal via IMAP.
+- E-mails enviados recebem token `[IECLB-R<ID>]`.
+- Remetente é validado contra o e-mail original do formulário.
+- Nova tabela `formulario_resposta_entradas`.
+- Nova tela `Admin > Configurações > E-mail de Entrada`.
+- Teste de conexão e sincronização manual.
+- Nova tarefa agendada a cada 5 minutos.
+- Conversa por e-mail une mensagens enviadas e recebidas.
+- Nova resposta recebida coloca o item novamente como `nova`.
 ## 0.78.0 — Responder mensagens dos formulários
 
 - Resposta por e-mail diretamente na tela da mensagem recebida.

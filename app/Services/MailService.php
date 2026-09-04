@@ -187,6 +187,14 @@ final class MailService
      *
      * @return array{ok:bool,summary:string,host:string,port:int,encryption:string,ips:array<int,string>,debug:array<int,string>}
      */
+    /**
+     * Uso interno da v0.79 para autenticação IMAP com a mesma credencial
+     * criptografada do SMTP.
+     */
+    public static function smtpPasswordForInbound(PDO $pdo): string
+    {
+        return self::smtpPassword($pdo);
+    }
     public static function diagnoseSmtp(PDO $pdo): array
     {
         self::$lastError = '';

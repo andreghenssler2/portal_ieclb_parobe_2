@@ -245,8 +245,97 @@ $replyHistory =
     FormReplyService::history(
         $pdo,
         $id,
-        30
+        50
     );
+
+$inboundHistory =
+    class_exists('InboundMailService')
+        ? InboundMailService::history(
+            $pdo,
+            $id,
+            50
+        )
+        : [];
+
+$conversation = [];
+
+foreach ($replyHistory as $reply) {
+    $conversation[] = [
+        'direction' => 'out',
+        'date' =>
+            (string)(
+                $reply['created_at']
+                ?? ''
+            ),
+        'subject' =>
+            (string)(
+                $reply['assunto']
+                ?? ''
+            ),
+        'message' =>
+            (string)(
+                $reply['mensagem']
+                ?? ''
+            ),
+        'email' =>
+            (string)(
+                $reply['destinatario']
+                ?? ''
+            ),
+        'status' =>
+            (string)(
+                $reply['status']
+                ?? ''
+            ),
+        'user' =>
+            (string)(
+                $reply['usuario_nome']
+                ?? ''
+            ),
+    ];
+}
+
+foreach ($inboundHistory as $incoming) {
+    $conversation[] = [
+        'direction' => 'in',
+        'date' =>
+            (string)(
+                $incoming['received_at']
+                ?: $incoming['created_at']
+            ),
+        'subject' =>
+            (string)(
+                $incoming['assunto']
+                ?? ''
+            ),
+        'message' =>
+            (string)(
+                $incoming['mensagem']
+                ?? ''
+            ),
+        'email' =>
+            (string)(
+                $incoming['remetente']
+                ?? ''
+            ),
+        'status' => 'recebido',
+        'user' => '',
+    ];
+}
+
+usort(
+    $conversation,
+    static function (
+        array $a,
+        array $b
+    ): int {
+        return
+            strcmp(
+                (string)$a['date'],
+                (string)$b['date']
+            );
+    }
+);
 
 $pageTitle =
     'Resposta #'
@@ -441,90 +530,77 @@ require __DIR__ . '/../_header.php';
             </div>
         </section>
 
-        <?php if ($replyHistory): ?>
+        <?php if ($conversation): ?>
             <section class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3">
                     <div class="fw-semibold">
-                        Respostas enviadas
+                        Conversa por e-mail
                     </div>
 
                     <div class="small text-secondary">
-                        Histórico desta mensagem.
+                        Mensagens enviadas pelo Portal e respostas recebidas da pessoa.
                     </div>
                 </div>
 
-                <div class="list-group list-group-flush">
-                    <?php foreach ($replyHistory as $reply): ?>
-                        <div class="list-group-item p-4">
-                            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-                                <div>
-                                    <div class="fw-semibold">
-                                        <?= e(
-                                            (string)(
-                                                $reply['assunto']
-                                                ?? ''
-                                            )
-                                        ) ?>
+                <div class="card-body p-4">
+                    <div class="d-flex flex-column gap-3">
+                        <?php foreach ($conversation as $message): ?>
+                            <?php $incoming = $message['direction'] === 'in'; ?>
+
+                            <div
+                                class="d-flex <?= $incoming ? 'justify-content-start' : 'justify-content-end' ?>"
+                            >
+                                <div
+                                    class="border rounded-3 p-3 <?= $incoming ? 'bg-light' : 'bg-primary-subtle border-primary-subtle' ?>"
+                                    style="width:min(100%,760px)"
+                                >
+                                    <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+                                        <div class="fw-semibold">
+                                            <?php if ($incoming): ?>
+                                                <i class="bi bi-reply-fill me-1"></i>
+                                                Resposta recebida
+                                            <?php else: ?>
+                                                <i class="bi bi-send-check me-1"></i>
+                                                Enviado pelo Portal
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <div class="small text-secondary">
+                                            <?= e(
+                                                formatDateBr(
+                                                    (string)$message['date']
+                                                )
+                                            ) ?>
+                                        </div>
                                     </div>
 
-                                    <div class="small text-secondary">
-                                        Para:
-                                        <?= e(
-                                            (string)(
-                                                $reply['destinatario']
-                                                ?? ''
-                                            )
-                                        ) ?>
-                                        ·
-                                        <?= e(
-                                            formatDateBr(
-                                                (string)(
-                                                    $reply['created_at']
-                                                    ?? ''
-                                                )
-                                            )
-                                        ) ?>
+                                    <?php if ((string)$message['subject'] !== ''): ?>
+                                        <div class="small text-secondary mb-2">
+                                            Assunto:
+                                            <?= e((string)$message['subject']) ?>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <div style="white-space:pre-wrap"><?= e(
+                                        (string)$message['message']
+                                    ) ?></div>
+
+                                    <div class="small text-secondary mt-3">
+                                        <?= $incoming ? 'De' : 'Para' ?>:
+                                        <?= e((string)$message['email']) ?>
 
                                         <?php if (
-                                            !empty(
-                                                $reply['usuario_nome']
-                                            )
+                                            !$incoming
+                                            && (string)$message['user'] !== ''
                                         ): ?>
                                             · por
-                                            <?= e(
-                                                (string)$reply['usuario_nome']
-                                            ) ?>
+                                            <?= e((string)$message['user']) ?>
                                         <?php endif; ?>
                                     </div>
                                 </div>
-
-                                <span class="badge <?= ($reply['status'] ?? '') === 'enviado' ? 'text-bg-success' : 'text-bg-danger' ?>">
-                                    <?= ($reply['status'] ?? '') === 'enviado'
-                                        ? 'Enviado'
-                                        : 'Erro' ?>
-                                </span>
                             </div>
-
-                            <div style="white-space:pre-wrap"><?= e(
-                                (string)(
-                                    $reply['mensagem']
-                                    ?? ''
-                                )
-                            ) ?></div>
-
-                            <?php if (
-                                !empty(
-                                    $reply['erro']
-                                )
-                            ): ?>
-                                <div class="alert alert-danger py-2 mt-3 mb-0 small">
-                                    <?= e(
-                                        (string)$reply['erro']
-                                    ) ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             </section>
         <?php endif; ?>

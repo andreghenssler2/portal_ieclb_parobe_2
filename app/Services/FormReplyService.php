@@ -239,7 +239,8 @@ final class FormReplyService
         }
 
         $subject =
-            self::singleLine(
+            self::subjectForResponse(
+                $responseId,
                 $subject
             );
 
@@ -366,12 +367,45 @@ final class FormReplyService
         $error = '';
 
         try {
+            $mailOptions = [];
+
+            $replyMailbox =
+                strtolower(
+                    trim(
+                        siteConfig(
+                            $pdo,
+                            'inbound_mail_address',
+                            siteConfig(
+                                $pdo,
+                                'mail_reply_to',
+                                siteConfig(
+                                    $pdo,
+                                    'mail_from_email',
+                                    ''
+                                )
+                            )
+                        )
+                    )
+                );
+
+            if (
+                $replyMailbox !== ''
+                && filter_var(
+                    $replyMailbox,
+                    FILTER_VALIDATE_EMAIL
+                )
+            ) {
+                $mailOptions['reply_to'] =
+                    $replyMailbox;
+            }
+
             $ok =
                 MailService::sendHtml(
                     $pdo,
                     $recipient,
                     $subject,
-                    $html
+                    $html,
+                    $mailOptions
                 );
 
             if (!$ok) {
@@ -503,6 +537,65 @@ final class FormReplyService
                 PDO::FETCH_ASSOC
             )
             ?: [];
+    }
+
+    public static function subjectForResponse(
+        int $responseId,
+        string $subject
+    ): string {
+        $subject =
+            self::singleLine(
+                $subject
+            );
+
+        $subject =
+            preg_replace(
+                '/\s*\[IECLB-R\d+\]\s*/i',
+                ' ',
+                $subject
+            )
+            ?? $subject;
+
+        $subject =
+            trim(
+                preg_replace(
+                    '/\s{2,}/',
+                    ' ',
+                    $subject
+                )
+                ?? $subject
+            );
+
+        if ($subject === '') {
+            $subject =
+                'Resposta ao seu contato';
+        }
+
+        $token =
+            '[IECLB-R'
+            . max(
+                1,
+                $responseId
+            )
+            . ']';
+
+        $maxBase =
+            max(
+                20,
+                190
+                - self::length(
+                    $token
+                )
+                - 1
+            );
+
+        return
+            self::cut(
+                $subject,
+                $maxBase
+            )
+            . ' '
+            . $token;
     }
 
     public static function defaultSubject(

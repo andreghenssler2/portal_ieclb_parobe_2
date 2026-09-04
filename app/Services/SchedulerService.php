@@ -52,6 +52,13 @@ final class SchedulerService
                 'enabled' => true,
                 'priority' => 60,
             ],
+            'receber_respostas_email' => [
+                'name' => 'Receber respostas por e-mail',
+                'description' => 'Consulta a caixa IMAP e vincula respostas dos contatos às conversas dos formulários.',
+                'interval' => 5,
+                'enabled' => true,
+                'priority' => 35,
+            ],
 ];
     }
 
@@ -291,11 +298,41 @@ final class SchedulerService
             'limpar_logs_email' => self::cleanupMailLogs($pdo),
             'limpar_logs_auditoria' => self::cleanupAuditLogs($pdo),
             'verificar_integridade_midia' => self::verifyMediaIntegrity($pdo),
+            'receber_respostas_email' => self::syncInboundFormReplies($pdo),
             'limpar_derivados_midia' => self::cleanupMediaDerivedFiles($pdo),            default => throw new RuntimeException('Handler da tarefa não encontrado: ' . $slug),
         };
     }
 
     /** @return array{status:string,message:string} */
+    /** @return array{status:string,message:string} */
+    private static function syncInboundFormReplies(PDO $pdo): array
+    {
+        if (!class_exists('InboundMailService')) {
+            return [
+                'status' => 'ignorado',
+                'message' => 'InboundMailService não está disponível.',
+            ];
+        }
+
+        $result =
+            InboundMailService::sync(
+                $pdo,
+                false
+            );
+
+        return [
+            'status' =>
+                (string)(
+                    $result['status']
+                    ?? 'ok'
+                ),
+            'message' =>
+                (string)(
+                    $result['message']
+                    ?? 'Sincronização IMAP concluída.'
+                ),
+        ];
+    }
     private static function publishScheduledContent(PDO $pdo): array
     {
         $now = date('Y-m-d H:i:s');

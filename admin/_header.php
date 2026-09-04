@@ -448,6 +448,10 @@ $adminPendingTotal =
                         <?php endif; ?>
                         <?php if (Auth::can('email.gerenciar')): ?>
                             <a class="<?= $isPath('configuracoes/email.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/email.php')) ?>">E-mail</a>
+                            <a
+                                class="<?= $isPath('configuracoes/email-entrada.php') ? 'active' : '' ?>"
+                                href="<?= e(url('admin/configuracoes/email-entrada.php')) ?>"
+                            >E-mail de Entrada</a>
                         <?php endif; ?>
                         <?php if (Auth::can('seguranca.gerenciar')): ?>
                             <a class="<?= $isPath('configuracoes/seguranca.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/seguranca.php')) ?>">Segurança</a>
