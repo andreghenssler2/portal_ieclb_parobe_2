@@ -145,7 +145,13 @@ if (
 require themeFile($pdo, 'header.php');
 ?>
 <article class="container py-5 content-reading"><div class="mb-4"><div class="text-secondary mb-2"><?php if ($postCategories): ?><?php foreach ($postCategories as $i=>$cat): ?><?= $i ? ' · ' : '' ?><a class="text-reset text-decoration-none" href="<?= e(categoryUrl((string)$cat['slug'])) ?>"><?= e($cat['nome']) ?></a><?php endforeach; ?><?php else: ?>Notícia<?php endif; ?> · <?= e($post['comunidade_nome'] ?: 'Paroquial') ?></div><h1 class="display-5 fw-bold"><?= e($post['titulo']) ?></h1><div class="text-secondary">Publicado em <?= e(formatDateBr($post['publicado_em'] ?: $post['created_at'])) ?><?php if ($post['autor_nome']): ?> · <?= e($post['autor_nome']) ?><?php endif; ?></div></div>
-<?php if ($cover): ?><?php if ((int)($post['exibir_imagem_capa'] ?? 1) === 1): ?><img class="article-cover mb-4" src="<?= e(mediaUrl($cover)) ?><?php endif; ?>" alt="<?= e($post['imagem_capa_alt'] ?: $post['titulo']) ?>"><?php endif; ?>
+<?php if ($cover && (int)($post['exibir_imagem_capa'] ?? 1) === 1): ?>
+<img
+    class="article-cover mb-4"
+    src="<?= e(mediaUrl((string)$cover)) ?>"
+    alt="<?= e((string)($post['imagem_capa_alt'] ?: $post['titulo'])) ?>"
+>
+<?php endif; ?>
 <?php if (trim($articleContentPublic) !== ''): ?><div class="article-body"><?= $articleContentPublic ?></div><?php endif; ?>
 <?= ContentBlockService::render($pdo, 'post', (int)$post['id']) ?>
 </article>
