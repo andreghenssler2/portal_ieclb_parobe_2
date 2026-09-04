@@ -62,12 +62,91 @@ $metaImageType = trim((string)($post['imagem_capa_mime'] ?? ''));
 $canonicalUrl = contentUrl('noticia', (string)$post['slug']);
 $metaOgType = 'article';
 $relatedPosts = NewsEngagementService::related($pdo, $post, 4);
+/*
+ * v0.80.0 R4
+ *
+ * O resumo é metadado editorial para cards/listas/SEO e não faz parte da
+ * leitura individual.
+ *
+ * Compatibilidade com conteúdo legado:
+ * se o PRIMEIRO <p> do corpo for exatamente igual ao resumo, ele é tratado
+ * como duplicação e omitido somente na saída pública. O banco permanece intacto.
+ */
+$articleContentPublic =
+    (string)($post['conteudo'] ?? '');
+
+$articleSummaryPublic =
+    trim(
+        html_entity_decode(
+            strip_tags(
+                (string)($post['resumo'] ?? '')
+            ),
+            ENT_QUOTES | ENT_HTML5,
+            'UTF-8'
+        )
+    );
+
+$normalizeArticleText =
+    static function (string $value): string {
+        $value =
+            html_entity_decode(
+                strip_tags($value),
+                ENT_QUOTES | ENT_HTML5,
+                'UTF-8'
+            );
+
+        $value =
+            str_replace(
+                "\u{00A0}",
+                ' ',
+                $value
+            );
+
+        $value =
+            preg_replace(
+                '/\s+/u',
+                ' ',
+                trim($value)
+            )
+            ?? trim($value);
+
+        return $value;
+    };
+
+if (
+    $articleSummaryPublic !== ''
+    && preg_match(
+        '~^\s*(<p\b[^>]*>[\s\S]*?</p>)~iu',
+        $articleContentPublic,
+        $firstParagraphMatch
+    ) === 1
+) {
+    $firstParagraphHtml =
+        (string)$firstParagraphMatch[1];
+
+    if (
+        $normalizeArticleText(
+            $firstParagraphHtml
+        )
+        === $normalizeArticleText(
+            $articleSummaryPublic
+        )
+    ) {
+        $articleContentPublic =
+            substr(
+                $articleContentPublic,
+                strlen(
+                    (string)$firstParagraphMatch[0]
+                )
+            );
+    }
+}
+
 require themeFile($pdo, 'header.php');
 ?>
 <article class="container py-5 content-reading"><div class="mb-4"><div class="text-secondary mb-2"><?php if ($postCategories): ?><?php foreach ($postCategories as $i=>$cat): ?><?= $i ? ' · ' : '' ?><a class="text-reset text-decoration-none" href="<?= e(categoryUrl((string)$cat['slug'])) ?>"><?= e($cat['nome']) ?></a><?php endforeach; ?><?php else: ?>Notícia<?php endif; ?> · <?= e($post['comunidade_nome'] ?: 'Paroquial') ?></div><h1 class="display-5 fw-bold"><?= e($post['titulo']) ?></h1><div class="text-secondary">Publicado em <?= e(formatDateBr($post['publicado_em'] ?: $post['created_at'])) ?><?php if ($post['autor_nome']): ?> · <?= e($post['autor_nome']) ?><?php endif; ?></div></div>
-<?php if ($cover): ?><img class="article-cover mb-4" src="<?= e(mediaUrl($cover)) ?>" alt="<?= e($post['imagem_capa_alt'] ?: $post['titulo']) ?>"><?php endif; ?>
-<?php if ($post['resumo']): ?><p class="lead"><?= e($post['resumo']) ?></p><?php endif; ?>
-<?php if (trim((string)$post['conteudo']) !== ''): ?><div class="article-body"><?= $post['conteudo'] ?></div><?php endif; ?>
+<?php if ($cover): ?><?php if ((int)($post['exibir_imagem_capa'] ?? 1) === 1): ?><img class="article-cover mb-4" src="<?= e(mediaUrl($cover)) ?><?php endif; ?>" alt="<?= e($post['imagem_capa_alt'] ?: $post['titulo']) ?>"><?php endif; ?>
+<?php if (trim($articleContentPublic) !== ''): ?><div class="article-body"><?= $articleContentPublic ?></div><?php endif; ?>
 <?= ContentBlockService::render($pdo, 'post', (int)$post['id']) ?>
 </article>
 <?php if ($relatedPosts): ?>

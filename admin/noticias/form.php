@@ -30,6 +30,7 @@ $post = [
     'comentarios_ativos' => $defaultCommentsOpen,
     'publicado_em' => '',
     'imagem_capa_id' => '',
+    'exibir_imagem_capa' => 1,
 ];
 
 if ($id) {
@@ -113,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $post['destaque'] = isset($_POST['destaque']) ? 1 : 0;
     $post['comentarios_ativos'] = isset($_POST['comentarios_ativos']) ? 1 : 0;
     $post['seo_noindex'] = isset($_POST['seo_noindex']) ? 1 : 0;
+    $post['exibir_imagem_capa'] = ((string)($_POST['exibir_imagem_capa'] ?? '1') === '0') ? 0 : 1;
 
     $contentBlocks = ContentBlockService::prepareForEditor(
         $pdo,
@@ -216,6 +218,7 @@ $publicadoEm = trim((string)($_POST['publicado_em'] ?? ''));
                     'resumo' => trim((string)($_POST['resumo'] ?? '')) ?: null,
                     'conteudo' => $conteudo,
                     'imagem_capa_id' => $imagemCapaId,
+                    'exibir_imagem_capa' => ((string)($_POST['exibir_imagem_capa'] ?? '1') === '0') ? 0 : 1,
                     'seo_titulo' => trim((string)($_POST['seo_titulo'] ?? '')) ?: null,
                     'seo_descricao' => trim((string)($_POST['seo_descricao'] ?? '')) ?: null,
                     'seo_noindex' => isset($_POST['seo_noindex']) ? 1 : 0,
@@ -228,11 +231,11 @@ $publicadoEm = trim((string)($_POST['publicado_em'] ?? ''));
                 if ($id) {
                     $data['id'] = $id;
                     $stmt = $pdo->prepare(
-                        'UPDATE posts SET autor_id=:autor_id,comunidade_id=:comunidade_id,categoria_id=:categoria_id,titulo=:titulo,slug=:slug,resumo=:resumo,conteudo=:conteudo,imagem_capa_id=:imagem_capa_id,seo_titulo=:seo_titulo,seo_descricao=:seo_descricao,seo_noindex=:seo_noindex,status=:status,destaque=:destaque,comentarios_ativos=:comentarios_ativos,publicado_em=:publicado_em WHERE id=:id'
+                        'UPDATE posts SET autor_id=:autor_id,comunidade_id=:comunidade_id,categoria_id=:categoria_id,titulo=:titulo,slug=:slug,resumo=:resumo,conteudo=:conteudo,imagem_capa_id=:imagem_capa_id,exibir_imagem_capa=:exibir_imagem_capa,seo_titulo=:seo_titulo,seo_descricao=:seo_descricao,seo_noindex=:seo_noindex,status=:status,destaque=:destaque,comentarios_ativos=:comentarios_ativos,publicado_em=:publicado_em WHERE id=:id'
                     );
                 } else {
                     $stmt = $pdo->prepare(
-                        'INSERT INTO posts (autor_id,comunidade_id,categoria_id,titulo,slug,resumo,conteudo,imagem_capa_id,seo_titulo,seo_descricao,seo_noindex,status,destaque,comentarios_ativos,publicado_em) VALUES (:autor_id,:comunidade_id,:categoria_id,:titulo,:slug,:resumo,:conteudo,:imagem_capa_id,:seo_titulo,:seo_descricao,:seo_noindex,:status,:destaque,:comentarios_ativos,:publicado_em)'
+                        'INSERT INTO posts (autor_id,comunidade_id,categoria_id,titulo,slug,resumo,conteudo,imagem_capa_id,exibir_imagem_capa,seo_titulo,seo_descricao,seo_noindex,status,destaque,comentarios_ativos,publicado_em) VALUES (:autor_id,:comunidade_id,:categoria_id,:titulo,:slug,:resumo,:conteudo,:imagem_capa_id,:exibir_imagem_capa,:seo_titulo,:seo_descricao,:seo_noindex,:status,:destaque,:comentarios_ativos,:publicado_em)'
                     );
                 }
 
@@ -467,7 +470,51 @@ require __DIR__ . '/../_header.php';
                         </div>
                     </div>
 
-                    <button type="button" class="wp-summary-toggle" id="summaryToggle">Adicionar um resumo...</button>
+                                        <div class="border-top border-bottom py-3 mb-3">
+                        <div class="fw-semibold small mb-2">
+                            Imagem de capa na leitura
+                        </div>
+
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="radio"
+                                name="exibir_imagem_capa"
+                                id="exibirImagemCapaSim"
+                                value="1"
+                                <?= (int)($post['exibir_imagem_capa'] ?? 1) === 1 ? 'checked' : '' ?>
+                            >
+                            <label
+                                class="form-check-label"
+                                for="exibirImagemCapaSim"
+                            >
+                                Sim, exibir ao abrir a notícia
+                            </label>
+                        </div>
+
+                        <div class="form-check mt-1">
+                            <input
+                                class="form-check-input"
+                                type="radio"
+                                name="exibir_imagem_capa"
+                                id="exibirImagemCapaNao"
+                                value="0"
+                                <?= (int)($post['exibir_imagem_capa'] ?? 1) === 0 ? 'checked' : '' ?>
+                            >
+                            <label
+                                class="form-check-label"
+                                for="exibirImagemCapaNao"
+                            >
+                                Não, ocultar na leitura
+                            </label>
+                        </div>
+
+                        <div class="form-text mt-2">
+                            Mesmo ocultada na leitura, a imagem continua sendo usada em cards, destaques e compartilhamentos.
+                        </div>
+                    </div>
+
+<button type="button" class="wp-summary-toggle" id="summaryToggle">Adicionar um resumo...</button>
                     <div class="wp-summary-editor <?= trim((string)($post['resumo'] ?? '')) === '' ? 'd-none' : '' ?>" id="summaryEditor">
                         <textarea class="form-control form-control-sm" name="resumo" rows="4" placeholder="Escreva um resumo curto..."><?= e((string)($post['resumo'] ?? '')) ?></textarea>
                         <div class="form-text">Usado nos cards, busca e SEO quando a descrição específica estiver vazia.</div>

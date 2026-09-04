@@ -17,6 +17,16 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+
+## 0.80.0 — Leitura das Notícias
+
+- O resumo não aparece mais no corpo da notícia individual.
+- O resumo continua em cards, busca e SEO.
+- Novo controle "Imagem de capa na leitura".
+- Cada notícia escolhe se a capa aparece ao abrir o conteúdo.
+- A imagem continua disponível para cards, destaques e Open Graph.
+- Nova coluna `posts.exibir_imagem_capa`.
 ## 0.79.0 — Respostas recebidas por e-mail
 
 - Respostas dos contatos voltam ao Portal via IMAP.
