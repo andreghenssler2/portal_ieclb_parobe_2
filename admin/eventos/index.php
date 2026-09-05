@@ -12,7 +12,7 @@ $busca = trim((string)($_GET['q'] ?? ''));
 $where = [];
 $params = [];
 
-if (in_array($tipo, ['culto', 'evento'], true)) {
+if (in_array($tipo, ['culto', 'festa', 'atividade', 'reuniao'], true)) {
     $where[] = 'e.tipo = :tipo';
     $params['tipo'] = $tipo;
 }
@@ -48,12 +48,12 @@ $eventos = $stmt->fetchAll();
 $categorias = $pdo->query('SELECT id, nome FROM evento_categorias ORDER BY ordem, nome')->fetchAll();
 $comunidades = $pdo->query('SELECT id, nome FROM comunidades WHERE ativa = 1 ORDER BY ordem, nome')->fetchAll();
 
-$pageTitle = 'Eventos e Cultos';
+$pageTitle = 'Agenda';
 require __DIR__ . '/../_header.php';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
     <div>
-        <h1 class="h3 mb-1">Eventos e Cultos</h1>
+        <h1 class="h3 mb-1">Agenda</h1>
         <p class="text-secondary mb-0">Gerencie a agenda paroquial e das comunidades.</p>
     </div>
     <div class="d-flex gap-2">
@@ -74,7 +74,9 @@ require __DIR__ . '/../_header.php';
                 <select class="form-select" name="tipo">
                     <option value="">Todos</option>
                     <option value="culto" <?= $tipo === 'culto' ? 'selected' : '' ?>>Cultos</option>
-                    <option value="evento" <?= $tipo === 'evento' ? 'selected' : '' ?>>Eventos</option>
+                    <option value="festa" <?= $tipo === 'festa' ? 'selected' : '' ?>>Festas</option>
+                    <option value="atividade" <?= $tipo === 'atividade' ? 'selected' : '' ?>>Atividades</option>
+                    <option value="reuniao" <?= $tipo === 'reuniao' ? 'selected' : '' ?>>Reuniões</option>
                 </select>
             </div>
             <div class="col-lg-2 col-md-6">
@@ -133,12 +135,12 @@ require __DIR__ . '/../_header.php';
             </thead>
             <tbody>
             <?php if (!$eventos): ?>
-                <tr><td colspan="8" class="text-secondary">Nenhum evento ou culto encontrado.</td></tr>
+                <tr><td colspan="8" class="text-secondary">Nenhum item da agenda encontrado.</td></tr>
             <?php endif; ?>
             <?php foreach ($eventos as $evento): ?>
                 <tr>
                     <td class="text-nowrap"><?= e(formatDateBr($evento['data_inicio'])) ?></td>
-                    <td><span class="badge <?= $evento['tipo'] === 'culto' ? 'text-bg-primary' : 'text-bg-info' ?>"><?= e(eventTypeLabel($evento['tipo'])) ?></span></td>
+                    <td><span class="badge <?= e(eventTypeBadgeClass((string)$evento['tipo'])) ?>"><?= e(eventTypeLabel($evento['tipo'])) ?></span></td>
                     <td class="fw-semibold"><?= e($evento['titulo']) ?><?php if ((int)$evento['santa_ceia'] === 1): ?><div class="small text-secondary">Com Santa Ceia</div><?php endif; ?></td>
                     <td><?= e($evento['categoria_nome'] ?: '-') ?></td>
                     <td><?= e($evento['comunidade_nome'] ?: 'Paroquial') ?></td>

@@ -20,10 +20,10 @@ $evento = $stmt->fetch();
 if (!$evento) {
     http_response_code(404);
     $metaTitle = 'Evento não encontrado - ' . $siteLabel;
-    $metaDescription = 'O evento ou culto solicitado não está disponível.';
+    $metaDescription = 'O item da agenda solicitado não está disponível.';
     $metaNoindex = true;
     require themeFile($pdo, 'header.php');
-    echo '<div class="container py-5"><h1 class="h2">Evento ou culto não encontrado</h1><p class="text-secondary">O conteúdo solicitado não está disponível.</p><a class="btn btn-primary" href="' . e(url('agenda.php')) . '">Ver agenda</a></div>';
+    echo '<div class="container py-5"><h1 class="h2">Item da agenda não encontrado</h1><p class="text-secondary">O conteúdo solicitado não está disponível.</p><a class="btn btn-primary" href="' . e(url('agenda.php')) . '">Ver agenda</a></div>';
     require themeFile($pdo, 'footer.php');
     exit;
 }
@@ -44,7 +44,7 @@ require themeFile($pdo, 'header.php');
 <article class="container py-5 content-reading">
     <header class="mb-4">
         <div class="d-flex flex-wrap gap-2 mb-3">
-            <span class="badge <?= $evento['tipo'] === 'culto' ? 'text-bg-primary' : 'text-bg-info' ?>"><?= e(eventTypeLabel($evento['tipo'])) ?></span>
+            <span class="badge <?= e(eventTypeBadgeClass((string)$evento['tipo'])) ?>"><?= e(eventTypeLabel($evento['tipo'])) ?></span>
             <?php if ($evento['categoria_nome']): ?><span class="badge text-bg-light border"><?= e($evento['categoria_nome']) ?></span><?php endif; ?>
             <?php if ((int)$evento['santa_ceia'] === 1): ?><span class="badge text-bg-light border">Com Santa Ceia</span><?php endif; ?>
         </div>

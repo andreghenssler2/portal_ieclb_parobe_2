@@ -67,7 +67,7 @@ $todayMonth = (new DateTimeImmutable('now', new DateTimeZone('America/Sao_Paulo'
 
 $siteLabel = siteConfig($pdo, 'seo_titulo', 'IECLB Parobé');
 $metaTitle = 'Agenda - ' . $siteLabel;
-$metaDescription = 'Calendário de cultos, encontros e eventos da Paróquia Evangélica de Confissão Luterana de Parobé.';
+$metaDescription = 'Calendário de cultos, festas, atividades e reuniões da Paróquia Evangélica de Confissão Luterana de Parobé.';
 $canonicalUrl = url('agenda');
 
 require themeFile($pdo, 'header.php');
@@ -82,7 +82,10 @@ require themeFile($pdo, 'header.php');
 .portal-calendar-number{display:inline-flex;align-items:center;justify-content:center;width:1.8rem;height:1.8rem;border-radius:50%;font-weight:700;font-size:.9rem}
 .portal-calendar-day.is-today .portal-calendar-number{background:var(--bs-primary);color:#fff}
 .portal-calendar-event{display:block;position:relative;z-index:1;text-decoration:none;border:1px solid var(--bs-border-color);border-left:4px solid var(--bs-primary);border-radius:.45rem;padding:.35rem .45rem;margin-top:.35rem;background:var(--bs-body-bg);color:var(--bs-body-color);font-size:.78rem;line-height:1.25}
-.portal-calendar-event.is-evento{border-left-color:var(--bs-info)}
+.portal-calendar-event.is-culto{border-left-color:var(--bs-primary)}
+.portal-calendar-event.is-festa{border-left-color:var(--bs-danger)}
+.portal-calendar-event.is-atividade{border-left-color:var(--bs-success)}
+.portal-calendar-event.is-reuniao{border-left-color:var(--bs-secondary)}
 .portal-calendar-event:hover{background:var(--bs-tertiary-bg)}
 .portal-calendar-time{display:block;font-size:.7rem;color:var(--bs-secondary-color);margin-bottom:.1rem}
 .portal-agenda-toolbar .btn{white-space:nowrap}
@@ -97,7 +100,7 @@ require themeFile($pdo, 'header.php');
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div>
             <h1 class="display-6 fw-bold mb-2">Agenda</h1>
-            <p class="lead text-secondary mb-0">Cultos, encontros e eventos da Paróquia de Parobé.</p>
+            <p class="lead text-secondary mb-0">Cultos, festas, atividades e reuniões da Paróquia de Parobé.</p>
         </div>
 
         <div class="d-flex flex-wrap gap-2">
@@ -136,8 +139,10 @@ require themeFile($pdo, 'header.php');
                         <select class="form-select" name="tipo">
                             <option value="">Todos</option>
                             <option value="culto" <?=$filters['tipo'] === 'culto' ? 'selected' : ''?>>Cultos</option>
-                            <option value="evento" <?=$filters['tipo'] === 'evento' ? 'selected' : ''?>>Eventos</option>
-                        </select>
+                            <option value="festa" <?=$filters['tipo'] === 'festa' ? 'selected' : ''?>>Festas</option>
+                            <option value="atividade" <?=$filters['tipo'] === 'atividade' ? 'selected' : ''?>>Atividades</option>
+                            <option value="reuniao" <?=$filters['tipo'] === 'reuniao' ? 'selected' : ''?>>Reuniões</option>
+                </select>
                     </div>
 
                     <div class="col-xl-3 col-md-6">
@@ -252,7 +257,7 @@ require themeFile($pdo, 'header.php');
 
     <?php if(!$eventos):?>
         <div class="alert alert-light border">
-            Nenhum culto ou evento encontrado com esses filtros.
+            Nenhum item da agenda encontrado com esses filtros.
         </div>
     <?php elseif($view === 'calendario'):?>
         <div class="portal-calendar-shell shadow-sm rounded overflow-auto">
@@ -267,7 +272,7 @@ require themeFile($pdo, 'header.php');
 
                         <?php foreach($day['events'] as $evento):?>
                             <a
-                                class="portal-calendar-event <?=$evento['tipo'] === 'evento' ? 'is-evento' : ''?>"
+                                class="portal-calendar-event is-<?=e((string)$evento['tipo'])?>"
                                 href="<?=e(contentUrl('evento', (string)$evento['slug']))?>"
                                 title="<?=e($evento['titulo'])?>"
                             >
@@ -296,7 +301,7 @@ require themeFile($pdo, 'header.php');
                         <article class="card h-100 border-0 shadow-sm">
                             <div class="card-body p-4">
                                 <div class="d-flex flex-wrap gap-2 mb-3">
-                                    <span class="badge <?=$evento['tipo'] === 'culto' ? 'text-bg-primary' : 'text-bg-info'?>">
+                                    <span class="badge <?=e(eventTypeBadgeClass((string)$evento['tipo']))?>">
                                         <?=e(eventTypeLabel($evento['tipo']))?>
                                     </span>
                                     <?php if($evento['categoria_nome']):?>

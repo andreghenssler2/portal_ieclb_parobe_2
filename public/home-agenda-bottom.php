@@ -16,7 +16,7 @@ $homeAgendaItems = is_array($agenda ?? null) ? $agenda : [];
 
         <?php if (!$homeAgendaItems): ?>
             <div class="home-agenda-empty">
-                Nenhum culto ou evento futuro publicado.
+                Nenhum culto, festa, atividade ou reunião futura publicada.
             </div>
         <?php else: ?>
             <div class="home-agenda-grid">

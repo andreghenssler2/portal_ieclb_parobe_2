@@ -336,7 +336,24 @@ function formatMonthShortBr(?string $date): string
 
 function eventTypeLabel(?string $type): string
 {
-    return $type === 'culto' ? 'Culto' : 'Evento';
+    return match (strtolower(trim((string)$type))) {
+        'culto' => 'Culto',
+        'festa' => 'Festa',
+        'atividade' => 'Atividade',
+        'reuniao' => 'Reunião',
+        default => 'Atividade',
+    };
+}
+
+function eventTypeBadgeClass(?string $type): string
+{
+    return match (strtolower(trim((string)$type))) {
+        'culto' => 'text-bg-primary',
+        'festa' => 'text-bg-danger',
+        'atividade' => 'text-bg-success',
+        'reuniao' => 'text-bg-secondary',
+        default => 'text-bg-secondary',
+    };
 }
 
 function formatBytes(int $bytes): string

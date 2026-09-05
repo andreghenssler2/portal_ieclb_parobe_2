@@ -31,7 +31,7 @@ if ($id) {
     $found = $stmt->fetch();
     if (!$found) {
         http_response_code(404);
-        exit('Evento ou culto não encontrado.');
+        exit('Item da agenda não encontrado.');
     }
     $evento = $found;
 }
@@ -64,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $titulo = trim((string)($_POST['titulo'] ?? ''));
         $dataInicioInput = trim((string)($_POST['data_inicio'] ?? ''));
 
-        if (!in_array($tipo, ['culto', 'evento'], true)) {
-            $tipo = 'evento';
+        if (!in_array($tipo, ['culto', 'festa', 'atividade', 'reuniao'], true)) {
+            $tipo = 'atividade';
         }
 
         if ($titulo === '' || $dataInicioInput === '') {
@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         throw new RuntimeException('A imagem destacada precisa ser um arquivo de imagem.');
                     }
                     $imagemCapaId = (int)$newMedia['id'];
-                    logAction($pdo, 'midia.upload', 'midias', $imagemCapaId, 'Imagem destacada de evento/culto');
+                    logAction($pdo, 'midia.upload', 'midias', $imagemCapaId, 'Imagem destacada da agenda');
                 }
 
                 if ($imagemCapaId !== null) {
@@ -174,13 +174,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pageTitle = $id ? 'Editar evento/culto' : 'Novo evento/culto';
+$pageTitle = $id ? 'Editar item da agenda' : 'Novo item da agenda';
 require __DIR__ . '/../_header.php';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
     <div>
         <h1 class="h3 mb-1"><?= e($pageTitle) ?></h1>
-        <p class="text-secondary mb-0">Cadastre cultos e eventos da paróquia ou de uma comunidade.</p>
+        <p class="text-secondary mb-0">Cadastre cultos, festas, atividades e reuniões da paróquia ou de uma comunidade.</p>
     </div>
     <?php if ($id && $evento['status'] === 'publicado'): ?>
         <a class="btn btn-outline-primary" target="_blank" href="<?= e(contentUrl('evento', (string)$evento['slug'])) ?>">Visualizar</a>
@@ -197,7 +197,9 @@ require __DIR__ . '/../_header.php';
                 <label class="form-label">Tipo</label>
                 <select class="form-select" name="tipo" id="tipoEvento" required>
                     <option value="culto" <?= $evento['tipo'] === 'culto' ? 'selected' : '' ?>>Culto</option>
-                    <option value="evento" <?= $evento['tipo'] === 'evento' ? 'selected' : '' ?>>Evento</option>
+                    <option value="festa" <?= $evento['tipo'] === 'festa' ? 'selected' : '' ?>>Festa</option>
+                    <option value="atividade" <?= $evento['tipo'] === 'atividade' ? 'selected' : '' ?>>Atividade</option>
+                    <option value="reuniao" <?= $evento['tipo'] === 'reuniao' ? 'selected' : '' ?>>Reunião</option>
                 </select>
             </div>
             <div class="col-md-8">

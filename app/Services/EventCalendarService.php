@@ -10,7 +10,7 @@ final class EventCalendarService
     public static function filters(array $input): array
     {
         $tipo = strtolower(trim((string)($input['tipo'] ?? '')));
-        if (!in_array($tipo, ['culto', 'evento'], true)) {
+        if (!in_array($tipo, ['culto', 'festa', 'atividade', 'reuniao'], true)) {
             $tipo = '';
         }
 
@@ -273,7 +273,7 @@ final class EventCalendarService
         $params = [];
 
         $tipo = strtolower(trim((string)($filters['tipo'] ?? '')));
-        if (in_array($tipo, ['culto', 'evento'], true)) {
+        if (in_array($tipo, ['culto', 'festa', 'atividade', 'reuniao'], true)) {
             $where[] = 'e.tipo=?';
             $params[] = $tipo;
         }
