@@ -57,6 +57,7 @@ require __DIR__ . '/../_header.php';
         <p class="text-secondary mb-0">Gerencie a agenda paroquial e das comunidades.</p>
     </div>
     <div class="d-flex gap-2">
+        <a class="btn btn-outline-primary" href="<?= e(url('admin/eventos/importar.php')) ?>"><i class="bi bi-box-arrow-in-down me-1"></i>Importação externa</a>
         <a class="btn btn-outline-secondary" href="<?= e(url('admin/eventos/categorias.php')) ?>">Categorias</a>
         <a class="btn btn-primary" href="<?= e(url('admin/eventos/form.php')) ?>">Adicionar novo</a>
     </div>
