@@ -25,13 +25,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $enabled = isset($_POST['performance_cache_enabled']) ? '1' : '0';
                 $pageEnabled = isset($_POST['performance_page_cache_enabled']) ? '1' : '0';
+                $contentPageEnabled = isset($_POST['performance_content_page_cache_enabled']) ? '1' : '0';
                 $ttl = max(30, min(86400, (int)($_POST['performance_cache_ttl_seconds'] ?? 300)));
                 $pageTtl = max(15, min(3600, (int)($_POST['performance_page_cache_ttl_seconds'] ?? 120)));
+                $contentPageTtl = max(30, min(3600, (int)($_POST['performance_content_page_cache_ttl_seconds'] ?? 300)));
 
                 saveSiteConfig($pdo, 'performance_cache_enabled', $enabled, 'booleano');
                 saveSiteConfig($pdo, 'performance_page_cache_enabled', $pageEnabled, 'booleano');
                 saveSiteConfig($pdo, 'performance_cache_ttl_seconds', (string)$ttl, 'numero');
                 saveSiteConfig($pdo, 'performance_page_cache_ttl_seconds', (string)$pageTtl, 'numero');
+                saveSiteConfig($pdo, 'performance_content_page_cache_enabled', $contentPageEnabled, 'booleano');
+                saveSiteConfig($pdo, 'performance_content_page_cache_ttl_seconds', (string)$contentPageTtl, 'numero');
 
                 CacheService::clearAll();
                 CacheService::configure($pdo);
@@ -49,6 +53,9 @@ $enabled = ($settings['performance_cache_enabled'] ?? '1') !== '0';
 $pageEnabled = ($settings['performance_page_cache_enabled'] ?? '1') !== '0';
 $ttl = max(30, min(86400, (int)($settings['performance_cache_ttl_seconds'] ?? 300)));
 $pageTtl = max(15, min(3600, (int)($settings['performance_page_cache_ttl_seconds'] ?? 120)));
+$contentPageEnabled = ($settings['performance_content_page_cache_enabled'] ?? '1') !== '0';
+$contentPageTtl = max(30, min(3600, (int)($settings['performance_content_page_cache_ttl_seconds'] ?? 300)));
+$contentPageStats = class_exists('ContentPageCacheService') ? ContentPageCacheService::stats() : ['files'=>0,'bytes'=>0,'expired'=>0];
 $stats = CacheService::stats();
 
 include __DIR__ . '/../_header.php';
@@ -57,7 +64,7 @@ include __DIR__ . '/../_header.php';
 <div class="d-flex flex-column flex-xl-row align-items-xl-start justify-content-between gap-3 mb-4">
     <div>
         <h1 class="h3 mb-1">Performance</h1>
-        <p class="text-muted mb-0">Cache seguro em arquivos, cache da página inicial e otimizações de entrega pelo Apache.</p>
+        <p class="text-muted mb-0">Cache seguro em arquivos, Home e cache individual de Notícias/Páginas, com otimizações de entrega pelo Apache.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
         <form method="post">
@@ -113,6 +120,78 @@ include __DIR__ . '/../_header.php';
             <div class="form-text">Somente GET sem parâmetros e sem usuário autenticado. Painel, sessões e formulários nunca são armazenados.</div>
         </div>
 
+        <div class="border rounded-3 p-3 mb-4">
+            <div class="form-check form-switch mb-3">
+                <input
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    id="performance_content_page_cache_enabled"
+                    name="performance_content_page_cache_enabled"
+                    value="1"
+                    <?= $contentPageEnabled ? 'checked' : '' ?>
+                >
+
+                <label
+                    class="form-check-label fw-semibold"
+                    for="performance_content_page_cache_enabled"
+                >
+                    Cachear Notícias e Páginas individuais
+                </label>
+
+                <div class="form-text">
+                    Apenas visitantes anônimos em GET sem parâmetros. Conteúdos com formulários são excluídos automaticamente.
+                </div>
+            </div>
+
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label
+                        class="form-label"
+                        for="performance_content_page_cache_ttl_seconds"
+                    >
+                        Validade do cache por conteúdo
+                    </label>
+
+                    <div class="input-group">
+                        <input
+                            class="form-control"
+                            type="number"
+                            min="30"
+                            max="3600"
+                            id="performance_content_page_cache_ttl_seconds"
+                            name="performance_content_page_cache_ttl_seconds"
+                            value="<?= (int)$contentPageTtl ?>"
+                        >
+                        <span class="input-group-text">
+                            segundos
+                        </span>
+                    </div>
+
+                    <div class="form-text">
+                        Padrão: 300 segundos.
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="small text-secondary">
+                        Conteúdos atualmente em cache
+                    </div>
+
+                    <div class="fs-5 fw-semibold">
+                        <?= (int)$contentPageStats['files'] ?> arquivo(s)
+                        ·
+                        <?= e(formatBytes((int)$contentPageStats['bytes'])) ?>
+                    </div>
+
+                    <?php if ((int)$contentPageStats['expired'] > 0): ?>
+                        <div class="small text-warning">
+                            <?= (int)$contentPageStats['expired'] ?> expirado(s), removíveis pelo botão “Limpar expirados”.
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
         <div class="row g-3">
             <div class="col-md-6">
                 <label class="form-label" for="performance_cache_ttl_seconds">Validade do cache geral</label>

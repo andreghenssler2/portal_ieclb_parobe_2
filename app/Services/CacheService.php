@@ -227,6 +227,7 @@ final class CacheService
             if (str_contains($haystack, $hint)) {
                 self::clearGroup('page');
                 self::clearGroup('public');
+                self::clearGroup('content-page');
                 return;
             }
         }

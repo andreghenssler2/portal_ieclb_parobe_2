@@ -16,6 +16,29 @@ redirectCanonicalContent(
 );
 
 NewsAnalyticsService::trackView($pdo, (int)$post['id']);
+/*
+ * v0.88.0 - cache individual da Notícia.
+ * Fica depois do analytics para que HITs continuem contando visualizações.
+ */
+if (
+    class_exists('ContentPageCacheService')
+) {
+    ContentPageCacheService::begin(
+        $pdo,
+        'post',
+        (int)$post['id'],
+        (string)(
+            $post['updated_at']
+            ?? $post['publicado_em']
+            ?? $post['created_at']
+            ?? ''
+        ),
+        (string)(
+            $post['conteudo']
+            ?? ''
+        )
+    );
+}
 // v0.42.0-r1 - categorias com fallback legado.
 $postCategories = [];
 try {

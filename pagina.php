@@ -20,6 +20,27 @@ if (!$pagina) {
 }
 
 redirectCanonicalContent('pagina', (string)$pagina['slug']);
+/*
+ * v0.88.0 - cache individual da Página.
+ */
+if (
+    class_exists('ContentPageCacheService')
+) {
+    ContentPageCacheService::begin(
+        $pdo,
+        'pagina',
+        (int)$pagina['id'],
+        (string)(
+            $pagina['updated_at']
+            ?? $pagina['created_at']
+            ?? ''
+        ),
+        (string)(
+            $pagina['conteudo']
+            ?? ''
+        )
+    );
+}
 
 $pageBlocks = ContentBlockService::load(
     $pdo,

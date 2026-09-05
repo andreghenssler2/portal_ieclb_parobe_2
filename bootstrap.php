@@ -16,6 +16,13 @@ require_once __DIR__ . '/app/Helpers/functions.php';
 require_once __DIR__ . '/app/Services/SecurityHeadersService.php';
 require_once __DIR__ . '/app/Services/CspReportService.php';
 require_once __DIR__ . '/app/Services/CacheService.php';
+$contentPageCacheServiceFile =
+    __DIR__
+    . '/app/Services/ContentPageCacheService.php';
+
+if (is_file($contentPageCacheServiceFile)) {
+    require_once $contentPageCacheServiceFile;
+}
 require_once __DIR__ . '/app/Services/MediaService.php';
 require_once __DIR__ . '/app/Services/ImageOptimizationService.php';
 require_once __DIR__ . '/app/Services/MediaIntegrityService.php';

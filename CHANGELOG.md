@@ -26,6 +26,16 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.88.0 — Performance e cache por conteúdo
+
+- Cache individual para Notícias e Páginas públicas.
+- Bypass automático para formulários/CSRF.
+- ETag e Last-Modified.
+- Suporte a resposta HTTP 304.
+- Configuração e TTL próprios em Performance.
+- Invalidação automática do grupo `content-page`.
+- Sem nova tabela no banco.
 ## 0.87.0 — Histórico de atividades por usuário
 
 - Linha do tempo individual de atividade.
