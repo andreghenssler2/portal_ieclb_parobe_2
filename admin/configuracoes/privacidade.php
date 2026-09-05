@@ -128,6 +128,11 @@ require __DIR__.'/../_header.php';
     </div>
 </div>
 
+        <!-- PORTAL_COOKIE_PRIVACY_V91 -->
+        <div class="alert alert-info mt-3 mb-4">
+            Na v0.91.0, quando a Central de Consentimento estiver ativa, o Google Analytics só é carregado após autorização da categoria <strong>Estatísticas</strong>.
+            <a href="<?= e(url('admin/configuracoes/cookies.php')) ?>" class="alert-link">Configurar Cookies e Consentimento</a>.
+        </div>
 <button class="btn btn-primary">Salvar privacidade e Analytics</button>
 </form>
 <?php require __DIR__.'/../_footer.php';?>

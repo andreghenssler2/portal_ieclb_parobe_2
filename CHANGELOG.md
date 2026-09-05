@@ -1,5 +1,16 @@
 # Changelog — Portal IECLB Parobé
 
+## v0.91.0 — Cookies e Consentimento
+
+- adiciona Central pública de Consentimento de Cookies;
+- categorias Necessários, Estatísticas e Marketing;
+- adiciona Aceitar todos, Recusar opcionais e Personalizar;
+- adiciona Preferências de cookies no rodapé;
+- condiciona Google Analytics 4 ao consentimento de Estatísticas;
+- condiciona Google Tag Manager à categoria configurada;
+- permite aumentar a versão do consentimento para solicitar nova escolha;
+- adiciona Configurações → Cookies no Admin.
+
 ## v0.90.0 — Consolidação
 
 - consolida os hotfixes finais da v0.89.0;

@@ -510,6 +510,7 @@ if (
                             <a class="<?= $isPath('configuracoes/midia.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/midia.php')) ?>">Mídia</a>
                             <a class="<?= $isPath('configuracoes/links-permanentes.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/links-permanentes.php')) ?>">Links Permanentes</a>
                             <a class="<?= $isPath('configuracoes/privacidade.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/privacidade.php')) ?>">Privacidade</a>
+                            <a class="<?= $isPath('configuracoes/cookies.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/cookies.php')) ?>">Cookies</a>
                         <?php endif; ?>
                         <?php if (Auth::can('performance.gerenciar')): ?>
                             <a class="<?= $isPath('configuracoes/performance.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/performance.php')) ?>">Performance</a>

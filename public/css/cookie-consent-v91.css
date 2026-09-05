@@ -1,0 +1,32 @@
+.portal-cookie-dialog-open{overflow:hidden}
+.portal-cookie-banner{position:fixed;left:1rem;right:1rem;bottom:1rem;z-index:1080}
+.portal-cookie-banner[hidden],.portal-cookie-dialog-backdrop[hidden]{display:none!important}
+.portal-cookie-banner__content{max-width:1180px;margin:0 auto;padding:1rem;background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:1rem;box-shadow:0 .75rem 2.5rem rgba(0,0,0,.18);display:flex;gap:1rem;align-items:center;justify-content:space-between}
+.portal-cookie-banner__text{max-width:720px}
+.portal-cookie-title{display:block;font-size:1.05rem;margin-bottom:.35rem}
+.portal-cookie-banner__text p{margin:0 0 .25rem;color:#5f6670}
+.portal-cookie-privacy-link{font-size:.9rem}
+.portal-cookie-banner__actions{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:flex-end}
+.portal-cookie-dialog-backdrop{position:fixed;inset:0;z-index:1090;padding:1rem;background:rgba(0,0,0,.5);display:grid;place-items:center}
+.portal-cookie-dialog{width:min(680px,100%);max-height:calc(100vh - 2rem);overflow:auto;background:#fff;border-radius:1rem;box-shadow:0 1rem 3rem rgba(0,0,0,.28);outline:0}
+.portal-cookie-dialog__header,.portal-cookie-dialog__footer,.portal-cookie-category{padding:1rem 1.25rem}
+.portal-cookie-dialog__header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;border-bottom:1px solid rgba(0,0,0,.1)}
+.portal-cookie-dialog__header h2{margin:0;font-size:1.35rem}
+.portal-cookie-dialog__header p,.portal-cookie-category p{margin:.25rem 0 0;color:#68707b}
+.portal-cookie-close{border:0;background:transparent;font-size:1.8rem;line-height:1;padding:0 .25rem}
+.portal-cookie-category{display:flex;gap:1rem;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,.08)}
+.portal-cookie-category>div{max-width:500px}
+.portal-cookie-switch{min-width:110px;display:flex;align-items:center;gap:.5rem;justify-content:flex-end}
+.portal-cookie-switch input{width:1.1rem;height:1.1rem}
+.portal-cookie-dialog__footer{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:flex-end}
+.portal-cookie-footer-button{font:inherit;cursor:pointer}
+@media (max-width:767.98px){
+    .portal-cookie-banner{left:.5rem;right:.5rem;bottom:.5rem}
+    .portal-cookie-banner__content{align-items:stretch;flex-direction:column;padding:.9rem}
+    .portal-cookie-banner__actions{display:grid;grid-template-columns:1fr}
+    .portal-cookie-banner__actions .btn{width:100%}
+    .portal-cookie-category{align-items:flex-start;flex-direction:column}
+    .portal-cookie-switch{justify-content:flex-start}
+    .portal-cookie-dialog__footer{display:grid;grid-template-columns:1fr}
+    .portal-cookie-dialog__footer .btn{width:100%}
+}

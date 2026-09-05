@@ -411,6 +411,15 @@ function googleTagManagerContainerId(?PDO $pdo = null): string
             return '';
         }
 
+        /* PORTAL_COOKIE_GTM_V91 */
+        if (class_exists('CookieConsentService')) {
+            $gtmCategory = CookieConsentService::gtmCategory($pdo);
+
+            if (!CookieConsentService::allows($pdo, $gtmCategory)) {
+                return '';
+            }
+        }
+
         $containerId =
             strtoupper(
                 trim(

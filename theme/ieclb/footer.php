@@ -8,7 +8,13 @@ $footerAddress = trim((string)($footerSettings['site_endereco'] ?? ''));
 $newsletterFooterEnabled = (string)($footerSettings['newsletter_enabled'] ?? '1') === '1';
 $analyticsEnabled = (string)($footerSettings['analytics_enabled'] ?? '0') === '1';
 $analyticsMeasurementId = strtoupper(trim((string)($footerSettings['analytics_measurement_id'] ?? '')));
-$analyticsActive = $analyticsEnabled && preg_match('/^G-[A-Z0-9]+$/', $analyticsMeasurementId) === 1;
+$analyticsActive =
+    $analyticsEnabled
+    && preg_match('/^G-[A-Z0-9]+$/', $analyticsMeasurementId) === 1
+    && (
+        !class_exists('CookieConsentService')
+        || CookieConsentService::allows($footerPdo, 'analytics')
+    );
 $socials = [
     'Instagram' => trim((string)($footerSettings['site_instagram'] ?? '')),
     'YouTube' => trim((string)($footerSettings['site_youtube'] ?? '')),
@@ -42,13 +48,31 @@ try {
             <div class="col-lg-5 text-lg-end">
                 <?php if ($privacyPage): ?><a class="footer-social-link" href="<?= e(contentUrl('pagina',(string)$privacyPage['slug'])) ?>">Política de Privacidade</a><?php endif; ?>
                 <?php if ($newsletterFooterEnabled): ?><a class="footer-social-link" href="<?= e(url('newsletter')) ?>">Newsletter</a><?php endif; ?>
-                <?php foreach ($socials as $label => $socialUrl): ?>
+                                <?php if (
+                    class_exists('CookieConsentService')
+                    && CookieConsentService::enabled($footerPdo)
+                    && siteConfig($footerPdo, 'cookie_preferences_footer_link', '1') === '1'
+                ): ?>
+                    <button
+                        type="button"
+                        class="footer-social-link portal-cookie-footer-button border-0 bg-transparent p-0"
+                        data-cookie-preferences-open
+                    >Preferências de cookies</button>
+                <?php endif; ?>
+<?php foreach ($socials as $label => $socialUrl): ?>
                     <?php if ($socialUrl): ?><a class="footer-social-link" href="<?= e($socialUrl) ?>" target="_blank" rel="noopener"><?= e($label) ?></a><?php endif; ?>
                 <?php endforeach; ?>
             </div>
         </div>
     </div>
 </footer>
+<?php /* PORTAL_COOKIE_FOOTER_V91 */ ?>
+<?php if (class_exists('CookieConsentService')): ?>
+    <?= CookieConsentService::renderUi($footerPdo) ?>
+    <?php if (CookieConsentService::enabled($footerPdo)): ?>
+        <script src="<?= e(url('public/js/cookie-consent-v91.js?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.91.0'))) ?>" defer></script>
+    <?php endif; ?>
+<?php endif; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <?php if ($analyticsActive): ?>
 <script async src="https://www.googletagmanager.com/gtag/js?id=<?= e($analyticsMeasurementId) ?>"></script>
