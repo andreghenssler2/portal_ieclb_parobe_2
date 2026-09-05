@@ -1,3 +1,7 @@
+# BEGIN PORTAL IECLB v0.89.0 R13R2 - agenda por link
+RewriteEngine On
+RewriteRule ^agenda\.ics$ agenda-feed.php [L,QSA,NC]
+# END PORTAL IECLB v0.89.0 R13R2 - agenda por link
 # BEGIN PORTAL IECLB v0.36.0 - liderancas
 RewriteEngine On
 RewriteRule ^liderancas?\.sitemaps?\.xml$ sitemap.php [L,QSA]

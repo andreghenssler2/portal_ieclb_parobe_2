@@ -104,7 +104,13 @@ require themeFile($pdo, 'header.php');
         </div>
 
         <div class="d-flex flex-wrap gap-2">
-            <a
+                        <a
+                class="btn btn-success"
+                href="<?=e(url('agenda-exportar.php'))?>"
+            >
+                <i class="bi bi-link-45deg me-1"></i>Exportar / Assinar
+            </a>
+<a
                 class="btn btn-outline-success"
                 href="<?=e(EventCalendarService::agendaIcsUrl($filters, $view === 'calendario' || $listMode === 'mes' ? $month : null))?>"
             >

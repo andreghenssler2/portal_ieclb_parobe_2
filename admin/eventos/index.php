@@ -58,6 +58,7 @@ require __DIR__ . '/../_header.php';
     </div>
     <div class="d-flex gap-2">
         <a class="btn btn-outline-primary" href="<?= e(url('admin/eventos/importar.php')) ?>"><i class="bi bi-box-arrow-in-down me-1"></i>Importação externa</a>
+        <a class="btn btn-outline-success" href="<?= e(url('admin/eventos/exportar.php')) ?>"><i class="bi bi-download me-1"></i>Exportar Agenda</a>
         <a class="btn btn-outline-secondary" href="<?= e(url('admin/eventos/categorias.php')) ?>">Categorias</a>
         <a class="btn btn-primary" href="<?= e(url('admin/eventos/form.php')) ?>">Adicionar novo</a>
     </div>
