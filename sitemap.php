@@ -289,13 +289,28 @@ try {
                 $logoImages[] = mediaUrl((string)$logoPath);
             }
         }
-        sitemapEmitUrl(url(), $groups[$requestFile]['lastmod'], 'daily', '1.0', $logoImages, $includeImages);
-        sitemapEmitUrl(url('agenda'), null, 'daily', '0.8', [], $includeImages);
-        sitemapEmitUrl(url('comunidades'), null, 'monthly', '0.7', [], $includeImages);
-        sitemapEmitUrl(url('grupos'), null, 'monthly', '0.7', [], $includeImages);
-        sitemapEmitUrl(url('galerias'), null, 'weekly', '0.7', [], $includeImages);
-        sitemapEmitUrl(url('documentos'), null, 'weekly', '0.7', [], $includeImages);
-        sitemapEmitUrl(url('liderancas'), null, 'monthly', '0.7', [], $includeImages);
+                /* PORTAL_GERAL_SITEMAP_EMIT_R15R2 */
+        if (($settings['seo_sitemap_geral_home'] ?? '1') === '1') {
+            sitemapEmitUrl(url(), $groups[$requestFile]['lastmod'], 'daily', '1.0', $logoImages, $includeImages);
+        }
+        if (($settings['seo_sitemap_geral_agenda'] ?? '1') === '1') {
+            sitemapEmitUrl(url('agenda'), null, 'daily', '0.8', [], $includeImages);
+        }
+        if (($settings['seo_sitemap_geral_comunidades'] ?? '1') === '1') {
+            sitemapEmitUrl(url('comunidades'), null, 'monthly', '0.7', [], $includeImages);
+        }
+        if (($settings['seo_sitemap_geral_grupos'] ?? '1') === '1') {
+            sitemapEmitUrl(url('grupos'), null, 'monthly', '0.7', [], $includeImages);
+        }
+        if (($settings['seo_sitemap_geral_galerias'] ?? '1') === '1') {
+            sitemapEmitUrl(url('galerias'), null, 'weekly', '0.7', [], $includeImages);
+        }
+        if (($settings['seo_sitemap_geral_documentos'] ?? '1') === '1') {
+            sitemapEmitUrl(url('documentos'), null, 'weekly', '0.7', [], $includeImages);
+        }
+        if (($settings['seo_sitemap_geral_liderancas'] ?? '1') === '1') {
+            sitemapEmitUrl(url('liderancas'), null, 'monthly', '0.7', [], $includeImages);
+        }
     }
 
     if ($requestFile === 'posts.sitemaps.xml') {
