@@ -127,6 +127,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sql .= ' WHERE id = :id';
 
         $pdo->prepare($sql)->execute($params);
+        if (
+            $novaSenha !== ''
+            && class_exists('SessionSecurityService')
+        ) {
+            try {
+                SessionSecurityService::revokeOtherSessions(
+                    $pdo,
+                    $id,
+                    $id,
+                    'senha_alterada_encerrar_sessoes'
+                );
+            } catch (Throwable $ignored) {
+            }
+        }
 
         logAction(
             $pdo,

@@ -33,6 +33,7 @@ require_once __DIR__ . '/app/Services/EditorialWorkflowService.php';
 require_once __DIR__ . '/app/Services/AdminPendingService.php';
 require_once __DIR__ . '/app/Services/MailService.php';
 require_once __DIR__ . '/app/Services/TwoFactorService.php';
+require_once __DIR__ . '/app/Services/SessionSecurityService.php';
 require_once __DIR__ . '/app/Services/FormNotificationService.php';
 require_once __DIR__ . '/app/Services/EmbeddedFormService.php';
 require_once __DIR__ . '/app/Services/FormReplyService.php';
@@ -65,6 +66,16 @@ try {
     if (Auth::check()) {
         $sessionTimeout = (int)siteConfig($bootstrapPdo, 'security_session_timeout_minutes', '60');
         Session::enforceIdleTimeout($sessionTimeout);
+        if (
+            Auth::check()
+            && class_exists('SessionSecurityService')
+        ) {
+            SessionSecurityService::validateAndTouch(
+                $bootstrapPdo,
+                (int)Auth::id(),
+                $sessionTimeout
+            );
+        }
 
         if (Auth::check()) {
             $retentionDays = (int)siteConfig($bootstrapPdo, 'security_audit_retention_days', '180');

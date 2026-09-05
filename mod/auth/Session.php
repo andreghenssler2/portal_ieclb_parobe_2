@@ -10,17 +10,46 @@ final class Session
             return;
         }
 
+        /*
+         * v0.83.0 - endurecimento da sessão PHP.
+         */
+        @ini_set('session.use_strict_mode', '1');
+        @ini_set('session.use_only_cookies', '1');
+        @ini_set('session.cookie_httponly', '1');
+
+        $https =
+            !empty($_SERVER['HTTPS'])
+            && strtolower((string)$_SERVER['HTTPS']) !== 'off';
+
+        if (!$https) {
+            $forwardedProto =
+                strtolower(
+                    trim(
+                        explode(
+                            ',',
+                            (string)(
+                                $_SERVER['HTTP_X_FORWARDED_PROTO']
+                                ?? ''
+                            )
+                        )[0]
+                    )
+                );
+
+            $https =
+                $forwardedProto === 'https'
+                || (int)($_SERVER['SERVER_PORT'] ?? 0) === 443;
+        }
+
         session_set_cookie_params([
             'lifetime' => 0,
             'path' => '/',
-            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+            'secure' => $https,
             'httponly' => true,
             'samesite' => 'Lax',
         ]);
 
         session_start();
     }
-
     public static function regenerate(): void
     {
         session_regenerate_id(true);

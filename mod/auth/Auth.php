@@ -480,6 +480,19 @@ final class Auth
             }
         }
 
+        if (
+            class_exists('SessionSecurityService')
+            && self::id()
+        ) {
+            try {
+                SessionSecurityService::revokeCurrent(
+                    Database::connection(),
+                    (int)self::id(),
+                    'logout'
+                );
+            } catch (Throwable $ignored) {
+            }
+        }
         $_SESSION = [];
 
         if (ini_get('session.use_cookies')) {
@@ -523,6 +536,16 @@ final class Auth
         unset($_SESSION['auth_2fa_pending']);
 
         Session::touchAdminActivity();
+        if (class_exists('SessionSecurityService')) {
+            try {
+                SessionSecurityService::registerCurrent(
+                    $pdo,
+                    (int)$user['id'],
+                    true
+                );
+            } catch (Throwable $ignored) {
+            }
+        }
 
         $pdo->prepare(
             'UPDATE usuarios

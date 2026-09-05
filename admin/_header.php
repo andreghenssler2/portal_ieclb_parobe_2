@@ -147,6 +147,7 @@ $adminPendingTotal =
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                 <li><h6 class="dropdown-header"><?= e($user['perfil_nome'] ?? '') ?></h6></li>
                 <li><a class="dropdown-item" href="<?= e(url('admin/minha-conta.php')) ?>"><i class="bi bi-person me-2"></i>Minha conta</a></li>
+<li><a class="dropdown-item" href="<?= e(url('admin/minhas-sessoes.php')) ?>"><i class="bi bi-pc-display-horizontal me-2"></i>Minhas sessões</a></li>
                 <li><a class="dropdown-item" href="<?= e(url()) ?>" target="_blank"><i class="bi bi-box-arrow-up-right me-2"></i>Ver portal</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item text-danger" href="<?= e(url('admin/logout.php')) ?>"><i class="bi bi-box-arrow-right me-2"></i>Sair</a></li>
@@ -455,6 +456,7 @@ $adminPendingTotal =
                         <?php endif; ?>
                         <?php if (Auth::can('seguranca.gerenciar')): ?>
                             <a class="<?= $isPath('configuracoes/seguranca.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/seguranca.php')) ?>">Segurança</a>
+                            <a class="<?= $isPath('configuracoes/sessoes.php') ? 'active' : '' ?>" href="<?= e(url('admin/configuracoes/sessoes.php')) ?>">Sessões ativas</a>
                             <a
                                 class="<?= $isPath('configuracoes/cabecalhos-http.php') ? 'active' : '' ?>"
                                 href="<?= e(url('admin/configuracoes/cabecalhos-http.php')) ?>"

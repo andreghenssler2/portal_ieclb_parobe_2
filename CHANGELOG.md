@@ -21,6 +21,16 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.83.0 — Sessões e Acessos
+
+- Controle individual das sessões administrativas.
+- Nova tela `Minhas sessões`.
+- Nova tela `Configurações > Sessões ativas`.
+- Revogação remota de acesso.
+- Troca de senha encerra outras sessões.
+- Cookie/ID da sessão PHP reforçados.
+- Nova tabela `user_sessions`.
 ## 0.82.0 — Páginas
 
 - Editor de Páginas com o mesmo layout visual do editor de Notícias.

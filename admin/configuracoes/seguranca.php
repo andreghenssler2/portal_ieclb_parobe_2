@@ -183,6 +183,14 @@ require __DIR__ . '/../_header.php';
             Meu 2FA
         </a>
 
+        <a
+            class="btn btn-outline-primary"
+            href="<?= e(url('admin/configuracoes/sessoes.php')) ?>"
+        >
+            <i class="bi bi-pc-display-horizontal me-1"></i>
+            Sessões ativas
+        </a>
+
         <?php if (Auth::can('auditoria.visualizar')): ?>
             <a
                 class="btn btn-outline-secondary"
