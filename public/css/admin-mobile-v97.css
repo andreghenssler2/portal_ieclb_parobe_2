@@ -1,0 +1,158 @@
+/* Portal IECLB Parobé v0.97.0 - refinamento mobile administrativo */
+html,
+body.admin-body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.admin-main,
+.admin-content,
+.admin-content > * {
+    min-width: 0;
+}
+
+@media (max-width: 991.98px) {
+    .admin-sidebar {
+        --bs-offcanvas-width: min(88vw, 340px);
+    }
+
+    .admin-nav-link,
+    .admin-nav-submenu a,
+    .admin-menu-trigger,
+    .admin-user-button {
+        min-height: 44px;
+    }
+
+    .admin-nav-submenu a {
+        padding-top: .6rem;
+        padding-bottom: .6rem;
+    }
+
+    .admin-topbar .container-fluid {
+        gap: .5rem;
+    }
+
+    .admin-content .table-responsive {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-inline: contain;
+    }
+
+    .admin-content .form-control,
+    .admin-content .form-select {
+        font-size: 16px;
+    }
+
+    .admin-content .modal-dialog {
+        margin: .75rem;
+    }
+
+    .admin-content .modal-content {
+        max-height: calc(100dvh - 1.5rem);
+    }
+
+    .admin-content .modal-body {
+        overflow-y: auto;
+    }
+
+    .admin-content .pagination {
+        gap: .25rem;
+        flex-wrap: wrap;
+    }
+
+    .admin-content .page-link {
+        min-width: 42px;
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .admin-content {
+        padding: 1rem;
+    }
+
+    .admin-content h1,
+    .admin-content .h1,
+    .admin-content .h2,
+    .admin-content .h3 {
+        overflow-wrap: anywhere;
+    }
+
+    .admin-content .card-header,
+    .admin-content .card-body {
+        min-width: 0;
+    }
+
+    .admin-content .d-flex.justify-content-between,
+    .admin-content .d-flex.justify-content-end {
+        flex-wrap: wrap;
+        row-gap: .75rem;
+    }
+
+    .admin-content .btn {
+        min-height: 42px;
+    }
+
+    .admin-content .input-group {
+        max-width: 100%;
+    }
+
+    .admin-content .input-group > .form-control,
+    .admin-content .input-group > .form-select {
+        min-width: 0;
+    }
+
+    .admin-content pre,
+    .admin-content code {
+        overflow-wrap: anywhere;
+    }
+
+    .admin-content pre {
+        white-space: pre-wrap;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .admin-topbar .navbar-brand > span:last-child {
+        display: none;
+    }
+
+    .admin-topbar .admin-user-button {
+        min-width: 42px;
+        padding-left: .55rem;
+        padding-right: .55rem;
+    }
+
+    .admin-content {
+        padding: .85rem;
+    }
+
+    .admin-content .card {
+        border-radius: .7rem;
+    }
+
+    .admin-content .table {
+        font-size: .92rem;
+    }
+
+    .admin-content .btn-group {
+        flex-wrap: wrap;
+    }
+
+    .admin-content .btn-group > .btn {
+        border-radius: .375rem !important;
+        margin: .125rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-body *,
+    .admin-body *::before,
+    .admin-body *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}

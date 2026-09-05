@@ -102,7 +102,11 @@ if (
     <?php /* v0.64.0 - CSS administrativo consolidado */ ?>
     <link
         rel="stylesheet"
-        href="<?= e(url('public/css/admin-v64.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.64.0'))) ?>"
+        href="<?= e(url('public/css/admin-v64.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.64.0'))) ?>
+    <link
+        rel="stylesheet"
+        href="<?= e(url('public/css/admin-mobile-v97.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.97.0'))) ?>"
+    >"
     >
 <!-- Bootstrap JS precisa estar disponível antes dos scripts específicos das páginas. -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -477,6 +481,12 @@ if (
                     <div class="collapse admin-nav-submenu <?= $toolsOpen ? 'show' : '' ?>" id="menuFerramentas">
                         <?php if (Auth::can('tarefas.gerenciar')): ?>
                             <a class="<?= $isPath('ferramentas/tarefas-agendadas.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/tarefas-agendadas.php')) ?>">Tarefas Agendadas</a>
+                        <?php if (Auth::can('configuracoes.gerenciar') || Auth::isAdmin()): ?>
+                            <a
+                                class="<?= $isPath('ferramentas/desempenho.php') ? 'active' : '' ?>"
+                                href="<?= e(url('admin/ferramentas/desempenho.php')) ?>"
+                            >Desempenho</a>
+                        <?php endif; ?>
                         <?php endif; ?>
                         <?php if (Auth::can('backups.gerenciar')): ?>
                             <a class="<?= $isPath('ferramentas/backups.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/backups.php')) ?>">Backups</a>

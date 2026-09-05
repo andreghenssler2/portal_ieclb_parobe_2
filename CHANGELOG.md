@@ -1,5 +1,25 @@
 # Changelog — Portal IECLB Parobé
 
+## v0.97.0 — Refinamento Mobile
+
+- adiciona camada mobile final ao Portal público;
+- adiciona camada mobile final ao Admin;
+- melhora alvos de toque, formulários, modais e tabelas;
+- usa `100dvh` no menu móvel;
+- adiciona suporte a `prefers-reduced-motion`;
+- adiciona `tests/mobile.php`;
+- nenhuma alteração de banco.
+
+## v0.96.0 — Saúde de desempenho e cache
+
+- adiciona Ferramentas → Desempenho;
+- mostra cache, OPcache, PHP, banco e armazenamento;
+- permite configurar TTL do cache;
+- permite limpar cache expirado ou todo o cache;
+- adiciona benchmark seguro de banco e cache;
+- adiciona `tests/performance.php`;
+- não altera conteúdo durante o benchmark.
+
 ## v0.95.0 — SPF, DKIM e DMARC
 
 - adiciona diagnóstico DNS de e-mail;

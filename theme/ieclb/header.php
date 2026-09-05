@@ -148,6 +148,7 @@ if (!$menuPrincipal) {
     <?php if ($activeThemeStyle): ?><link rel="stylesheet" href="<?= e($activeThemeStyle) ?>"><?php endif; ?>
     <?php /* v0.51.0 - responsividade global */ ?>
     <link rel="stylesheet" href="<?= e(url('public/css/responsive-v51.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.51.0'))) ?>">
+    <link rel="stylesheet" href="<?= e(url('public/css/mobile-v97.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.97.0'))) ?>">
     <style>:root{--portal-primary:<?= e($appearancePrimary) ?>;--portal-secondary:<?= e($appearanceSecondary) ?>;--portal-bg:<?= e($appearanceBg) ?>;--portal-text:<?= e($appearanceText) ?>;--portal-footer-bg:<?= e($appearanceFooter) ?>;--portal-footer-text:<?= e($appearanceFooterText) ?>;--portal-container:<?= (int)$appearanceContainer ?>px;--portal-radius:<?= (int)$appearanceRadius ?>px}</style>
     <?php /* PORTAL_GTM_HEAD_R16 */ echo googleTagManagerHead(($themePdo ?? ($pdo ?? Database::connection()))); ?>
 </head>

@@ -1,0 +1,220 @@
+/* Portal IECLB Parobé v0.97.0 - refinamento mobile público */
+html {
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
+}
+body { min-width: 320px; }
+
+button,
+.btn,
+.form-control,
+.form-select,
+.form-check-input,
+.nav-link,
+.dropdown-item {
+    touch-action: manipulation;
+}
+
+@media (max-width: 991.98px) {
+    .portal-header .navbar-collapse {
+        max-height: calc(100dvh - 76px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+    }
+
+    .portal-header .nav-link,
+    .portal-header .dropdown-item,
+    .portal-header .navbar-toggler,
+    .portal-search-form .form-control,
+    .portal-search-form .btn {
+        min-height: 44px;
+    }
+
+    .portal-header .dropdown-item {
+        display: flex;
+        align-items: center;
+    }
+
+    .portal-header .dropdown-menu {
+        padding-top: .25rem;
+        padding-bottom: .25rem;
+    }
+
+    .portal-search-form .form-control {
+        font-size: 16px;
+    }
+
+    .portal-search-form .btn {
+        min-width: 46px;
+    }
+
+    .portal-footer .row {
+        row-gap: 1.5rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    :root {
+        --portal-mobile-gutter: 1rem;
+    }
+
+    .container {
+        --bs-gutter-x: calc(var(--portal-mobile-gutter) * 2);
+    }
+
+    main {
+        overflow-wrap: anywhere;
+    }
+
+    main h1,
+    main .h1,
+    main .display-1,
+    main .display-2,
+    main .display-3,
+    main .display-4,
+    main .display-5 {
+        line-height: 1.12;
+    }
+
+    main h1,
+    main .h1 {
+        font-size: clamp(1.75rem, 8vw, 2.35rem);
+    }
+
+    main h2,
+    main .h2 {
+        font-size: clamp(1.45rem, 6vw, 1.9rem);
+    }
+
+    .lead {
+        font-size: 1.05rem;
+    }
+
+    .card-body {
+        min-width: 0;
+    }
+
+    .public-form .btn,
+    .public-form .form-control,
+    .public-form .form-select,
+    .public-form input[type="date"],
+    .public-form input[type="time"] {
+        min-height: 46px;
+        font-size: 16px;
+    }
+
+    .table-responsive {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-inline: contain;
+    }
+
+    .pagination {
+        flex-wrap: wrap;
+        gap: .25rem;
+    }
+
+    .pagination .page-link {
+        min-width: 42px;
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-dialog {
+        margin: .75rem;
+    }
+
+    .modal-content {
+        max-height: calc(100dvh - 1.5rem);
+    }
+
+    .modal-body {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .gallery-modal-image {
+        max-height: calc(100dvh - 10rem);
+    }
+
+    .agenda-date-box {
+        flex: 0 0 58px;
+    }
+
+    .article-body blockquote {
+        margin-left: 0;
+        margin-right: 0;
+        padding-left: 1rem;
+    }
+
+    .article-body ul,
+    .article-body ol {
+        padding-left: 1.35rem;
+    }
+
+    .footer-social-link {
+        margin-left: 0;
+        margin-right: .9rem;
+        margin-top: .5rem;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+}
+
+@media (max-width: 575.98px) {
+    body {
+        font-size: 1rem;
+    }
+
+    .portal-header .navbar-brand {
+        max-width: calc(100% - 58px);
+    }
+
+    .portal-header .navbar-toggler {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .portal-header .navbar-collapse {
+        max-height: calc(100dvh - 66px);
+    }
+
+    .home-banner-caption .btn {
+        min-height: 44px;
+    }
+
+    .home-banner-caption {
+        max-width: calc(100% - 2rem);
+    }
+
+    .input-group > .form-control,
+    .input-group > .form-select {
+        min-width: 0;
+    }
+
+    .article-body table {
+        font-size: .92rem;
+    }
+
+    .article-body pre {
+        font-size: .86rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto !important;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}
