@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../bootstrap.php';
 require_once __DIR__ . '/../../app/Services/BackupService.php';
 require_once __DIR__ . '/../../app/Services/FullBackupService.php';
+require_once __DIR__ . '/../../app/Services/AutomaticBackupService.php';
 Auth::requirePermission('backups.gerenciar');
 
 $pdo = Database::connection();
@@ -13,6 +14,24 @@ $dbRetention = max(1, min(100, (int)siteConfig($pdo, 'backup_retention_count', '
 $fullRetention = max(1, min(50, (int)siteConfig($pdo, 'backup_full_retention_count', '5')));
 $includeUploads = siteConfig($pdo, 'backup_full_include_uploads', '1') === '1';
 $includeThemes = siteConfig($pdo, 'backup_full_include_themes', '1') === '1';
+$automaticBackupStatus =
+    AutomaticBackupService::status(
+        $pdo,
+        $root
+    );
+
+$automaticDb =
+    (array)(
+        $automaticBackupStatus['database']
+        ?? []
+    );
+
+$automaticFull =
+    (array)(
+        $automaticBackupStatus['full']
+        ?? []
+    );
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Csrf::validate($_POST['_token'] ?? null)) {
@@ -144,7 +163,170 @@ require __DIR__ . '/../_header.php';
 </div>
 
 <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white fw-semibold">Política de retenção</div>
+    <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span class="fw-semibold">
+            <i class="bi bi-clock-history me-1"></i>
+            Backups automáticos
+        </span>
+
+        <a
+            class="btn btn-sm btn-outline-primary"
+            href="<?= e(url('admin/ferramentas/tarefas-agendadas.php')) ?>"
+        >
+            Configurar tarefas
+        </a>
+    </div>
+
+    <div class="card-body">
+        <p class="text-secondary">
+            O Agendador reutiliza os mesmos serviços, retenções e opções desta tela.
+            O backup do banco fica ativo diariamente por padrão; o backup completo
+            fica desativado até você decidir habilitá-lo.
+        </p>
+
+        <div class="row g-3">
+            <div class="col-xl-6">
+                <div class="border rounded-3 p-3 h-100">
+                    <div class="d-flex justify-content-between gap-2 mb-2">
+                        <strong>Banco de dados</strong>
+
+                        <span class="badge <?= !empty($automaticDb['active']) ? 'text-bg-success' : 'text-bg-secondary' ?>">
+                            <?= !empty($automaticDb['active']) ? 'Ativo' : 'Inativo' ?>
+                        </span>
+                    </div>
+
+                    <div class="small text-secondary mb-1">
+                        Intervalo:
+                        <strong>
+                            <?= isset($automaticDb['interval'])
+                                ? (int)$automaticDb['interval'] . ' min'
+                                : 'não registrado' ?>
+                        </strong>
+                    </div>
+
+                    <div class="small text-secondary mb-1">
+                        Próxima execução:
+                        <strong>
+                            <?= !empty($automaticDb['next_run'])
+                                ? e(formatDateBr((string)$automaticDb['next_run']))
+                                : 'não definida' ?>
+                        </strong>
+                    </div>
+
+                    <div class="small text-secondary mb-1">
+                        Última execução:
+                        <strong>
+                            <?= !empty($automaticDb['last_finished'])
+                                ? e(formatDateBr((string)$automaticDb['last_finished']))
+                                : 'ainda não executado' ?>
+                        </strong>
+                    </div>
+
+                    <?php if (!empty($automaticDb['last_status'])): ?>
+                        <div class="small text-secondary mb-1">
+                            Último status:
+                            <span class="badge <?= $automaticDb['last_status'] === 'erro' ? 'text-bg-danger' : ($automaticDb['last_status'] === 'ignorado' ? 'text-bg-warning' : 'text-bg-success') ?>">
+                                <?= e((string)$automaticDb['last_status']) ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($automaticDb['latest_file'])): ?>
+                        <hr>
+
+                        <div class="small">
+                            <div class="text-secondary">
+                                Último arquivo automático
+                            </div>
+
+                            <code>
+                                <?= e((string)$automaticDb['latest_file']['name']) ?>
+                            </code>
+
+                            <div class="text-secondary mt-1">
+                                <?= e(formatBytes((int)$automaticDb['latest_file']['size'])) ?>
+                                ·
+                                <?= e(date('d/m/Y H:i:s', (int)$automaticDb['latest_file']['mtime'])) ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="col-xl-6">
+                <div class="border rounded-3 p-3 h-100">
+                    <div class="d-flex justify-content-between gap-2 mb-2">
+                        <strong>Backup completo</strong>
+
+                        <span class="badge <?= !empty($automaticFull['active']) ? 'text-bg-success' : 'text-bg-secondary' ?>">
+                            <?= !empty($automaticFull['active']) ? 'Ativo' : 'Inativo' ?>
+                        </span>
+                    </div>
+
+                    <div class="small text-secondary mb-1">
+                        Intervalo:
+                        <strong>
+                            <?= isset($automaticFull['interval'])
+                                ? (int)$automaticFull['interval'] . ' min'
+                                : 'não registrado' ?>
+                        </strong>
+                    </div>
+
+                    <div class="small text-secondary mb-1">
+                        Próxima execução:
+                        <strong>
+                            <?= !empty($automaticFull['next_run'])
+                                ? e(formatDateBr((string)$automaticFull['next_run']))
+                                : 'não definida' ?>
+                        </strong>
+                    </div>
+
+                    <div class="small text-secondary mb-1">
+                        Última execução:
+                        <strong>
+                            <?= !empty($automaticFull['last_finished'])
+                                ? e(formatDateBr((string)$automaticFull['last_finished']))
+                                : 'ainda não executado' ?>
+                        </strong>
+                    </div>
+
+                    <?php if (empty($automaticBackupStatus['zip_supported'])): ?>
+                        <div class="alert alert-warning py-2 px-3 small mt-2 mb-0">
+                            ZipArchive não está disponível; o backup completo automático
+                            será ignorado enquanto a extensão não estiver ativa.
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($automaticFull['latest_file'])): ?>
+                        <hr>
+
+                        <div class="small">
+                            <div class="text-secondary">
+                                Último arquivo automático
+                            </div>
+
+                            <code>
+                                <?= e((string)$automaticFull['latest_file']['name']) ?>
+                            </code>
+
+                            <div class="text-secondary mt-1">
+                                <?= e(formatBytes((int)$automaticFull['latest_file']['size'])) ?>
+                                ·
+                                <?= e(date('d/m/Y H:i:s', (int)$automaticFull['latest_file']['mtime'])) ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-text mt-3">
+            As execuções dependem do cron.php configurado no servidor.
+        </div>
+    </div>
+</div>
+<div class="card-header bg-white fw-semibold">Política de retenção</div>
     <div class="card-body">
         <form method="post" class="row g-3 align-items-end">
             <?= Csrf::field() ?>

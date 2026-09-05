@@ -27,6 +27,15 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.89.0 — Backups automáticos
+
+- Backup automático diário do banco.
+- Backup completo automático semanal opcional.
+- Integração com o Scheduler.
+- Monitoramento em Ferramentas > Backups.
+- Reutilização das retenções e opções existentes.
+- Sem nova tabela no banco.
 ## 0.88.0 — Performance e cache por conteúdo
 
 - Cache individual para Notícias e Páginas públicas.

@@ -59,6 +59,20 @@ final class SchedulerService
                 'enabled' => true,
                 'priority' => 35,
             ],
+            'backup_banco_automatico' => [
+                'name' => 'Backup automático do banco',
+                'description' => 'Cria diariamente um backup do banco e aplica a retenção configurada em Ferramentas > Backups.',
+                'interval' => 1440,
+                'enabled' => true,
+                'priority' => 65,
+            ],
+            'backup_completo_automatico' => [
+                'name' => 'Backup completo automático',
+                'description' => 'Cria um backup completo periódico usando as opções de uploads, temas e retenção de Ferramentas > Backups.',
+                'interval' => 10080,
+                'enabled' => false,
+                'priority' => 70,
+            ],
 ];
     }
 
@@ -299,7 +313,9 @@ final class SchedulerService
             'limpar_logs_auditoria' => self::cleanupAuditLogs($pdo),
             'verificar_integridade_midia' => self::verifyMediaIntegrity($pdo),
             'receber_respostas_email' => self::syncInboundFormReplies($pdo),
-            'limpar_derivados_midia' => self::cleanupMediaDerivedFiles($pdo),            default => throw new RuntimeException('Handler da tarefa não encontrado: ' . $slug),
+            'limpar_derivados_midia' => self::cleanupMediaDerivedFiles($pdo),            'backup_banco_automatico' => self::automaticDatabaseBackup($pdo),
+            'backup_completo_automatico' => self::automaticFullBackup($pdo),
+            default => throw new RuntimeException('Handler da tarefa não encontrado: ' . $slug),
         };
     }
 
@@ -333,7 +349,74 @@ final class SchedulerService
                 ),
         ];
     }
-    private static function publishScheduledContent(PDO $pdo): array
+        /** @return array{status:string,message:string} */
+    private static function automaticDatabaseBackup(PDO $pdo): array
+    {
+        $root =
+            dirname(
+                __DIR__,
+                2
+            );
+
+        $serviceFile =
+            $root
+            . '/app/Services/AutomaticBackupService.php';
+
+        if (
+            !class_exists('AutomaticBackupService')
+            && is_file($serviceFile)
+        ) {
+            require_once $serviceFile;
+        }
+
+        if (!class_exists('AutomaticBackupService')) {
+            return [
+                'status' => 'ignorado',
+                'message' => 'AutomaticBackupService não está disponível.',
+            ];
+        }
+
+        return
+            AutomaticBackupService::runDatabase(
+                $pdo,
+                $root
+            );
+    }
+
+    /** @return array{status:string,message:string} */
+    private static function automaticFullBackup(PDO $pdo): array
+    {
+        $root =
+            dirname(
+                __DIR__,
+                2
+            );
+
+        $serviceFile =
+            $root
+            . '/app/Services/AutomaticBackupService.php';
+
+        if (
+            !class_exists('AutomaticBackupService')
+            && is_file($serviceFile)
+        ) {
+            require_once $serviceFile;
+        }
+
+        if (!class_exists('AutomaticBackupService')) {
+            return [
+                'status' => 'ignorado',
+                'message' => 'AutomaticBackupService não está disponível.',
+            ];
+        }
+
+        return
+            AutomaticBackupService::runFull(
+                $pdo,
+                $root
+            );
+    }
+private static function publishScheduledContent(PDO $pdo): array
     {
         $now = date('Y-m-d H:i:s');
         $posts = 0;
