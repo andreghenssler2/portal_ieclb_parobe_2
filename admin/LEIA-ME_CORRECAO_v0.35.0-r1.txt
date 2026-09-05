@@ -1,0 +1,17 @@
+Portal IECLB Parobé - correção v0.35.0-r1
+
+Corrige o atualizador que parava com:
+- Undefined variable $newsletterOpen
+- Undefined variable $startsPath
+- Undefined variable $groupsOpen
+- Não foi possível registrar o estado do menu Documentos
+
+Também corrige um segundo erro latente no patch da busca administrativa/pública.
+
+COMO USAR
+1. Substitua o atualizar_v0.35.0.php antigo por este.
+2. NÃO restaure os backups e NÃO desfaça a atualização parcial.
+3. Execute novamente:
+   php atualizar_v0.35.0.php
+
+O atualizador reconhece tabelas e arquivos que já foram modificados e continua de onde parou.

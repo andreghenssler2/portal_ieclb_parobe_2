@@ -34,6 +34,8 @@ $defaults = [
     'media_allow_documents' => '1',
     'media_delete_file_on_delete' => '1',
 
+    'media_post_cover_default_show' => '0',
+
     'media_optimize_images' => '1',
     'media_image_max_width' => '1920',
     'media_generate_webp' => '1',
@@ -107,6 +109,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     )
                 );
 
+            $s['media_post_cover_default_show'] =
+                (string)(
+                    (
+                        (string)(
+                            $_POST['media_post_cover_default_show']
+                            ?? '0'
+                        )
+                    ) === '1'
+                        ? '1'
+                        : '0'
+                );
             foreach (
                 [
                     'media_organize_year_month',
@@ -129,6 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'media_organize_year_month' => 'booleano',
                 'media_allow_documents' => 'booleano',
                 'media_delete_file_on_delete' => 'booleano',
+                'media_post_cover_default_show' => 'booleano',
                 'media_optimize_images' => 'booleano',
                 'media_image_max_width' => 'numero',
                 'media_generate_webp' => 'booleano',
@@ -375,6 +389,67 @@ require __DIR__ . '/../_header.php';
                     >
                         Apagar arquivo físico quando a mídia for excluída
                     </label>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="mt-4 mb-4">
+            <h2 class="h5 mb-1">
+                Imagem de capa das Notícias
+            </h2>
+
+            <div class="text-secondary small mb-3">
+                Define o padrão usado ao criar uma nova Notícia/Post.
+                Cada notícia ainda pode alterar esta opção individualmente.
+            </div>
+
+            <div class="border rounded-3 p-3">
+                <div class="fw-semibold mb-2">
+                    Exibir a imagem de capa quando a notícia for aberta?
+                </div>
+
+                <div class="form-check">
+                    <input
+                        class="form-check-input"
+                        type="radio"
+                        name="media_post_cover_default_show"
+                        id="mediaPostCoverNo"
+                        value="0"
+                        <?= $s['media_post_cover_default_show'] !== '1' ? 'checked' : '' ?>
+                    >
+
+                    <label
+                        class="form-check-label"
+                        for="mediaPostCoverNo"
+                    >
+                        Não, ocultar na leitura
+                        <span class="badge text-bg-secondary ms-1">Padrão</span>
+                    </label>
+                </div>
+
+                <div class="form-check mt-2">
+                    <input
+                        class="form-check-input"
+                        type="radio"
+                        name="media_post_cover_default_show"
+                        id="mediaPostCoverYes"
+                        value="1"
+                        <?= $s['media_post_cover_default_show'] === '1' ? 'checked' : '' ?>
+                    >
+
+                    <label
+                        class="form-check-label"
+                        for="mediaPostCoverYes"
+                    >
+                        Sim, exibir ao abrir a notícia
+                    </label>
+                </div>
+
+                <div class="form-text mt-3">
+                    Mesmo quando oculta na leitura, a imagem continua disponível
+                    para cards, listagens, destaques e compartilhamentos.
                 </div>
             </div>
         </div>

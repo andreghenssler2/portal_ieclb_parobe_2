@@ -1,0 +1,15 @@
+[30-Aug-2026 18:30:06 America/Sao_Paulo] PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY093]: Invalid parameter number in /home1/ieclbp28/public_html/admin/auditoria/index.php:45
+Stack trace:
+#0 /home1/ieclbp28/public_html/admin/auditoria/index.php(45): PDOStatement->execute(Array)
+#1 {main}
+  thrown in /home1/ieclbp28/public_html/admin/auditoria/index.php on line 45
+[30-Aug-2026 18:33:50 America/Sao_Paulo] PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY093]: Invalid parameter number in /home1/ieclbp28/public_html/admin/auditoria/index.php:45
+Stack trace:
+#0 /home1/ieclbp28/public_html/admin/auditoria/index.php(45): PDOStatement->execute(Array)
+#1 {main}
+  thrown in /home1/ieclbp28/public_html/admin/auditoria/index.php on line 45
+[30-Aug-2026 19:48:00 America/Sao_Paulo] PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY093]: Invalid parameter number in /home1/ieclbp28/public_html/admin/auditoria/index.php:45
+Stack trace:
+#0 /home1/ieclbp28/public_html/admin/auditoria/index.php(45): PDOStatement->execute(Array)
+#1 {main}
+  thrown in /home1/ieclbp28/public_html/admin/auditoria/index.php on line 45

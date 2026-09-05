@@ -1,0 +1,18 @@
+Portal IECLB Parobé v0.35.0 - Documentos / Downloads
+
+INSTALAÇÃO
+1. Extraia o ZIP na raiz do Portal.
+2. Execute no terminal:
+   php atualizar_v0.35.0.php
+3. Atualize o navegador com Ctrl+F5.
+
+FLUXO
+1. Envie PDF/Word/Excel/etc. em Mídia > Biblioteca.
+2. Abra Documentos > Adicionar Novo.
+3. Selecione o arquivo, informe título/categoria e publique.
+
+ROTAS
+/documentos
+/documento/{slug}
+/documento/{slug}/baixar
+/documentos.sitemaps.xml

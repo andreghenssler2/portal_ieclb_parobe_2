@@ -1,0 +1,2 @@
+ALTER TABLE posts
+    MODIFY COLUMN exibir_imagem_capa TINYINT(1) NOT NULL DEFAULT 0;

@@ -15,6 +15,14 @@ if (!in_array($defaultStatus, ['rascunho', 'publicado'], true)) {
 }
 $defaultCommentsOpen = siteConfig($pdo, 'comments_default_open', '1') === '1' ? 1 : 0;
 
+$defaultShowPostCover =
+    siteConfig(
+        $pdo,
+        'media_post_cover_default_show',
+        '0'
+    ) === '1'
+        ? 1
+        : 0;
 $post = [
     'titulo' => '',
     'slug' => '',
@@ -30,7 +38,7 @@ $post = [
     'comentarios_ativos' => $defaultCommentsOpen,
     'publicado_em' => '',
     'imagem_capa_id' => '',
-    'exibir_imagem_capa' => 1,
+    'exibir_imagem_capa' => $defaultShowPostCover,
 ];
 
 if ($id) {
@@ -114,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $post['destaque'] = isset($_POST['destaque']) ? 1 : 0;
     $post['comentarios_ativos'] = isset($_POST['comentarios_ativos']) ? 1 : 0;
     $post['seo_noindex'] = isset($_POST['seo_noindex']) ? 1 : 0;
-    $post['exibir_imagem_capa'] = ((string)($_POST['exibir_imagem_capa'] ?? '1') === '0') ? 0 : 1;
+    $post['exibir_imagem_capa'] = ((string)($_POST['exibir_imagem_capa'] ?? (string)$defaultShowPostCover) === '0') ? 0 : 1;
 
     $contentBlocks = ContentBlockService::prepareForEditor(
         $pdo,
@@ -218,7 +226,7 @@ $publicadoEm = trim((string)($_POST['publicado_em'] ?? ''));
                     'resumo' => trim((string)($_POST['resumo'] ?? '')) ?: null,
                     'conteudo' => $conteudo,
                     'imagem_capa_id' => $imagemCapaId,
-                    'exibir_imagem_capa' => ((string)($_POST['exibir_imagem_capa'] ?? '1') === '0') ? 0 : 1,
+                    'exibir_imagem_capa' => ((string)($_POST['exibir_imagem_capa'] ?? (string)$defaultShowPostCover) === '0') ? 0 : 1,
                     'seo_titulo' => trim((string)($_POST['seo_titulo'] ?? '')) ?: null,
                     'seo_descricao' => trim((string)($_POST['seo_descricao'] ?? '')) ?: null,
                     'seo_noindex' => isset($_POST['seo_noindex']) ? 1 : 0,
