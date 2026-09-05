@@ -11,7 +11,13 @@ $dataDe = trim((string)($_GET['data_de'] ?? ''));
 $dataAte = trim((string)($_GET['data_ate'] ?? ''));
 
 $where = ['1=1']; $params=[];
-if ($q !== '') { $where[]='(l.acao LIKE :q OR l.entidade LIKE :q OR l.detalhes LIKE :q OR l.ip LIKE :q OR u.nome LIKE :q OR u.email LIKE :q)'; $params['q']='%'.$q.'%'; }
+if ($q !== '') { $where[]='(l.acao LIKE :q_acao OR l.entidade LIKE :q_entidade OR l.detalhes LIKE :q_detalhes OR l.ip LIKE :q_ip OR u.nome LIKE :q_nome OR u.email LIKE :q_email)'; $searchValue = '%' . $q . '%';
+$params['q_acao'] = $searchValue;
+$params['q_entidade'] = $searchValue;
+$params['q_detalhes'] = $searchValue;
+$params['q_ip'] = $searchValue;
+$params['q_nome'] = $searchValue;
+$params['q_email'] = $searchValue; }
 if (in_array($nivel,['info','warning','critical'],true)) { $where[]='COALESCE(l.nivel,"info")=:nivel'; $params['nivel']=$nivel; }
 if ($usuarioId>0) { $where[]='l.usuario_id=:usuario_id'; $params['usuario_id']=$usuarioId; }
 if ($acao!=='') { $where[]='l.acao=:acao'; $params['acao']=$acao; }
