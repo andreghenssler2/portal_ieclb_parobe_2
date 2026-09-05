@@ -1,5 +1,15 @@
 # Changelog — Portal IECLB Parobé
 
+## v0.90.0 — Consolidação
+
+- consolida os hotfixes finais da v0.89.0;
+- padroniza seleção de imagens e documentos por modal;
+- consolida Agenda com Cultos, Festas, Atividades e Reuniões;
+- adiciona importação/exportação/assinatura iCalendar;
+- consolida controles e configuração do Sitemap;
+- adiciona Google Tag Manager administrável;
+- completa a CSP para Google Tag Manager e Google Analytics 4.
+
 Este arquivo passa a ser o histórico consolidado do projeto a partir da
 v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 `docs/releases/`.
