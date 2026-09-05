@@ -25,6 +25,8 @@ $images = $pdo->query(
     "SELECT id, caminho, titulo, alt_text, nome_original
      FROM midias WHERE mime_type LIKE 'image/%' ORDER BY id DESC"
 )->fetchAll();
+$midias = $images;
+$currentBannerImage = !empty($banner['imagem_id']) ? MediaService::find($pdo, (int)$banner['imagem_id']) : null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $banner = array_merge($banner, $_POST);
@@ -124,15 +126,64 @@ require __DIR__ . '/../_header.php';
         <div class="col-xl-8">
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-4">
-                    <div class="mb-3">
+                                        <div class="mb-3">
                         <label class="form-label">Imagem</label>
-                        <select class="form-select banner-image-select" name="imagem_id" required>
-                            <option value="">Selecione...</option>
-                            <?php foreach ($images as $image): ?>
-                                <option value="<?= (int)$image['id'] ?>" data-url="<?= e(mediaUrl($image['caminho'])) ?>" <?= (string)$banner['imagem_id'] === (string)$image['id'] ? 'selected' : '' ?>><?= e($image['titulo'] ?: $image['nome_original']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div id="bannerPreview" class="mt-3"></div>
+
+                        <input
+                            type="hidden"
+                            name="imagem_id"
+                            id="bannerImageId"
+                            value="<?= e((string)$banner['imagem_id']) ?>"
+                        >
+
+                        <div
+                            id="bannerImagePreview"
+                            class="border rounded-3 p-3 bg-body-tertiary"
+                        >
+                            <?php if (
+                                $currentBannerImage
+                                && MediaService::isImage($currentBannerImage)
+                            ): ?>
+                                <div class="d-flex flex-wrap align-items-center gap-3">
+                                    <img
+                                        src="<?= e(mediaUrl((string)$currentBannerImage['caminho'])) ?>"
+                                        alt="<?= e(
+                                            (string)(
+                                                $currentBannerImage['alt_text']
+                                                ?: $currentBannerImage['titulo']
+                                                ?: $currentBannerImage['nome_original']
+                                            )
+                                        ) ?>"
+                                        class="img-thumbnail featured-preview"
+                                    >
+                                    <div class="fw-semibold">
+                                        <?= e(
+                                            (string)(
+                                                $currentBannerImage['titulo']
+                                                ?: $currentBannerImage['nome_original']
+                                            )
+                                        ) ?>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <div class="text-secondary small">
+                                    Nenhuma imagem selecionada.
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="btn btn-outline-primary mt-3"
+                            id="bannerImageOpen"
+                        >
+                            <i class="bi bi-images me-1"></i>
+                            Escolher na Biblioteca de Mídia
+                        </button>
+
+                        <div class="form-text">
+                            A imagem é obrigatória. O upload também pode ser feito dentro do modal.
+                        </div>
                     </div>
                     <div class="row g-3">
                         <div class="col-12">
@@ -179,16 +230,24 @@ require __DIR__ . '/../_header.php';
         </div>
     </div>
 </form>
+<?php require __DIR__ . '/../_editor_media_picker.php'; ?>
+
+<script src="<?= e(url('public/js/editor-media-picker.js?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.89.0'))) ?>"></script>
+<script src="<?= e(url('public/js/admin-image-modal-v89-r5.js?v=0.89.0-r5')) ?>"></script>
 <script>
-function renderBannerPreview() {
-    const select = document.querySelector('.banner-image-select');
-    const target = document.getElementById('bannerPreview');
-    if (!select || !target) return;
-    const option = select.options[select.selectedIndex];
-    const src = option ? option.dataset.url : '';
-    target.innerHTML = src ? '<img class="banner-form-preview" src="' + src.replace(/"/g, '&quot;') + '" alt="Pré-visualização">' : '';
-}
-document.querySelector('.banner-image-select')?.addEventListener('change', renderBannerPreview);
-renderBannerPreview();
+PortalMediaPicker.init({
+    modalId: 'portalMediaPickerModal',
+    uploadUrl: <?= json_encode(url('admin/midias/upload-editor.php'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>,
+    csrfToken: <?= json_encode(Csrf::token(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>
+});
+
+PortalAdminImageModal.bindSingle({
+    openButton: document.getElementById('bannerImageOpen'),
+    input: document.getElementById('bannerImageId'),
+    preview: document.getElementById('bannerImagePreview'),
+    title: 'Escolher imagem do banner',
+    subtitle: 'Selecione uma imagem da Biblioteca de Mídia ou faça upload de uma nova.',
+    confirmText: 'Usar no banner'
+});
 </script>
 <?php require __DIR__ . '/../_footer.php'; ?>

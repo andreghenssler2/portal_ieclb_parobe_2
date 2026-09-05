@@ -34,6 +34,15 @@ $images = $pdo->query(
      WHERE mime_type LIKE 'image/%'
      ORDER BY id DESC"
 )->fetchAll();
+$midias = $images;
+$galleryImagesById = [];
+foreach ($images as $galleryImage) {
+    $galleryImagesById[(int)$galleryImage['id']] = $galleryImage;
+}
+$currentGalleryCover =
+    !empty($galeria['imagem_capa_id'])
+        ? MediaService::find($pdo, (int)$galeria['imagem_capa_id'])
+        : null;
 
 $selected = [];
 if ($id > 0) {
@@ -278,73 +287,99 @@ require __DIR__ . '/../_header.php';
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white fw-semibold">Fotos da galeria</div>
+                        <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <span class="fw-semibold">Fotos da galeria</span>
+
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary"
+                        id="galleryPhotosOpen"
+                    >
+                        <i class="bi bi-images me-1"></i>
+                        Adicionar/editar fotos
+                    </button>
+                </div>
 
                 <div class="card-body p-4">
-                    <?php if (!$images): ?>
-                        <div class="alert alert-light border mb-0">
-                            Nenhuma imagem disponível. Envie imagens na Biblioteca de Mídia primeiro.
-                        </div>
-                    <?php else: ?>
-                        <div class="row g-3 gallery-picker-grid">
-                            <?php foreach ($images as $image): ?>
-                                <?php
-                                $imageId = (int)$image['id'];
-                                $isSelected = isset($selected[$imageId]);
-                                ?>
+                    <p class="text-secondary small">
+                        As fotos são escolhidas no modal da Biblioteca de Mídia.
+                        Você pode selecionar várias de uma vez e fazer upload sem sair da galeria.
+                    </p>
 
-                                <div class="col-sm-6 col-lg-4">
-                                    <div class="gallery-picker-item border rounded-3 p-2 h-100 <?= $isSelected ? 'is-selected' : '' ?>">
-                                        <label class="d-block cursor-pointer">
-                                            <img
-                                                src="<?= e(mediaUrl($image['caminho'])) ?>"
-                                                class="w-100 rounded gallery-picker-thumb"
-                                                alt="<?= e($image['alt_text'] ?: $image['titulo'] ?: $image['nome_original']) ?>"
-                                            >
+                    <div id="gallerySelectedImages">
+                        <?php foreach ($selected as $imageId => $meta): ?>
+                            <?php
+                            $imageId = (int)$imageId;
+                            $image = $galleryImagesById[$imageId] ?? null;
+                            if (!$image) {
+                                continue;
+                            }
+                            ?>
+                            <div
+                                class="border rounded-3 p-2 mb-2"
+                                data-r5-gallery-item
+                                data-media-id="<?= $imageId ?>"
+                            >
+                                <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center">
+                                    <img
+                                        src="<?= e(mediaUrl((string)$image['caminho'])) ?>"
+                                        alt="<?= e($image['alt_text'] ?: $image['titulo'] ?: $image['nome_original']) ?>"
+                                        class="img-thumbnail flex-shrink-0"
+                                        style="width:120px;height:82px;object-fit:cover"
+                                    >
 
-                                            <div class="form-check mt-2">
+                                    <div class="flex-grow-1 min-w-0">
+                                        <div class="fw-semibold text-truncate mb-2">
+                                            <?= e($image['titulo'] ?: $image['nome_original']) ?>
+                                        </div>
+
+                                        <input
+                                            type="hidden"
+                                            name="midias[]"
+                                            value="<?= $imageId ?>"
+                                        >
+
+                                        <div class="row g-2">
+                                            <div class="col-md-8">
                                                 <input
-                                                    class="form-check-input gallery-image-check"
-                                                    type="checkbox"
-                                                    name="midias[]"
-                                                    value="<?= $imageId ?>"
-                                                    <?= $isSelected ? 'checked' : '' ?>
+                                                    class="form-control form-control-sm"
+                                                    name="legenda[<?= $imageId ?>]"
+                                                    value="<?= e((string)($meta['legenda'] ?? '')) ?>"
+                                                    placeholder="Legenda opcional"
+                                                    data-r5-caption
                                                 >
-                                                <span class="form-check-label small fw-semibold text-truncate d-block">
-                                                    <?= e($image['titulo'] ?: $image['nome_original']) ?>
-                                                </span>
                                             </div>
-                                        </label>
 
-                                        <div class="gallery-image-fields mt-2 <?= $isSelected ? '' : 'd-none' ?>">
-                                            <input
-                                                class="form-control form-control-sm mb-2"
-                                                name="legenda[<?= $imageId ?>]"
-                                                value="<?= e($selected[$imageId]['legenda'] ?? '') ?>"
-                                                placeholder="Legenda opcional"
-                                                <?= $isSelected ? '' : 'disabled' ?>
-                                            >
-
-                                            <input
-                                                class="form-control form-control-sm"
-                                                type="number"
-                                                name="ordem[<?= $imageId ?>]"
-                                                value="<?= e((string)($selected[$imageId]['ordem'] ?? '')) ?>"
-                                                placeholder="Ordem"
-                                                <?= $isSelected ? '' : 'disabled' ?>
-                                            >
+                                            <div class="col-md-4">
+                                                <input
+                                                    class="form-control form-control-sm"
+                                                    type="number"
+                                                    name="ordem[<?= $imageId ?>]"
+                                                    value="<?= e((string)($meta['ordem'] ?? '')) ?>"
+                                                    placeholder="Ordem"
+                                                    data-r5-order
+                                                >
+                                            </div>
                                         </div>
                                     </div>
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-danger flex-shrink-0"
+                                        data-r5-gallery-remove
+                                        title="Remover foto da galeria"
+                                    >
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <div class="col-xl-4">
+<div class="col-xl-4">
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white fw-semibold">Publicação</div>
 
@@ -429,18 +464,65 @@ require __DIR__ . '/../_header.php';
                 <div class="card-header bg-white fw-semibold">Imagem de capa</div>
 
                 <div class="card-body p-4">
-                    <select class="form-select" name="imagem_capa_id">
-                        <option value="">Sem capa</option>
+                                        <input
+                        type="hidden"
+                        name="imagem_capa_id"
+                        id="galleryCoverId"
+                        value="<?= e((string)$galeria['imagem_capa_id']) ?>"
+                    >
 
-                        <?php foreach ($images as $image): ?>
-                            <option
-                                value="<?= (int)$image['id'] ?>"
-                                <?= (string)$galeria['imagem_capa_id'] === (string)$image['id'] ? 'selected' : '' ?>
-                            >
-                                <?= e($image['titulo'] ?: $image['nome_original']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div id="galleryCoverPreview">
+                        <?php if (
+                            $currentGalleryCover
+                            && MediaService::isImage($currentGalleryCover)
+                        ): ?>
+                            <div class="d-flex flex-wrap align-items-center gap-3">
+                                <img
+                                    src="<?= e(mediaUrl((string)$currentGalleryCover['caminho'])) ?>"
+                                    alt="<?= e(
+                                        (string)(
+                                            $currentGalleryCover['alt_text']
+                                            ?: $currentGalleryCover['titulo']
+                                            ?: $currentGalleryCover['nome_original']
+                                        )
+                                    ) ?>"
+                                    class="img-thumbnail featured-preview"
+                                >
+
+                                <div>
+                                    <div class="fw-semibold">
+                                        <?= e(
+                                            (string)(
+                                                $currentGalleryCover['titulo']
+                                                ?: $currentGalleryCover['nome_original']
+                                            )
+                                        ) ?>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-link text-danger p-0 mt-1"
+                                        data-media-featured-remove
+                                    >
+                                        Remover imagem
+                                    </button>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-secondary small">
+                                Sem imagem de capa.
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary w-100 mt-3"
+                        id="galleryCoverOpen"
+                    >
+                        <i class="bi bi-images me-1"></i>
+                        Escolher capa na Biblioteca
+                    </button>
 
                     <div class="form-text">
                         A capa não precisa obrigatoriamente fazer parte do álbum.
@@ -454,21 +536,35 @@ require __DIR__ . '/../_header.php';
         </div>
     </div>
 </form>
-
+<?php require __DIR__ . '/../_editor_media_picker.php'; ?>
+<script src="<?= e(url('public/js/editor-media-picker.js?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.89.0'))) ?>"></script>
+<script src="<?= e(url('public/js/admin-image-modal-v89-r5.js?v=0.89.0-r5')) ?>"></script>
 <script>
-document.querySelectorAll('.gallery-image-check').forEach(function (check) {
-    check.addEventListener('change', function () {
-        const item = check.closest('.gallery-picker-item');
-        const fields = item.querySelector('.gallery-image-fields');
+PortalMediaPicker.init({
+    modalId: 'portalMediaPickerModal',
+    uploadUrl: <?= json_encode(url('admin/midias/upload-editor.php'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>,
+    csrfToken: <?= json_encode(Csrf::token(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>
+});
 
-        item.classList.toggle('is-selected', check.checked);
-        fields.classList.toggle('d-none', !check.checked);
+PortalAdminImageModal.bindSingle({
+    openButton: document.getElementById('galleryCoverOpen'),
+    input: document.getElementById('galleryCoverId'),
+    preview: document.getElementById('galleryCoverPreview'),
+    title: 'Escolher capa da galeria',
+    subtitle: 'Selecione uma imagem da Biblioteca de Mídia para usar como capa.',
+    confirmText: 'Usar como capa'
+});
 
-        fields.querySelectorAll('input').forEach(function (field) {
-            field.disabled = !check.checked;
-        });
-    });
+PortalAdminImageModal.bindMultiple({
+    openButton: document.getElementById('galleryPhotosOpen'),
+    container: document.getElementById('gallerySelectedImages'),
+    title: 'Selecionar fotos da galeria',
+    subtitle: 'Marque uma ou várias imagens. Você também pode fazer upload dentro deste modal.',
+    confirmText: 'Usar fotos selecionadas',
+    emptyText: 'Nenhuma foto selecionada para esta galeria.'
 });
 </script>
+
+
 
 <?php require __DIR__ . '/../_footer.php'; ?>

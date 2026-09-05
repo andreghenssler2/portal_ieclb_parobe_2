@@ -45,6 +45,7 @@ $midias = $pdo->query(
      ORDER BY id DESC
      LIMIT 100"
 )->fetchAll();
+$imagemCapaAtual = !empty($evento['imagem_capa_id']) ? MediaService::find($pdo, (int)$evento['imagem_capa_id']) : null;
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -251,30 +252,74 @@ require __DIR__ . '/../_header.php';
                 <textarea class="form-control" name="resumo" rows="3" placeholder="Texto curto para a agenda e página inicial"><?= e((string)($evento['resumo'] ?? '')) ?></textarea>
             </div>
 
-            <div class="col-12">
+                        <div class="col-12">
                 <div class="border rounded-3 p-3 bg-light-subtle">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <label class="form-label fw-semibold mb-0">Imagem destacada</label>
-                            <div class="form-text mt-0">Envie uma nova imagem ou escolha uma da Biblioteca de Mídia.</div>
-                        </div>
-                        <a class="btn btn-sm btn-outline-secondary" target="_blank" href="<?= e(url('admin/midias/index.php?tipo=imagens')) ?>">Abrir biblioteca</a>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-lg-5">
-                            <input class="form-control" type="file" name="imagem_capa_upload" accept="image/jpeg,image/png,image/webp,image/gif">
-                            <div class="form-text">JPG, PNG, WEBP ou GIF. Máximo <?= e(formatBytes(mediaUploadMaxSize($pdo))) ?>.</div>
-                        </div>
-                        <div class="col-lg-7">
-                            <select class="form-select" name="imagem_capa_id" id="imagemCapaSelect">
-                                <option value="">Sem imagem destacada</option>
-                                <?php foreach ($midias as $m): ?>
-                                    <option value="<?= (int)$m['id'] ?>" data-url="<?= e(mediaUrl($m['caminho'])) ?>" <?= (string)($evento['imagem_capa_id'] ?? '') === (string)$m['id'] ? 'selected' : '' ?>><?= e($m['titulo'] ?: $m['nome_original']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold mb-0">
+                            Imagem destacada
+                        </label>
+                        <div class="form-text mt-0">
+                            Escolha na Biblioteca de Mídia. O modal também permite enviar uma nova imagem.
                         </div>
                     </div>
-                    <div id="imagemCapaPreview" class="mt-3"></div>
+
+                    <input
+                        type="hidden"
+                        name="imagem_capa_id"
+                        id="eventCoverId"
+                        value="<?= e((string)($evento['imagem_capa_id'] ?? '')) ?>"
+                    >
+
+                    <div id="eventCoverPreview">
+                        <?php if (
+                            $imagemCapaAtual
+                            && MediaService::isImage($imagemCapaAtual)
+                        ): ?>
+                            <div class="d-flex flex-wrap align-items-center gap-3">
+                                <img
+                                    src="<?= e(mediaUrl((string)$imagemCapaAtual['caminho'])) ?>"
+                                    alt="<?= e(
+                                        (string)(
+                                            $imagemCapaAtual['alt_text']
+                                            ?: $imagemCapaAtual['titulo']
+                                            ?: $imagemCapaAtual['nome_original']
+                                        )
+                                    ) ?>"
+                                    class="img-thumbnail featured-preview"
+                                >
+                                <div>
+                                    <div class="fw-semibold">
+                                        <?= e(
+                                            (string)(
+                                                $imagemCapaAtual['titulo']
+                                                ?: $imagemCapaAtual['nome_original']
+                                            )
+                                        ) ?>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-link text-danger p-0 mt-1"
+                                        data-media-featured-remove
+                                    >
+                                        Remover imagem
+                                    </button>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-secondary small">
+                                Nenhuma imagem destacada.
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary mt-3"
+                        id="eventCoverOpen"
+                    >
+                        <i class="bi bi-images me-1"></i>
+                        Escolher na Biblioteca de Mídia
+                    </button>
                 </div>
             </div>
 
@@ -309,18 +354,45 @@ require __DIR__ . '/../_header.php';
 </form>
 
 <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
-<script>
-tinymce.init({selector:'#descricao',height:380,menubar:false,plugins:'link lists table code image media',toolbar:'undo redo | blocks | bold italic | bullist numlist | link image table | alignleft aligncenter alignright | code'});
+<?php require __DIR__ . '/../_editor_media_picker.php'; ?>
+<script src="<?= e(url('public/js/editor-media-picker.js?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.89.0'))) ?>"></script>
+<script src="<?= e(url('public/js/admin-image-modal-v89-r5.js?v=0.89.0-r5')) ?>"></script>
 
-const select = document.getElementById('imagemCapaSelect');
-const preview = document.getElementById('imagemCapaPreview');
-function updatePreview() {
-    const option = select.options[select.selectedIndex];
-    const src = option?.dataset?.url || '';
-    preview.innerHTML = src ? `<img src="${src}" alt="Prévia" class="img-thumbnail featured-preview">` : '';
-}
-select.addEventListener('change', updatePreview);
-updatePreview();
+<script>
+PortalMediaPicker.init({
+    modalId: 'portalMediaPickerModal',
+    uploadUrl: <?= json_encode(url('admin/midias/upload-editor.php'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>,
+    csrfToken: <?= json_encode(Csrf::token(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>
+});
+
+tinymce.init({
+    selector:'#descricao',
+    height:380,
+    menubar:false,
+    plugins:'link lists table code image media',
+    toolbar:'undo redo | blocks | bold italic | bullist numlist | link portalmedia table | alignleft aligncenter alignright | code',
+    setup:function(ed){
+        ed.ui.registry.addButton('portalmedia',{
+            icon:'image',
+            tooltip:'Inserir imagens da Biblioteca de Mídia',
+            onAction:function(){
+                PortalMediaPicker.openForEditor(ed);
+            }
+        });
+        ed.on('change keyup',function(){
+            ed.save();
+        });
+    }
+});
+
+PortalAdminImageModal.bindSingle({
+    openButton: document.getElementById('eventCoverOpen'),
+    input: document.getElementById('eventCoverId'),
+    preview: document.getElementById('eventCoverPreview'),
+    title: 'Escolher imagem destacada do evento',
+    subtitle: 'Selecione uma imagem da Biblioteca de Mídia ou faça upload de uma nova.',
+    confirmText: 'Usar como imagem destacada'
+});
 
 const tipoEvento = document.getElementById('tipoEvento');
 const santaCeiaWrap = document.getElementById('santaCeiaWrap');
