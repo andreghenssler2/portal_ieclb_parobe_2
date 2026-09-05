@@ -362,6 +362,10 @@ if (
                         <a class="<?= $isPath('seo/social.php') ? 'active' : '' ?>" href="<?= e(url('admin/seo/social.php')) ?>">Social</a>
                         <a class="<?= $isPath('seo/sitemap.php') ? 'active' : '' ?>" href="<?= e(url('admin/seo/sitemap.php')) ?>">Sitemap</a>
                         <a class="<?= $isPath('seo/feeds.php') ? 'active' : '' ?>" href="<?= e(url('admin/seo/feeds.php')) ?>">Feeds RSS</a>
+                        <a
+                            class="<?= $isPath('seo/google-tags.php') ? 'active' : '' ?>"
+                            href="<?= e(url('admin/seo/google-tags.php')) ?>"
+                        >Google Tag Manager</a>
                     </div>
                 <?php endif; ?>
 

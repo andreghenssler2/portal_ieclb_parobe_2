@@ -148,8 +148,10 @@ if (!$menuPrincipal) {
     <?php /* v0.51.0 - responsividade global */ ?>
     <link rel="stylesheet" href="<?= e(url('public/css/responsive-v51.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.51.0'))) ?>">
     <style>:root{--portal-primary:<?= e($appearancePrimary) ?>;--portal-secondary:<?= e($appearanceSecondary) ?>;--portal-bg:<?= e($appearanceBg) ?>;--portal-text:<?= e($appearanceText) ?>;--portal-footer-bg:<?= e($appearanceFooter) ?>;--portal-footer-text:<?= e($appearanceFooterText) ?>;--portal-container:<?= (int)$appearanceContainer ?>px;--portal-radius:<?= (int)$appearanceRadius ?>px}</style>
+    <?php /* PORTAL_GTM_HEAD_R16 */ echo googleTagManagerHead(($themePdo ?? ($pdo ?? Database::connection()))); ?>
 </head>
 <body>
+<?php /* PORTAL_GTM_BODY_R16 */ echo googleTagManagerBody(($themePdo ?? ($pdo ?? Database::connection()))); ?>
 <header class="border-bottom bg-white portal-header <?= $appearanceSticky ? 'sticky-top shadow-sm' : '' ?>">
     <nav class="navbar navbar-expand-lg container py-3">
         <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= e(url()) ?>">

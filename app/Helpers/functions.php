@@ -387,6 +387,114 @@ function mediaUrl(?string $path): string
     return url(ltrim($path, '/'));
 }
 
+/**
+ * Google Tag Manager configurado no Portal.
+ */
+function googleTagManagerContainerId(?PDO $pdo = null): string
+{
+    try {
+        $pdo ??= Database::connection();
+
+        $settings =
+            siteConfigAll(
+                $pdo,
+                true
+            );
+
+        $enabled =
+            (string)(
+                $settings['google_tag_manager_ativo']
+                ?? '0'
+            ) === '1';
+
+        if (!$enabled) {
+            return '';
+        }
+
+        $containerId =
+            strtoupper(
+                trim(
+                    (string)(
+                        $settings['google_tag_manager_container_id']
+                        ?? ''
+                    )
+                )
+            );
+
+        return
+            preg_match(
+                '/^GTM-[A-Z0-9]+$/',
+                $containerId
+            )
+                ? $containerId
+                : '';
+    } catch (Throwable $ignored) {
+        return '';
+    }
+}
+
+function googleTagManagerHead(?PDO $pdo = null): string
+{
+    $containerId =
+        googleTagManagerContainerId(
+            $pdo
+        );
+
+    if ($containerId === '') {
+        return '';
+    }
+
+    $jsonId =
+        json_encode(
+            $containerId,
+            JSON_UNESCAPED_SLASHES
+            | JSON_UNESCAPED_UNICODE
+        );
+
+    if (!is_string($jsonId)) {
+        return '';
+    }
+
+    return
+        "<!-- Google Tag Manager -->\n"
+        . "<script>\n"
+        . "(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\n"
+        . "new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\n"
+        . "j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\n"
+        . "'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\n"
+        . "})(window,document,'script','dataLayer',"
+        . $jsonId
+        . ");\n"
+        . "</script>\n"
+        . "<!-- End Google Tag Manager -->\n";
+}
+
+function googleTagManagerBody(?PDO $pdo = null): string
+{
+    $containerId =
+        googleTagManagerContainerId(
+            $pdo
+        );
+
+    if ($containerId === '') {
+        return '';
+    }
+
+    $safeId =
+        htmlspecialchars(
+            $containerId,
+            ENT_QUOTES,
+            'UTF-8'
+        );
+
+    return
+        "<!-- Google Tag Manager (noscript) -->\n"
+        . '<noscript><iframe src="https://www.googletagmanager.com/ns.html?id='
+        . $safeId
+        . '" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>'
+        . "\n<!-- End Google Tag Manager (noscript) -->\n";
+}
+
 function logAction(PDO $pdo, string $acao, ?string $entidade = null, ?int $entidadeId = null, ?string $detalhes = null, string $nivel = 'info'): void
 {
     // v0.31.0: alterações de conteúdo invalidam fragmentos/páginas públicas.
