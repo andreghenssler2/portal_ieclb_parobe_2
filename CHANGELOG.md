@@ -22,6 +22,15 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.84.0 — Autosave e recuperação de rascunhos
+
+- Autosave nos editores de Notícias e Páginas.
+- Recuperação após fechamento/interrupção.
+- Indicador visual do autosave.
+- Recuperação do TinyMCE, formulário e blocos.
+- Rascunho separado do conteúdo definitivo.
+- Nova tabela `content_autosaves`.
 ## 0.83.0 — Sessões e Acessos
 
 - Controle individual das sessões administrativas.

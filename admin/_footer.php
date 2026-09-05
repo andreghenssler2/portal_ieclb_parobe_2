@@ -18,5 +18,17 @@
     });
 })();
 </script>
+<script
+    src="<?= e(
+        url(
+            'public/js/admin-autosave-v84.js?v='
+            . rawurlencode(
+                defined('APP_VERSION')
+                    ? (string)APP_VERSION
+                    : '0.84.0'
+            )
+        )
+    ) ?>"
+></script>
 </body>
 </html>

@@ -301,6 +301,18 @@ $publicadoEm = trim((string)($_POST['publicado_em'] ?? ''));
                     $status
                 );
 logAction($pdo, $id ? 'noticia.editar' : 'noticia.criar', 'posts', $savedId, $titulo);
+                /* v0.84.0 - autosave_limpo_apos_salvar_post */
+                if (class_exists('ContentAutosaveService')) {
+                    try {
+                        ContentAutosaveService::delete(
+                            $pdo,
+                            (int)Auth::id(),
+                            'post',
+                            $id ? (int)$id : 0
+                        );
+                    } catch (Throwable $ignored) {
+                    }
+                }
                 Session::flash('success', $id ? 'Notícia atualizada.' : 'Notícia criada.');
                 header('Location: ' . url('admin/noticias/index.php'));
                 exit;

@@ -25,6 +25,13 @@ require_once __DIR__ . '/app/Services/CategoryService.php';
 require_once __DIR__ . '/app/Services/PageHierarchyService.php';
 require_once __DIR__ . '/app/Services/MenuHierarchyService.php';
 require_once __DIR__ . '/app/Services/ContentBlockService.php';
+$autosaveServiceFile =
+    __DIR__
+    . '/app/Services/ContentAutosaveService.php';
+
+if (is_file($autosaveServiceFile)) {
+    require_once $autosaveServiceFile;
+}
 require_once __DIR__ . '/app/Services/DynamicContentBlockService.php';
 require_once __DIR__ . '/app/Services/ContentPatternService.php';
 require_once __DIR__ . '/app/Services/EditorialBulkService.php';

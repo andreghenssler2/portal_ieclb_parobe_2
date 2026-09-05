@@ -909,6 +909,16 @@
       });
     });
 
+    /*
+     * v0.84.0 - permite que o autosave restaure visualmente os blocos.
+     */
+    root._portalAutosaveRestoreBlocks = function (nextBlocks) {
+      if (!Array.isArray(nextBlocks)) return;
+
+      blocks = clone(nextBlocks);
+      render();
+      sync();
+    };
     root.closest('form')?.addEventListener('submit', sync);
     render();
   }
@@ -917,5 +927,18 @@
     init() {
       document.querySelectorAll('[data-content-block-editor]').forEach(init);
     }
+  };
+
+  window.ContentBlockEditor.restoreAll = function (blocks) {
+    document
+      .querySelectorAll('[data-content-block-editor]')
+      .forEach((root) => {
+        if (
+          typeof root._portalAutosaveRestoreBlocks
+          === 'function'
+        ) {
+          root._portalAutosaveRestoreBlocks(blocks);
+        }
+      });
   };
 })();

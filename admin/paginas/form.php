@@ -208,6 +208,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw $txe;
                 }
                 logAction($pdo, $id ? 'pagina.editar' : 'pagina.criar', 'paginas', $savedId, $titulo);
+                /* v0.84.0 - autosave_limpo_apos_salvar_pagina */
+                if (class_exists('ContentAutosaveService')) {
+                    try {
+                        ContentAutosaveService::delete(
+                            $pdo,
+                            (int)Auth::id(),
+                            'pagina',
+                            $id ? (int)$id : 0
+                        );
+                    } catch (Throwable $ignored) {
+                    }
+                }
                 Session::flash('success', $id ? 'Página atualizada.' : 'Página criada.');
                 header('Location: ' . url('admin/paginas/index.php'));
                 exit;
