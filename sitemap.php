@@ -7,6 +7,55 @@ require_once __DIR__ . '/bootstrap.php';
 $pdo = Database::connection();
 CategoryService::ensureSchema($pdo);
 $settings = siteConfigAll($pdo);
+/* PORTAL_GERAL_SITEMAP_DB_REFRESH_R15R3
+ * As opções do Geral são lidas diretamente do banco para evitar qualquer
+ * valor antigo mantido no cache de configurações da requisição.
+ */
+$generalSitemapSettingKeys = [
+    'seo_sitemap_geral_home',
+    'seo_sitemap_geral_agenda',
+    'seo_sitemap_geral_comunidades',
+    'seo_sitemap_geral_grupos',
+    'seo_sitemap_geral_galerias',
+    'seo_sitemap_geral_documentos',
+    'seo_sitemap_geral_liderancas',
+];
+
+try {
+    $placeholders = implode(
+        ',',
+        array_fill(0, count($generalSitemapSettingKeys), '?')
+    );
+
+    $generalSettingsStmt = $pdo->prepare(
+        "SELECT chave,valor
+         FROM configuracoes
+         WHERE chave IN ({$placeholders})"
+    );
+
+    $generalSettingsStmt->execute(
+        $generalSitemapSettingKeys
+    );
+
+    foreach ($generalSettingsStmt->fetchAll() ?: [] as $generalSettingRow) {
+        $generalSettingKey =
+            (string)($generalSettingRow['chave'] ?? '');
+
+        if (
+            $generalSettingKey !== ''
+            && in_array(
+                $generalSettingKey,
+                $generalSitemapSettingKeys,
+                true
+            )
+        ) {
+            $settings[$generalSettingKey] =
+                (string)($generalSettingRow['valor'] ?? '0');
+        }
+    }
+} catch (Throwable $ignored) {
+    // Mantém os defaults já carregados se o banco estiver em migração.
+}
 
 if (($settings['seo_sitemap_ativo'] ?? '1') !== '1') {
     http_response_code(404);
@@ -15,6 +64,10 @@ if (($settings['seo_sitemap_ativo'] ?? '1') !== '1') {
 }
 
 header('Content-Type: application/xml; charset=UTF-8');
+/* PORTAL_SITEMAP_NOCACHE_R15R3 */
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
 header('X-Robots-Tag: noindex, follow');
 
 /** Escape seguro para XML. */

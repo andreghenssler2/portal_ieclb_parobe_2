@@ -26,7 +26,8 @@ $defaults = [
     'seo_sitemap_imagens' => '1',
     'seo_sitemap_ultima_geracao' => '',
 ];
-$settings = array_merge($defaults, siteConfigAll($pdo));
+/* PORTAL_SITEMAP_REFRESH_R15R3 */
+$settings = array_merge($defaults, siteConfigAll($pdo, true));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Csrf::validate($_POST['_token'] ?? null)) {
@@ -38,6 +39,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $settings['seo_sitemap_ultima_geracao'] = date('Y-m-d H:i:s');
         saveSiteConfig($pdo, 'seo_sitemap_ultima_geracao', $settings['seo_sitemap_ultima_geracao'], 'datahora');
+        /* PORTAL_SITEMAP_AFTER_SAVE_R15R3 */
+        $settings = array_merge($defaults, siteConfigAll($pdo, true));
+
+        if (class_exists('CacheService', false)) {
+            CacheService::clearGroup('public');
+            CacheService::clearGroup('content-page');
+        }
         logAction($pdo, 'seo.sitemap.atualizar', 'configuracoes', null, 'Configurações do índice e sub-sitemaps atualizadas');
         Session::flash('success', 'Sitemaps atualizados. O índice e os sub-sitemaps são dinâmicos; novos conteúdos publicados entram automaticamente.');
         header('Location: ' . url('admin/seo/sitemap.php'));

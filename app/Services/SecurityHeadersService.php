@@ -440,8 +440,8 @@ final class SecurityHeadersService
             "font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com",
             "img-src 'self' data: blob: https:",
             "media-src 'self' blob: https:",
-            "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://*.google-analytics.com",
-            "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://www.google.com https://maps.google.com",
+            "connect-src 'self' https://www.googletagmanager.com https://*.googletagmanager.com https://analytics.google.com https://*.analytics.google.com https://www.google-analytics.com https://region1.google-analytics.com https://*.google-analytics.com",
+            "frame-src 'self' https://www.googletagmanager.com https://www.youtube.com https://www.youtube-nocookie.com https://www.google.com https://maps.google.com",
             "worker-src 'self' blob:",
             "manifest-src 'self'",
         ];
