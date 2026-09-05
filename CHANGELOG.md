@@ -1,5 +1,16 @@
 # Changelog — Portal IECLB Parobé
 
+## v0.98.0 — Acessibilidade e navegação por teclado
+
+- adiciona skip link no Portal e no Admin;
+- adiciona alvos de conteúdo com foco programático;
+- reforça foco visível;
+- adiciona suporte a forced colors;
+- adiciona Central de Acessibilidade;
+- audita imagens sem alt e iframes sem title em páginas públicas principais;
+- adiciona `tests/accessibility.php`;
+- reconstrói defensivamente o bloco CSS do Admin.
+
 ## v0.97.0 — Refinamento Mobile
 
 - adiciona camada mobile final ao Portal público;

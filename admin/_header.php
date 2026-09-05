@@ -102,18 +102,25 @@ if (
     <?php /* v0.64.0 - CSS administrativo consolidado */ ?>
     <link
         rel="stylesheet"
-        href="<?= e(url('public/css/admin-v64.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.64.0'))) ?>
+        href="<?= e(url('public/css/admin-v64.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.64.0'))) ?>"
+    >
+    <?php if (is_file(dirname(__DIR__) . '/public/css/admin-mobile-v97.css')): ?>
     <link
         rel="stylesheet"
         href="<?= e(url('public/css/admin-mobile-v97.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.97.0'))) ?>"
-    >"
+    >
+    <?php endif; ?>
+    <link
+        rel="stylesheet"
+        href="<?= e(url('public/css/accessibility-v98.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.98.0'))) ?>"
     >
 <!-- Bootstrap JS precisa estar disponível antes dos scripts específicos das páginas. -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script defer src="<?= e(url('public/js/admin-menu-v34.js')) ?>"></script>
 </head>
 <body class="admin-body">
-<nav class="navbar navbar-dark admin-topbar sticky-top">
+<a class="portal-skip-link" href="#admin-conteudo">Ir para o conteúdo administrativo</a>
+<nav class="navbar navbar-dark admin-topbar sticky-top" aria-label="Barra superior administrativa">
     <div class="container-fluid px-3 px-lg-4">
         <div class="d-flex align-items-center gap-2">
             <button class="admin-menu-trigger d-lg-none" type="button" id="adminMobileMenuToggle" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" aria-controls="adminSidebar" aria-label="Abrir menu">
@@ -486,6 +493,12 @@ if (
                                 class="<?= $isPath('ferramentas/desempenho.php') ? 'active' : '' ?>"
                                 href="<?= e(url('admin/ferramentas/desempenho.php')) ?>"
                             >Desempenho</a>
+                        <?php if (Auth::can('configuracoes.gerenciar') || Auth::isAdmin()): ?>
+                            <a
+                                class="<?= $isPath('ferramentas/acessibilidade.php') ? 'active' : '' ?>"
+                                href="<?= e(url('admin/ferramentas/acessibilidade.php')) ?>"
+                            >Acessibilidade</a>
+                        <?php endif; ?>
                         <?php endif; ?>
                         <?php endif; ?>
                         <?php if (Auth::can('backups.gerenciar')): ?>
@@ -561,7 +574,7 @@ if (
         </div>
     </aside>
 
-    <main class="admin-main flex-grow-1">
+    <main id="admin-conteudo" class="admin-main flex-grow-1" tabindex="-1">
         <div class="admin-content container-fluid">
             <?php if ($msg = Session::flash('success')): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
