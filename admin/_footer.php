@@ -30,5 +30,12 @@
         )
     ) ?>"
 ></script>
+<script
+    src="<?= e(
+        url(
+            'public/js/admin-autosave-v84-r3.js?v=0.84.0-r3'
+        )
+    ) ?>"
+></script>
 </body>
 </html>

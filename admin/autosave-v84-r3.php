@@ -5,31 +5,27 @@ declare(strict_types=1);
 require_once __DIR__ . '/../bootstrap.php';
 
 /*
- * v0.84.0 R2
+ * v0.84.0 R3
  *
- * O endpoint não depende apenas do bootstrap para carregar o serviço.
- * Isso corrige instalações onde o Portal está funcionando, porém a classe
- * ContentAutosaveService não foi registrada pelo bootstrap.
+ * Endpoint NOVO para evitar cache/opcache do autosave.php antigo.
+ * Se o bootstrap ainda não tiver carregado o serviço, usamos um arquivo
+ * exclusivo da R3, evitando depender do estado das tentativas anteriores.
  */
 if (!class_exists('ContentAutosaveService')) {
-    $autosaveServiceFile =
+    $r3ServiceFile =
         __DIR__
-        . '/../app/Services/ContentAutosaveService.php';
+        . '/../app/Services/ContentAutosaveServiceV84R3.php';
 
-    if (is_file($autosaveServiceFile)) {
-        require_once $autosaveServiceFile;
+    if (is_file($r3ServiceFile)) {
+        require_once $r3ServiceFile;
     }
 }
 
-header(
-    'Content-Type: application/json; charset=utf-8'
-);
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 
-header(
-    'Cache-Control: no-store, max-age=0'
-);
-
-function autosaveJson(
+function autosaveV84R3Json(
     array $data,
     int $status = 200
 ): never {
@@ -46,46 +42,50 @@ function autosaveJson(
 }
 
 if (!Auth::check()) {
-    autosaveJson(
+    autosaveV84R3Json(
         [
             'ok' => false,
             'error' => 'Sua sessão expirou.',
             'login_required' => true,
+            'endpoint' => 'v0.84.0-R3',
         ],
         401
     );
 }
 
 if (!class_exists('ContentAutosaveService')) {
-    autosaveJson(
+    autosaveV84R3Json(
         [
             'ok' => false,
-            'error' => 'Serviço de autosave indisponível.',
+            'error' => 'Serviço de autosave R3 não carregado.',
+            'endpoint' => 'v0.84.0-R3',
+            'service_file_exists' =>
+                is_file(
+                    __DIR__
+                    . '/../app/Services/ContentAutosaveServiceV84R3.php'
+                ),
         ],
         503
     );
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    autosaveJson(
+    autosaveV84R3Json(
         [
             'ok' => false,
             'error' => 'Método não permitido.',
+            'endpoint' => 'v0.84.0-R3',
         ],
         405
     );
 }
 
-if (
-    !Csrf::validate(
-        $_POST['_token']
-        ?? null
-    )
-) {
-    autosaveJson(
+if (!Csrf::validate($_POST['_token'] ?? null)) {
+    autosaveV84R3Json(
         [
             'ok' => false,
             'error' => 'Token de segurança inválido.',
+            'endpoint' => 'v0.84.0-R3',
         ],
         419
     );
@@ -113,14 +113,13 @@ $permission =
 
 if (
     $permission === ''
-    || !Auth::can(
-        $permission
-    )
+    || !Auth::can($permission)
 ) {
-    autosaveJson(
+    autosaveV84R3Json(
         [
             'ok' => false,
             'error' => 'Você não possui permissão para este autosave.',
+            'endpoint' => 'v0.84.0-R3',
         ],
         403
     );
@@ -152,9 +151,7 @@ $pdo =
     Database::connection();
 
 try {
-    ContentAutosaveService::ensureSchema(
-        $pdo
-    );
+    ContentAutosaveService::ensureSchema($pdo);
 
     if ($action === 'load') {
         $row =
@@ -165,10 +162,11 @@ try {
                 $contentId
             );
 
-        autosaveJson(
+        autosaveV84R3Json(
             [
                 'ok' => true,
                 'draft' => $row,
+                'endpoint' => 'v0.84.0-R3',
             ]
         );
     }
@@ -181,39 +179,39 @@ try {
             );
 
         if ($raw === '') {
-            autosaveJson(
+            autosaveV84R3Json(
                 [
                     'ok' => false,
                     'error' => 'Rascunho vazio.',
+                    'endpoint' => 'v0.84.0-R3',
                 ],
                 422
             );
         }
 
-        if (
-            strlen($raw)
-            > 4 * 1024 * 1024
-        ) {
-            autosaveJson(
+        if (strlen($raw) > 4 * 1024 * 1024) {
+            autosaveV84R3Json(
                 [
                     'ok' => false,
                     'error' => 'O rascunho automático ultrapassou 4 MB.',
+                    'endpoint' => 'v0.84.0-R3',
                 ],
                 413
             );
         }
 
-        $payload =
+        $draft =
             json_decode(
                 $raw,
                 true
             );
 
-        if (!is_array($payload)) {
-            autosaveJson(
+        if (!is_array($draft)) {
+            autosaveV84R3Json(
                 [
                     'ok' => false,
                     'error' => 'Formato de rascunho inválido.',
+                    'endpoint' => 'v0.84.0-R3',
                 ],
                 422
             );
@@ -225,25 +223,16 @@ try {
                 $userId,
                 $type,
                 $contentId,
-                $payload
+                $draft
             );
 
-        try {
-            if (random_int(1, 50) === 1) {
-                ContentAutosaveService::cleanup(
-                    $pdo,
-                    30
-                );
-            }
-        } catch (Throwable $ignored) {
-        }
-
-        autosaveJson(
+        autosaveV84R3Json(
             [
                 'ok' => true,
                 'updated_at' =>
                     $row['updated_at']
                     ?? null,
+                'endpoint' => 'v0.84.0-R3',
             ]
         );
     }
@@ -257,23 +246,25 @@ try {
                 $contentId
             );
 
-        autosaveJson(
+        autosaveV84R3Json(
             [
                 'ok' => true,
                 'deleted' => $deleted,
+                'endpoint' => 'v0.84.0-R3',
             ]
         );
     }
 
-    autosaveJson(
+    autosaveV84R3Json(
         [
             'ok' => false,
             'error' => 'Ação de autosave inválida.',
+            'endpoint' => 'v0.84.0-R3',
         ],
         422
     );
 } catch (Throwable $e) {
-    autosaveJson(
+    autosaveV84R3Json(
         [
             'ok' => false,
             'error' =>
@@ -281,6 +272,7 @@ try {
                 && APP_DEBUG
                     ? $e->getMessage()
                     : 'Não foi possível processar o autosave.',
+            'endpoint' => 'v0.84.0-R3',
         ],
         500
     );
