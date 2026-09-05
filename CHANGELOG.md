@@ -1,5 +1,15 @@
 # Changelog — Portal IECLB Parobé
 
+## v0.93.0 — Teste seguro de restaurabilidade
+
+- adiciona teste de restaurabilidade para backups do banco;
+- valida SHA-256, tabelas e estrutura do dump SQL;
+- adiciona teste de integridade do backup completo;
+- revalida arquivos do manifest.json por tamanho e SHA-256;
+- adiciona Ferramentas → Backups → Teste de restauração;
+- adiciona `tests/backups.php`;
+- o teste não restaura nem sobrescreve o Portal ativo.
+
 ## v0.92.0 — Auditoria de Perfis e Permissões
 
 - adiciona Auditoria de Permissões no Admin;

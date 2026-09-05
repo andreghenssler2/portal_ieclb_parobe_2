@@ -384,6 +384,7 @@ final class PermissionAuditService
             'admin/login.php',
             'admin/logout.php',
             'admin/2fa.php',
+            'admin/login-2fa.php',
         ];
 
         $iterator =
@@ -406,10 +407,13 @@ final class PermissionAuditService
             $relative = self::relativePath($root, $file);
             $base = basename($relative);
 
+            /* PORTAL_PERMISSION_AUDIT_R4 */
             if (
                 str_starts_with($base, '_')
                 || str_contains($relative, '/_update_payload')
                 || str_contains($relative, '/storage/')
+                || str_starts_with($relative, 'admin/app/')
+                || preg_match('/^(?:atualizar|corrigir|reverter)_v.*\.php$/i', $base)
             ) {
                 continue;
             }
@@ -485,6 +489,12 @@ final class PermissionAuditService
                     'Auth::requireLogin('
                 );
 
+            $hasAuthCheck =
+                str_contains(
+                    $content,
+                    'Auth::check('
+                );
+
             $isPublic =
                 in_array(
                     $relative,
@@ -493,10 +503,17 @@ final class PermissionAuditService
                 );
 
             $protection =
-                $requiredPermissions
+                (
+                    $requiredPermissions
+                    || (
+                        $hasAuthCheck
+                        && $canPermissions
+                    )
+                )
                     ? 'permission'
                     : (
                         $hasRequireLogin
+                        || $hasAuthCheck
                             ? 'login'
                             : (
                                 $isPublic

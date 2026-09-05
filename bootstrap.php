@@ -47,6 +47,7 @@ require_once __DIR__ . '/app/Services/RevisionService.php';
 require_once __DIR__ . '/app/Services/EditorialWorkflowService.php';
 require_once __DIR__ . '/app/Services/AdminPendingService.php';
 require_once __DIR__ . '/app/Services/PermissionAuditService.php';
+require_once __DIR__ . '/app/Services/BackupRestoreTestService.php';
 $adminAdvancedSearchServiceFile =
     __DIR__
     . '/app/Services/AdminAdvancedSearchService.php';

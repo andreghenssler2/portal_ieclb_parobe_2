@@ -128,6 +128,13 @@ require __DIR__ . '/../_header.php';
         <p class="text-secondary mb-0">Backups do banco e cópias completas do conteúdo do portal.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        <a
+            class="btn btn-outline-success"
+            href="<?= e(url('admin/ferramentas/backup-teste.php')) ?>"
+        >
+            <i class="bi bi-shield-check me-1"></i>
+            Teste de restauração
+        </a>
         <form method="post">
             <?= Csrf::field() ?>
             <input type="hidden" name="acao" value="criar_db">
