@@ -1,5 +1,17 @@
 # Changelog — Portal IECLB Parobé
 
+## v0.92.0 — Auditoria de Perfis e Permissões
+
+- adiciona Auditoria de Permissões no Admin;
+- adiciona matriz Perfil × Permissão;
+- exporta a matriz em CSV;
+- audita integridade das tabelas de perfis/permissões;
+- detecta vínculos órfãos ou duplicados;
+- compara permissões usadas no código com as cadastradas no banco;
+- revisa a proteção estática das páginas administrativas;
+- adiciona `tests/permissions.php`;
+- não altera automaticamente as permissões existentes.
+
 ## v0.91.0 — Cookies e Consentimento
 
 - adiciona Central pública de Consentimento de Cookies;

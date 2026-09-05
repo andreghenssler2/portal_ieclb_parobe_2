@@ -382,6 +382,7 @@ if (
                         <?php if (Auth::can('permissoes.gerenciar')): ?>
                             <a class="<?= $startsPath('perfis') ? 'active' : '' ?>" href="<?= e(url('admin/perfis/index.php#funcoes')) ?>">Funções</a>
                             <a class="<?= $startsPath('perfis') ? 'active' : '' ?>" href="<?= e(url('admin/perfis/index.php#permissoes')) ?>">Permissões</a>
+                            <a class="<?= $isPath('perfis/auditoria.php') ? 'active' : '' ?>" href="<?= e(url('admin/perfis/auditoria.php')) ?>">Auditoria de Permissões</a>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
