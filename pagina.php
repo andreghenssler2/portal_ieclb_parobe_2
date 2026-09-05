@@ -42,6 +42,89 @@ $metaImageWidth = (int)($pagina['imagem_capa_largura'] ?? 0);
 $metaImageHeight = (int)($pagina['imagem_capa_altura'] ?? 0);
 $metaImageType = trim((string)($pagina['imagem_capa_mime'] ?? ''));$metaOgType = 'article';
 $canonicalUrl = contentUrl('pagina', (string)$pagina['slug']);
+$showPageCoverGlobal =
+    siteConfig(
+        $pdo,
+        'media_page_cover_show',
+        '0'
+    ) === '1';
+
+$pageContentPublic =
+    (string)(
+        $pagina['conteudo']
+        ?? ''
+    );
+
+$pageSummaryPublic =
+    trim(
+        html_entity_decode(
+            strip_tags(
+                (string)(
+                    $pagina['resumo']
+                    ?? ''
+                )
+            ),
+            ENT_QUOTES | ENT_HTML5,
+            'UTF-8'
+        )
+    );
+
+$normalizePageText =
+    static function (
+        string $value
+    ): string {
+        $value =
+            html_entity_decode(
+                strip_tags($value),
+                ENT_QUOTES | ENT_HTML5,
+                'UTF-8'
+            );
+
+        $value =
+            str_replace(
+                "\u{00A0}",
+                ' ',
+                $value
+            );
+
+        return
+            preg_replace(
+                '/\s+/u',
+                ' ',
+                trim($value)
+            )
+            ?? trim($value);
+    };
+
+if (
+    $pageSummaryPublic !== ''
+    && preg_match(
+        '~^\s*(<p\b[^>]*>[\s\S]*?</p>)~iu',
+        $pageContentPublic,
+        $firstParagraphMatch
+    ) === 1
+) {
+    $firstParagraphHtml =
+        (string)$firstParagraphMatch[1];
+
+    if (
+        $normalizePageText(
+            $firstParagraphHtml
+        )
+        === $normalizePageText(
+            $pageSummaryPublic
+        )
+    ) {
+        $pageContentPublic =
+            substr(
+                $pageContentPublic,
+                strlen(
+                    (string)$firstParagraphMatch[0]
+                )
+            );
+    }
+}
+
 require themeFile($pdo, 'header.php');
 ?>
 <article class="container py-5 content-reading">
@@ -63,15 +146,20 @@ require themeFile($pdo, 'header.php');
 
     <header class="mb-4">
         <h1 class="display-5 fw-bold mb-3"><?= e($pagina['titulo']) ?></h1>
-        <?php if ($pagina['resumo']): ?><p class="lead text-secondary"><?= e($pagina['resumo']) ?></p><?php endif; ?>
-    </header>
+        </header>
 
     <?php if ($cover): ?>
-        <img class="article-cover mb-4" src="<?= e(mediaUrl((string)$cover)) ?>" alt="<?= e($pagina['imagem_capa_alt'] ?: $pagina['titulo']) ?>">
+<?php if ($cover && $showPageCoverGlobal): ?>
+<img
+    class="article-cover mb-4"
+    src="<?= e(mediaUrl((string)$cover)) ?>"
+    alt="<?= e((string)($pagina['imagem_capa_alt'] ?: $pagina['titulo'])) ?>"
+>
+<?php endif; ?>
     <?php endif; ?>
 
-    <?php if (trim((string)$pagina['conteudo']) !== ''): ?>
-        <div class="article-body"><?= $pagina['conteudo'] ?></div>
+    <?php if (trim($pageContentPublic) !== ''): ?>
+        <div class="article-body"><?= $pageContentPublic ?></div>
     <?php endif; ?>
 
     <?= ContentBlockService::render($pdo, 'pagina', (int)$pagina['id']) ?>

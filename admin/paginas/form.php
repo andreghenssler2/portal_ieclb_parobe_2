@@ -219,221 +219,794 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = $id ? 'Editar página' : 'Nova página';
+
+$authUser =
+    Auth::user()
+    ?: [];
+
+$authorName =
+    (string)(
+        $authUser['nome']
+        ?? $authUser['email']
+        ?? 'Usuário'
+    );
+
+$lastEdited = '';
+
+if (
+    $id
+    && !empty(
+        $pagina['updated_at']
+    )
+) {
+    try {
+        $lastEdited =
+            (
+                new DateTime(
+                    (string)$pagina['updated_at']
+                )
+            )->format(
+                'd/m/Y H:i'
+            );
+    } catch (Throwable $ignored) {
+        $lastEdited = '';
+    }
+}
+
 require __DIR__ . '/../_header.php';
 ?>
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-1"><?= e($pageTitle) ?></h1>
-        <p class="text-secondary mb-0">Crie páginas institucionais com URL própria.</p>
-    </div>
-    <div class="d-flex flex-wrap gap-2">
-        <?php if ($id): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/revisoes/index.php?tipo=pagina&id=' . $id)) ?>"><i class="bi bi-clock-history me-1"></i>Revisões (<?= (int)$revisionCount ?>)</a><?php endif; ?>
-        <?php if ($id && $pagina['status'] === 'publicado'): ?>
-            <a class="btn btn-outline-primary" target="_blank" href="<?= e(contentUrl('pagina', (string)$pagina['slug'])) ?>">Visualizar</a>
-        <?php endif; ?>
-    </div>
-</div>
 
-<?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
+<div class="wp-post-editor-page">
+    <div class="wp-editor-toolbar mb-3">
+        <div>
+            <div class="text-uppercase small text-secondary fw-semibold mb-1">
+                Páginas
+            </div>
 
-<form method="post" enctype="multipart/form-data" class="card border-0 shadow-sm">
-    <div class="card-body p-4">
+            <h1 class="h4 mb-0">
+                <?= e($pageTitle) ?>
+            </h1>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <?php if ($id): ?>
+                <a
+                    class="btn btn-outline-secondary"
+                    href="<?= e(
+                        url(
+                            'admin/revisoes/index.php?tipo=pagina&id='
+                            . $id
+                        )
+                    ) ?>"
+                >
+                    <i class="bi bi-clock-history me-1"></i>
+                    Revisões
+                    (<?= (int)$revisionCount ?>)
+                </a>
+            <?php endif; ?>
+
+            <?php if (
+                $id
+                && ($pagina['status'] ?? '') === 'publicado'
+                && !empty($pagina['slug'])
+            ): ?>
+                <a
+                    class="btn btn-outline-primary"
+                    target="_blank"
+                    href="<?= e(
+                        contentUrl(
+                            'pagina',
+                            (string)$pagina['slug']
+                        )
+                    ) ?>"
+                >
+                    <i class="bi bi-box-arrow-up-right me-1"></i>
+                    Visualizar
+                </a>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <?php if ($error): ?>
+        <div class="alert alert-danger">
+            <?= e($error) ?>
+        </div>
+    <?php endif; ?>
+
+    <form
+        method="post"
+        enctype="multipart/form-data"
+        id="pageEditorForm"
+    >
         <?= Csrf::field() ?>
-        <div class="row g-3">
-            <div class="col-lg-8">
-                <label class="form-label">Título</label>
-                <input class="form-control form-control-lg" name="titulo" value="<?= e((string)$pagina['titulo']) ?>" required>
-            </div>
-            <div class="col-lg-4">
-                <label class="form-label">Slug / URL</label>
-                <input class="form-control" name="slug" value="<?= e((string)$pagina['slug']) ?>" placeholder="gerado-pelo-titulo">
-                <div class="form-text">Ex.: quem-somos. Se vazio, será gerado automaticamente.</div>
-            </div>
 
-            <div class="col-lg-6">
-                <label class="form-label">Página superior</label>
-                <select class="form-select" name="parent_id">
-                    <option value="">Nenhuma — página principal</option>
-                    <?php foreach ($pageOptions as $option): ?>
-                        <?php $depth = max(0, (int)($option['depth'] ?? 0)); ?>
-                        <option
-                            value="<?= (int)$option['id'] ?>"
-                            <?= (int)($pagina['parent_id'] ?? 0) === (int)$option['id'] ? 'selected' : '' ?>
+        <div class="wp-post-editor-shell">
+            <main class="wp-post-editor-main">
+                <div class="wp-post-editor-canvas">
+                    <div class="wp-post-title-wrap">
+                        <label
+                            class="visually-hidden"
+                            for="pageTitulo"
                         >
-                            <?= e(str_repeat('— ', $depth) . (string)$option['titulo']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <div class="form-text">
-                    Crie subpáginas escolhendo uma página superior. A URL usará toda a hierarquia.
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="alert alert-light border h-100 mb-0 small">
-                    Exemplo: <code>/pagina/quem-somos/historia</code>.
-                    Não é permitido criar ciclos entre páginas.
-                </div>
-            </div>
-            <div class="col-12">
-                <label class="form-label">Resumo</label>
-                <textarea class="form-control" name="resumo" rows="3" placeholder="Descrição curta da página"><?= e((string)($pagina['resumo'] ?? '')) ?></textarea>
-            </div>
+                            Título
+                        </label>
 
-            <div class="col-12">
-                <div class="border rounded-3 p-3 bg-light-subtle">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                        <div>
-                            <label class="form-label fw-semibold mb-0">Imagem destacada</label>
-                            <div class="form-text mt-0">Faça upload ou escolha visualmente uma imagem da Biblioteca de Mídia.</div>
-                        </div>
-                        <button class="btn btn-sm btn-outline-primary" type="button" data-media-featured-open>Escolher da biblioteca</button>
+                        <input
+                            id="pageTitulo"
+                            class="wp-post-title-input"
+                            name="titulo"
+                            value="<?= e((string)$pagina['titulo']) ?>"
+                            maxlength="220"
+                            placeholder="Adicionar título"
+                            autocomplete="off"
+                            required
+                        >
+
+                        <?php if (
+                            $id
+                            && !empty(
+                                $pagina['slug']
+                            )
+                        ): ?>
+                            <div class="wp-post-permalink-preview">
+                                <i class="bi bi-link-45deg"></i>
+
+                                <a
+                                    target="_blank"
+                                    href="<?= e(
+                                        contentUrl(
+                                            'pagina',
+                                            (string)$pagina['slug']
+                                        )
+                                    ) ?>"
+                                >
+                                    <?= e(
+                                        contentUrl(
+                                            'pagina',
+                                            (string)$pagina['slug']
+                                        )
+                                    ) ?>
+                                </a>
+                            </div>
+                        <?php endif; ?>
                     </div>
-                    <input type="hidden" name="imagem_capa_id" id="imagemCapaId" value="<?= e((string)($pagina['imagem_capa_id'] ?? '')) ?>">
-                    <div class="row g-3 align-items-start">
-                        <div class="col-lg-5">
-                            <input class="form-control" type="file" name="imagem_capa_upload" accept="image/jpeg,image/png,image/webp,image/gif">
-                            <div class="form-text">JPG, PNG, WEBP ou GIF. Máximo <?= e(formatBytes(mediaUploadMaxSize($pdo))) ?>.</div>
-                        </div>
-                        <div class="col-lg-7">
-                            <div id="imagemCapaPreview" class="featured-picker-preview">
-                                <?php if ($imagemCapaAtual && MediaService::isImage($imagemCapaAtual)): ?>
-                                    <div class="d-flex align-items-center gap-3">
-                                        <img src="<?= e(mediaUrl($imagemCapaAtual['caminho'])) ?>" alt="<?= e($imagemCapaAtual['alt_text'] ?: $imagemCapaAtual['titulo'] ?: $imagemCapaAtual['nome_original']) ?>" class="img-thumbnail featured-preview">
-                                        <div><div class="fw-semibold"><?= e($imagemCapaAtual['titulo'] ?: $imagemCapaAtual['nome_original']) ?></div><button type="button" class="btn btn-sm btn-link text-danger p-0 mt-1" data-media-featured-remove>Remover imagem</button></div>
-                                    </div>
-                                <?php else: ?>
-                                    <div class="text-secondary small">Nenhuma imagem selecionada.</div>
-                                <?php endif; ?>
+
+                    <div class="wp-post-content-wrap">
+                        <label
+                            class="visually-hidden"
+                            for="conteudo"
+                        >
+                            Conteúdo
+                        </label>
+
+                        <textarea
+                            id="conteudo"
+                            name="conteudo"
+                            rows="18"
+                        ><?= e((string)$pagina['conteudo']) ?></textarea>
+                    </div>
+                </div>
+
+                <?php
+                $contentBlocksTitle =
+                    'Blocos da página';
+
+                require __DIR__
+                    . '/../_content_blocks_editor.php';
+                ?>
+
+                <section class="card border-0 shadow-sm mt-3">
+                    <div class="card-header bg-white fw-semibold py-3">
+                        SEO do conteúdo
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">
+                                    Título SEO
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    name="seo_titulo"
+                                    maxlength="180"
+                                    value="<?= e(
+                                        (string)(
+                                            $pagina['seo_titulo']
+                                            ?? ''
+                                        )
+                                    ) ?>"
+                                    placeholder="Se vazio, usa o título da página"
+                                >
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">
+                                    Meta description
+                                </label>
+
+                                <textarea
+                                    class="form-control"
+                                    name="seo_descricao"
+                                    maxlength="320"
+                                    rows="3"
+                                ><?= e(
+                                    (string)(
+                                        $pagina['seo_descricao']
+                                        ?? ''
+                                    )
+                                ) ?></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        name="seo_noindex"
+                                        id="seoNoindex"
+                                        <?= !empty(
+                                            $pagina['seo_noindex']
+                                        )
+                                            ? 'checked'
+                                            : '' ?>
+                                    >
+
+                                    <label
+                                        class="form-check-label"
+                                        for="seoNoindex"
+                                    >
+                                        Não indexar esta página
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </section>
+            </main>
+
+            <aside
+                class="wp-post-settings"
+                aria-label="Configurações da Página"
+            >
+                <div
+                    class="wp-settings-tabs"
+                    role="tablist"
+                >
+                    <button
+                        class="wp-settings-tab active"
+                        type="button"
+                        aria-selected="true"
+                    >
+                        Página
+                    </button>
+
+                    <button
+                        class="wp-settings-tab"
+                        type="button"
+                        aria-selected="false"
+                        disabled
+                    >
+                        Bloco
+                    </button>
+
+                    <span
+                        class="wp-settings-close"
+                        title="Configurações da página"
+                    >
+                        <i class="bi bi-x-lg"></i>
+                    </span>
                 </div>
-            </div>
 
-            <div class="col-12">
-                <label class="form-label">Conteúdo</label>
-                <textarea id="conteudo" class="form-control" name="conteudo" rows="16"><?= e((string)$pagina['conteudo']) ?></textarea>
-            </div>
+                <section class="wp-settings-section wp-post-overview">
+                    <div class="wp-post-overview-title">
+                        <i class="bi bi-file-earmark-text"></i>
 
-            <div class="col-12">
-                <?php
-                $contentBlocksTitle = 'Blocos da página';
-                require __DIR__ . '/../_content_blocks_editor.php';
-                ?>
-            </div>
-            <div class="col-12"><div class="border rounded-3 p-3"><div class="fw-semibold mb-3">SEO do conteúdo</div><div class="row g-3"><div class="col-12"><label class="form-label">Título SEO</label><input class="form-control" name="seo_titulo" maxlength="180" value="<?= e((string)($pagina['seo_titulo'] ?? '')) ?>" placeholder="Se vazio, usa o título da página"></div><div class="col-12"><label class="form-label">Meta description</label><textarea class="form-control" name="seo_descricao" maxlength="320" rows="2"><?= e((string)($pagina['seo_descricao'] ?? '')) ?></textarea></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="seo_noindex" id="seoNoindex" <?= !empty($pagina['seo_noindex']) ? 'checked' : '' ?>><label class="form-check-label" for="seoNoindex">Não indexar esta página</label></div></div></div></div></div>
+                        <strong id="sidebarPageTitle">
+                            <?= e(
+                                trim(
+                                    (string)$pagina['titulo']
+                                ) !== ''
+                                    ? (string)$pagina['titulo']
+                                    : 'Sem título'
+                            ) ?>
+                        </strong>
 
-            <div class="col-md-3">
-                <label class="form-label">Status</label>
-                <select class="form-select" name="status">
-                    <?php foreach (['rascunho' => 'Rascunho', 'agendado' => 'Agendado', 'publicado' => 'Publicado', 'arquivado' => 'Arquivado'] as $v => $l): ?>
-                        <option value="<?= e($v) ?>" <?= $pagina['status'] === $v ? 'selected' : '' ?>><?= e($l) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Publicar em</label>
-                <input type="datetime-local" class="form-control" name="publicado_em" value="<?= $pagina['publicado_em'] ? e((new DateTime((string)$pagina['publicado_em']))->format('Y-m-d\TH:i')) : '' ?>">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Ordem no menu</label>
-                <input type="number" class="form-control" name="ordem" value="<?= (int)$pagina['ordem'] ?>" step="1">
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" name="exibir_menu" id="exibirMenu" <?= $pagina['exibir_menu'] ? 'checked' : '' ?>>
-                    <label class="form-check-label" for="exibirMenu">Exibir no menu público</label>
+                        <i class="bi bi-three-dots-vertical ms-auto"></i>
+                    </div>
+
+                    <div class="wp-featured-area">
+                        <input
+                            type="hidden"
+                            name="imagem_capa_id"
+                            id="imagemCapaId"
+                            value="<?= e(
+                                (string)(
+                                    $pagina['imagem_capa_id']
+                                    ?? ''
+                                )
+                            ) ?>"
+                        >
+
+                        <div
+                            id="imagemCapaPreview"
+                            class="wp-featured-preview"
+                        >
+                            <?php if (
+                                $imagemCapaAtual
+                                && MediaService::isImage(
+                                    $imagemCapaAtual
+                                )
+                            ): ?>
+                                <img
+                                    src="<?= e(
+                                        mediaUrl(
+                                            $imagemCapaAtual['caminho']
+                                        )
+                                    ) ?>"
+                                    alt="<?= e(
+                                        $imagemCapaAtual['alt_text']
+                                        ?: $imagemCapaAtual['titulo']
+                                        ?: $imagemCapaAtual['nome_original']
+                                    ) ?>"
+                                >
+
+                                <div class="wp-featured-actions">
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        data-media-featured-open
+                                    >
+                                        Substituir imagem
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-link text-danger"
+                                        data-media-featured-remove
+                                    >
+                                        Remover
+                                    </button>
+                                </div>
+                            <?php else: ?>
+                                <button
+                                    type="button"
+                                    class="wp-featured-button"
+                                    data-media-featured-open
+                                >
+                                    Definir imagem destacada
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="wp-summary-toggle"
+                        id="summaryToggle"
+                    >
+                        Adicionar um resumo...
+                    </button>
+
+                    <div
+                        class="wp-summary-editor <?= trim(
+                            (string)(
+                                $pagina['resumo']
+                                ?? ''
+                            )
+                        ) === ''
+                            ? 'd-none'
+                            : '' ?>"
+                        id="summaryEditor"
+                    >
+                        <textarea
+                            class="form-control form-control-sm"
+                            name="resumo"
+                            rows="4"
+                            placeholder="Escreva um resumo curto..."
+                        ><?= e(
+                            (string)(
+                                $pagina['resumo']
+                                ?? ''
+                            )
+                        ) ?></textarea>
+
+                        <div class="form-text">
+                            Usado para SEO e contextos resumidos. Não aparece na leitura da página.
+                        </div>
+                    </div>
+
+                    <div class="wp-last-edit">
+                        <?php if ($lastEdited !== ''): ?>
+                            Última edição em
+                            <?= e($lastEdited) ?>
+                        <?php else: ?>
+                            Ainda não salvo
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="wp-property-list">
+                        <label class="wp-property-row">
+                            <span>Status</span>
+
+                            <select
+                                class="wp-property-control"
+                                name="status"
+                            >
+                                <?php foreach (
+                                    [
+                                        'rascunho' => 'Rascunho',
+                                        'agendado' => 'Agendado',
+                                        'publicado' => 'Publicado',
+                                        'arquivado' => 'Arquivado',
+                                    ]
+                                    as $value => $label
+                                ): ?>
+                                    <option
+                                        value="<?= e($value) ?>"
+                                        <?= (
+                                            $pagina['status']
+                                            ?? ''
+                                        ) === $value
+                                            ? 'selected'
+                                            : '' ?>
+                                    >
+                                        <?= e($label) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+
+                        <label class="wp-property-row">
+                            <span>Publicar</span>
+
+                            <input
+                                type="datetime-local"
+                                class="wp-property-control"
+                                name="publicado_em"
+                                value="<?= !empty(
+                                    $pagina['publicado_em']
+                                )
+                                    ? e(
+                                        (
+                                            new DateTime(
+                                                (string)$pagina['publicado_em']
+                                            )
+                                        )->format(
+                                            'Y-m-d\TH:i'
+                                        )
+                                    )
+                                    : '' ?>"
+                            >
+                        </label>
+
+                        <label class="wp-property-row">
+                            <span>Slug</span>
+
+                            <input
+                                class="wp-property-control"
+                                name="slug"
+                                value="<?= e(
+                                    (string)(
+                                        $pagina['slug']
+                                        ?? ''
+                                    )
+                                ) ?>"
+                                maxlength="240"
+                                placeholder="automática"
+                            >
+                        </label>
+
+                        <div class="wp-property-row">
+                            <span>Autor</span>
+
+                            <span class="wp-property-value">
+                                <?= e($authorName) ?>
+                            </span>
+                        </div>
+
+                        <div class="wp-property-row">
+                            <span>Modelo</span>
+
+                            <span class="wp-property-value">
+                                Página padrão
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                <details
+                    class="wp-settings-section wp-settings-details"
+                    open
+                >
+                    <summary>
+                        Hierarquia e menu
+                    </summary>
+
+                    <div class="wp-settings-section-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">
+                                Página superior
+                            </label>
+
+                            <select
+                                class="form-select form-select-sm"
+                                name="parent_id"
+                            >
+                                <option value="">
+                                    Nenhuma — página principal
+                                </option>
+
+                                <?php foreach ($pageOptions as $option): ?>
+                                    <?php
+                                    $depth =
+                                        max(
+                                            0,
+                                            (int)(
+                                                $option['depth']
+                                                ?? 0
+                                            )
+                                        );
+                                    ?>
+
+                                    <option
+                                        value="<?= (int)$option['id'] ?>"
+                                        <?= (int)(
+                                            $pagina['parent_id']
+                                            ?? 0
+                                        ) === (int)$option['id']
+                                            ? 'selected'
+                                            : '' ?>
+                                    >
+                                        <?= e(
+                                            str_repeat(
+                                                '— ',
+                                                $depth
+                                            )
+                                            . (string)$option['titulo']
+                                        ) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+
+                            <div class="form-text">
+                                A URL usa toda a hierarquia da página.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">
+                                Ordem
+                            </label>
+
+                            <input
+                                type="number"
+                                class="form-control form-control-sm"
+                                name="ordem"
+                                value="<?= (int)(
+                                    $pagina['ordem']
+                                    ?? 0
+                                ) ?>"
+                                step="1"
+                            >
+                        </div>
+
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                name="exibir_menu"
+                                id="exibirMenu"
+                                <?= !empty(
+                                    $pagina['exibir_menu']
+                                )
+                                    ? 'checked'
+                                    : '' ?>
+                            >
+
+                            <label
+                                class="form-check-label"
+                                for="exibirMenu"
+                            >
+                                Exibir no menu público
+                            </label>
+                        </div>
+                    </div>
+                </details>
+
+                <div class="wp-settings-section px-3 py-3">
+                    <div class="small text-secondary">
+                        A imagem destacada é escolhida acima pela Biblioteca de Mídia.
+                        A exibição da capa na página pública é definida globalmente em
+                        Configurações → Mídia.
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="mt-4 d-flex gap-2">
-            <button class="btn btn-primary">Salvar página</button>
-            <a class="btn btn-outline-secondary" href="<?= e(url('admin/paginas/index.php')) ?>">Cancelar</a>
+                <div class="wp-sidebar-save">
+                    <button
+                        class="btn btn-primary w-100"
+                        type="submit"
+                    >
+                        <i class="bi bi-check2 me-1"></i>
+                        <?= $id
+                            ? 'Atualizar'
+                            : 'Salvar página' ?>
+                    </button>
+
+                    <?php if (
+                        $id
+                        && !empty(
+                            $pagina['slug']
+                        )
+                    ): ?>
+                        <a
+                            class="btn btn-link w-100 text-decoration-none"
+                            target="_blank"
+                            href="<?= e(
+                                contentUrl(
+                                    'pagina',
+                                    (string)$pagina['slug']
+                                )
+                            ) ?>"
+                        >
+                            Visualizar página
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </aside>
         </div>
-    </div>
-</form>
+    </form>
+</div>
 
 <?php require __DIR__ . '/../_editor_media_picker.php'; ?>
+
 <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
 <script src="<?= e(url('public/js/editor-media-picker.js')) ?>"></script>
-<script src="<?= e(url('public/js/content-block-editor.js?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.43.0'))) ?>"></script>
+<script src="<?= e(
+    url(
+        'public/js/content-block-editor.js?v='
+        . rawurlencode(
+            defined('APP_VERSION')
+                ? (string)APP_VERSION
+                : '0.82.0'
+        )
+    )
+) ?>"></script>
+
 <script>
 PortalMediaPicker.init({
     modalId: 'portalMediaPickerModal',
-    uploadUrl: <?= json_encode(url('admin/midias/upload-editor.php'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>,
-    csrfToken: <?= json_encode(Csrf::token(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>
+    uploadUrl: <?= json_encode(
+        url('admin/midias/upload-editor.php'),
+        JSON_UNESCAPED_SLASHES
+        | JSON_UNESCAPED_UNICODE
+    ) ?>,
+    csrfToken: <?= json_encode(
+        Csrf::token(),
+        JSON_UNESCAPED_SLASHES
+        | JSON_UNESCAPED_UNICODE
+    ) ?>
 });
 
 ContentBlockEditor.init();
 
 tinymce.init({
-    selector:'#conteudo',
-    height:520,
-    menubar:false,
-    plugins:'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table wordcount',
-    toolbar:'undo redo | blocks fontfamily fontsize lineheight | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link portalmedia media table charmap | blockquote removeformat | searchreplace visualblocks preview fullscreen code',
-    // v0.53.0 - editor avançado TinyMCE
-    toolbar_mode: 'sliding',
-    browser_spellcheck: true,
-    contextmenu: false,
-    font_family_formats:
-        'Sistema=system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;'
-        + 'Arial=Arial,Helvetica,sans-serif;'
-        + 'Verdana=Verdana,Geneva,sans-serif;'
-        + 'Tahoma=Tahoma,Arial,sans-serif;'
-        + 'Trebuchet MS="Trebuchet MS",Arial,sans-serif;'
-        + 'Georgia=Georgia,serif;'
-        + 'Times New Roman="Times New Roman",Times,serif;'
-        + 'Courier New="Courier New",Courier,monospace;',
-    font_size_formats:
-        '10px 12px 14px 16px 18px 20px 22px 24px 28px 32px 36px 42px 48px 56px 64px',
-    line_height_formats:
-        '1 1.15 1.25 1.5 1.75 2 2.5 3',
-    // v0.52.1 - cores personalizadas do TinyMCE
-    color_cols: 8,
-    custom_colors: true,
-    color_map: [
-        '000000', 'Preto',
-        '333333', 'Cinza escuro',
-        '666666', 'Cinza',
-        '999999', 'Cinza claro',
-        'FFFFFF', 'Branco',
-        'B91C1C', 'Vermelho',
-        'DC2626', 'Vermelho vivo',
-        'EA580C', 'Laranja',
-        'F59E0B', 'Âmbar',
-        'FACC15', 'Amarelo',
-        '15803D', 'Verde',
-        '16A34A', 'Verde vivo',
-        '0F766E', 'Verde petróleo',
-        '0369A1', 'Azul',
-        '2563EB', 'Azul vivo',
-        '4F46E5', 'Índigo',
-        '7E22CE', 'Roxo',
-        'C026D3', 'Magenta',
-        'BE185D', 'Rosa',
-        '7C2D12', 'Marrom'
-    ],
-    setup:function(editor){
+    selector: '#conteudo',
+    height: 520,
+    menubar: false,
+    plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table wordcount',
+    toolbar: 'undo redo | blocks fontfamily fontsize lineheight | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link portalmedia media table charmap | blockquote removeformat | searchreplace visualblocks preview fullscreen code',
+    setup: function(editor) {
         editor.ui.registry.addButton('portalmedia', {
             icon: 'image',
             tooltip: 'Inserir imagens da Biblioteca de Mídia',
-            onAction: function () { PortalMediaPicker.openForEditor(editor); }
+            onAction: function() {
+                PortalMediaPicker.openForEditor(editor);
+            }
         });
-        editor.on('change keyup', function(){ editor.save(); });
+
+        editor.on('change keyup', function() {
+            editor.save();
+        });
     }
 });
 
-document.querySelector('form').addEventListener('submit', function(){
-    if (typeof tinymce !== 'undefined') tinymce.triggerSave();
-});
+const pageEditorForm =
+    document.getElementById('pageEditorForm');
+
+if (pageEditorForm) {
+    pageEditorForm.addEventListener(
+        'submit',
+        function() {
+            if (
+                typeof tinymce !== 'undefined'
+            ) {
+                tinymce.triggerSave();
+            }
+        }
+    );
+}
 
 PortalMediaPicker.bindFeatured({
-    openButton: document.querySelector('[data-media-featured-open]'),
-    removeButtonSelector: '[data-media-featured-remove]',
-    input: document.getElementById('imagemCapaId'),
-    preview: document.getElementById('imagemCapaPreview')
+    openButton:
+        document.querySelector(
+            '[data-media-featured-open]'
+        ),
+    removeButtonSelector:
+        '[data-media-featured-remove]',
+    input:
+        document.getElementById(
+            'imagemCapaId'
+        ),
+    preview:
+        document.getElementById(
+            'imagemCapaPreview'
+        )
 });
+
+const pageTitleInput =
+    document.getElementById(
+        'pageTitulo'
+    );
+
+const sidebarPageTitle =
+    document.getElementById(
+        'sidebarPageTitle'
+    );
+
+if (
+    pageTitleInput
+    && sidebarPageTitle
+) {
+    pageTitleInput.addEventListener(
+        'input',
+        function() {
+            sidebarPageTitle.textContent =
+                pageTitleInput.value.trim()
+                || 'Sem título';
+        }
+    );
+}
+
+const summaryToggle =
+    document.getElementById(
+        'summaryToggle'
+    );
+
+const summaryEditor =
+    document.getElementById(
+        'summaryEditor'
+    );
+
+if (
+    summaryToggle
+    && summaryEditor
+) {
+    summaryToggle.addEventListener(
+        'click',
+        function() {
+            summaryEditor.classList.toggle(
+                'd-none'
+            );
+
+            if (
+                !summaryEditor.classList.contains(
+                    'd-none'
+                )
+            ) {
+                const textarea =
+                    summaryEditor.querySelector(
+                        'textarea'
+                    );
+
+                if (textarea) {
+                    textarea.focus();
+                }
+            }
+        }
+    );
+}
 </script>
+
 <?php require __DIR__ . '/../_footer.php'; ?>

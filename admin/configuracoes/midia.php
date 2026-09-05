@@ -35,6 +35,7 @@ $defaults = [
     'media_delete_file_on_delete' => '1',
 
     'media_post_cover_default_show' => '0',
+    'media_page_cover_show' => '0',
 
     'media_optimize_images' => '1',
     'media_image_max_width' => '1920',
@@ -120,6 +121,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ? '1'
                         : '0'
                 );
+            $s['media_page_cover_show'] =
+                (
+                    (string)(
+                        $_POST['media_page_cover_show']
+                        ?? '0'
+                    )
+                ) === '1'
+                    ? '1'
+                    : '0';
             foreach (
                 [
                     'media_organize_year_month',
@@ -143,6 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'media_allow_documents' => 'booleano',
                 'media_delete_file_on_delete' => 'booleano',
                 'media_post_cover_default_show' => 'booleano',
+                'media_page_cover_show' => 'booleano',
                 'media_optimize_images' => 'booleano',
                 'media_image_max_width' => 'numero',
                 'media_generate_webp' => 'booleano',
@@ -163,6 +174,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
             }
 
+            try {
+                $pageCoverValue =
+                    $s['media_page_cover_show'] === '1'
+                        ? 1
+                        : 0;
+
+                $pdo->exec(
+                    "UPDATE paginas
+                     SET exibir_imagem_capa="
+                    . $pageCoverValue
+                );
+            } catch (Throwable $ignored) {
+            }
             logAction(
                 $pdo,
                 'configuracoes.midia',
@@ -454,7 +478,65 @@ require __DIR__ . '/../_header.php';
             </div>
         </div>
 
-        <hr>
+        
+        <div class="mt-4 mb-4">
+            <h2 class="h5 mb-1">
+                Imagem de capa das Páginas
+            </h2>
+
+            <div class="text-secondary small mb-3">
+                Define se a imagem de capa aparece ou não na leitura de todas as Páginas.
+            </div>
+
+            <div class="border rounded-3 p-3">
+                <div class="fw-semibold mb-2">
+                    Exibir a imagem de capa quando a página for aberta?
+                </div>
+
+                <div class="form-check">
+                    <input
+                        class="form-check-input"
+                        type="radio"
+                        name="media_page_cover_show"
+                        id="mediaPageCoverNo"
+                        value="0"
+                        <?= $s['media_page_cover_show'] !== '1' ? 'checked' : '' ?>
+                    >
+
+                    <label
+                        class="form-check-label"
+                        for="mediaPageCoverNo"
+                    >
+                        Não, ocultar na leitura
+                        <span class="badge text-bg-secondary ms-1">Padrão</span>
+                    </label>
+                </div>
+
+                <div class="form-check mt-2">
+                    <input
+                        class="form-check-input"
+                        type="radio"
+                        name="media_page_cover_show"
+                        id="mediaPageCoverYes"
+                        value="1"
+                        <?= $s['media_page_cover_show'] === '1' ? 'checked' : '' ?>
+                    >
+
+                    <label
+                        class="form-check-label"
+                        for="mediaPageCoverYes"
+                    >
+                        Sim, exibir ao abrir a página
+                    </label>
+                </div>
+
+                <div class="form-text mt-3">
+                    A configuração vale para todas as páginas. Mesmo oculta na leitura,
+                    a imagem continua disponível para compartilhamentos e metadados.
+                </div>
+            </div>
+        </div>
+<hr>
 
         <div class="d-flex justify-content-between align-items-start gap-3 mt-4 mb-3">
             <div>
