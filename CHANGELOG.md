@@ -24,6 +24,14 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.86.0 — Busca Administrativa Avançada
+
+- Nova tela de busca com filtros.
+- Filtros por módulo, status e período.
+- Pesquisa em conteúdo e metadados.
+- Ordenação configurável.
+- Integração com Ctrl+K.
 ## 0.85.0 — Central de Notificações
 
 - Central de notificações individual no Admin.

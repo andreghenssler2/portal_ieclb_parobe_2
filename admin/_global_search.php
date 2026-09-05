@@ -84,7 +84,14 @@ $adminGlobalSearchEndpoint =
                     A busca respeita as permissões do seu perfil.
                 </small>
 
-                <small class="text-secondary d-none d-sm-inline">
+                                <a
+                    class="small text-decoration-none me-auto"
+                    href="<?= e(url('admin/busca.php')) ?>"
+                >
+                    <i class="bi bi-sliders me-1"></i>
+                    Busca avançada
+                </a>
+<small class="text-secondary d-none d-sm-inline">
                     Esc para fechar
                 </small>
             </div>

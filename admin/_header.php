@@ -29,6 +29,7 @@ $documentsOpen = $startsPath('documentos');
 $newsletterOpen = $startsPath('newsletter');
 $accountOpen = $isPath('minha-conta.php');
 $pendingCenterOpen = $isPath('pendencias.php');
+$advancedSearchOpen = $isPath('busca.php');
 $notificationCenterOpen = $isPath('notificacoes.php');
 
 $canAppearance = Auth::can('home.gerenciar') || Auth::can('aparencia.gerenciar') || Auth::can('tema_editor.gerenciar') || Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') || Auth::can('configuracoes.gerenciar');
@@ -205,6 +206,14 @@ if (
             <nav class="admin-nav flex-grow-1 py-3" aria-label="Navegação administrativa">
                 <a class="admin-nav-link <?= $isPath('index.php') ? 'active' : '' ?>" href="<?= e(url('admin/index.php')) ?>">
                     <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+                </a>
+
+                <a
+                    class="admin-nav-link <?= $advancedSearchOpen ? 'active' : '' ?>"
+                    href="<?= e(url('admin/busca.php')) ?>"
+                >
+                    <i class="bi bi-search"></i>
+                    <span>Busca avançada</span>
                 </a>
 
                 <a
