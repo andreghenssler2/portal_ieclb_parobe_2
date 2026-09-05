@@ -45,6 +45,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
 
 $categories = DocumentService::categories($pdo);
 $media = DocumentService::mediaChoices($pdo);
+$mediaById = [];
+foreach ($media as $mediaItem) {
+    $mediaById[(int)$mediaItem['id']] = $mediaItem;
+}
+
+$selectedDocumentMediaId =
+    (int)($document['midia_id'] ?? 0);
+
+$selectedDocumentMedia =
+    $selectedDocumentMediaId > 0
+        ? ($mediaById[$selectedDocumentMediaId] ?? null)
+        : null;
 
 $value = static function(string $key, mixed $default='') use ($document) {
     return $document[$key] ?? $default;
@@ -134,25 +146,119 @@ require __DIR__ . '/../_header.php';
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white fw-semibold">Arquivo</div>
-                <div class="card-body p-4">
-                    <?php if(!$media): ?>
-                        <div class="alert alert-warning small">Nenhum documento foi encontrado na Biblioteca de Mídia.</div>
-                    <?php endif; ?>
-                    <select class="form-select" name="midia_id" required>
-                        <option value="">Selecione um arquivo</option>
-                        <?php foreach($media as $file): ?>
-                            <option value="<?=(int)$file['id']?>" <?=(int)$value('midia_id',0)===(int)$file['id']?'selected':''?>>
-                                <?=e(strtoupper((string)$file['extensao']).' · '.($file['titulo'] ?: $file['nome_original']).' · '.formatBytes((int)$file['tamanho']))?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <div class="form-text">PDF, Word, Excel, PowerPoint, TXT e outros documentos permitidos pela Biblioteca.</div>
-                    <a class="btn btn-sm btn-outline-secondary mt-3" target="_blank" href="<?=e(url('admin/midias/index.php#adicionar-novo'))?>">Abrir Biblioteca de Mídia</a>
+                        <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-semibold">
+                    Arquivo
                 </div>
-            </div>
-        </div>
+
+                <div class="card-body p-4">
+                    <input
+                        type="hidden"
+                        name="midia_id"
+                        id="documentMediaId"
+                        value="<?= e((string)$value('midia_id', '')) ?>"
+                        required
+                    >
+
+                    <div
+                        id="documentMediaPreview"
+                        class="border rounded-3 p-3 bg-body-tertiary"
+                    >
+                        <?php if ($selectedDocumentMedia): ?>
+                            <div class="d-flex align-items-start gap-3">
+                                <div
+                                    class="rounded-3 bg-body-secondary d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width:56px;height:56px"
+                                >
+                                    <i class="bi bi-file-earmark-text fs-3"></i>
+                                </div>
+
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="fw-semibold text-truncate">
+                                        <?= e(
+                                            (string)(
+                                                $selectedDocumentMedia['titulo']
+                                                ?: $selectedDocumentMedia['nome_original']
+                                            )
+                                        ) ?>
+                                    </div>
+
+                                    <div class="small text-secondary">
+                                        <?= e(
+                                            strtoupper(
+                                                (string)$selectedDocumentMedia['extensao']
+                                            )
+                                        ) ?>
+                                        ·
+                                        <?= e(
+                                            formatBytes(
+                                                (int)$selectedDocumentMedia['tamanho']
+                                            )
+                                        ) ?>
+                                        ·
+                                        <?= e(
+                                            (string)$selectedDocumentMedia['nome_original']
+                                        ) ?>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-link text-danger p-0 mt-1"
+                                        data-document-media-remove
+                                    >
+                                        Remover arquivo
+                                    </button>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-secondary small">
+                                Nenhum arquivo selecionado.
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary w-100 mt-3"
+                        id="documentMediaOpen"
+                    >
+                        <i class="bi bi-folder2-open me-1"></i>
+                        Escolher na Biblioteca de Mídia
+                    </button>
+
+                    <div class="form-text mt-2">
+                        PDF, Word, Excel, PowerPoint, TXT e outros arquivos permitidos.
+                        O upload pode ser feito dentro do modal.
+                    </div>
+                </div>
+            </div></div>
     </div>
 </form>
+
+<?php
+$documentMediaSelectedId =
+    (int)$value('midia_id', 0);
+
+require __DIR__ . '/../_document_media_picker.php';
+?>
+
+<script src="<?= e(url('public/js/document-media-picker-v89-r6.js?v=0.89.0-r6')) ?>"></script>
+<script>
+PortalDocumentMediaPicker.init({
+    modalId: 'portalDocumentMediaPickerModal',
+    inputId: 'documentMediaId',
+    previewId: 'documentMediaPreview',
+    openButtonId: 'documentMediaOpen',
+    uploadUrl: <?= json_encode(
+        url('admin/documentos/upload-modal.php'),
+        JSON_UNESCAPED_SLASHES
+        | JSON_UNESCAPED_UNICODE
+    ) ?>,
+    csrfToken: <?= json_encode(
+        Csrf::token(),
+        JSON_UNESCAPED_SLASHES
+        | JSON_UNESCAPED_UNICODE
+    ) ?>
+});
+</script>
 <?php require __DIR__ . '/../_footer.php'; ?>
