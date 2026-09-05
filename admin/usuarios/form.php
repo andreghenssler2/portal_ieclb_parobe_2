@@ -132,6 +132,17 @@ require __DIR__ . '/../_header.php';
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div><h1 class="h3 mb-1"><?= e($pageTitle) ?></h1><p class="text-secondary mb-0">Defina os dados de acesso e o perfil administrativo.</p></div>
 </div>
+<?php if ($id): ?>
+<div class="mb-4">
+    <a
+        class="btn btn-outline-primary"
+        href="<?= e(url('admin/usuarios/atividade.php?id=' . (int)$id)) ?>"
+    >
+        <i class="bi bi-clock-history me-1"></i>
+        Histórico de atividade
+    </a>
+</div>
+<?php endif; ?>
 <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
 
 <form method="post" class="card border-0 shadow-sm">

@@ -55,6 +55,13 @@ if (is_file($adminNotificationServiceFile)) {
 require_once __DIR__ . '/app/Services/MailService.php';
 require_once __DIR__ . '/app/Services/TwoFactorService.php';
 require_once __DIR__ . '/app/Services/SessionSecurityService.php';
+$userActivityServiceFile =
+    __DIR__
+    . '/app/Services/UserActivityService.php';
+
+if (is_file($userActivityServiceFile)) {
+    require_once $userActivityServiceFile;
+}
 require_once __DIR__ . '/app/Services/FormNotificationService.php';
 require_once __DIR__ . '/app/Services/EmbeddedFormService.php';
 require_once __DIR__ . '/app/Services/FormReplyService.php';

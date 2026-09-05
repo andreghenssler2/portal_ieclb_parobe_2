@@ -188,6 +188,7 @@ if (
                 <li><h6 class="dropdown-header"><?= e($user['perfil_nome'] ?? '') ?></h6></li>
                 <li><a class="dropdown-item" href="<?= e(url('admin/minha-conta.php')) ?>"><i class="bi bi-person me-2"></i>Minha conta</a></li>
 <li><a class="dropdown-item" href="<?= e(url('admin/minhas-sessoes.php')) ?>"><i class="bi bi-pc-display-horizontal me-2"></i>Minhas sessões</a></li>
+<li><a class="dropdown-item" href="<?= e(url('admin/usuarios/atividade.php')) ?>"><i class="bi bi-clock-history me-2"></i>Minha atividade</a></li>
                 <li><a class="dropdown-item" href="<?= e(url()) ?>" target="_blank"><i class="bi bi-box-arrow-up-right me-2"></i>Ver portal</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item text-danger" href="<?= e(url('admin/logout.php')) ?>"><i class="bi bi-box-arrow-right me-2"></i>Sair</a></li>

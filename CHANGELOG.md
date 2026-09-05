@@ -25,6 +25,15 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.87.0 — Histórico de atividades por usuário
+
+- Linha do tempo individual de atividade.
+- Unifica Auditoria e Sessões.
+- Filtros por categoria, nível e período.
+- “Minha atividade” no menu da conta.
+- Atalho no editor de usuários e na Auditoria.
+- Sem nova tabela no banco.
 ## 0.86.0 — Busca Administrativa Avançada
 
 - Nova tela de busca com filtros.

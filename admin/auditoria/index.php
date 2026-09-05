@@ -91,7 +91,23 @@ $badgeClass = static function(string $level): string {
     </div>
     <div class="d-flex gap-2">
         <?php if (Auth::can('seguranca.gerenciar')): ?><a class="btn btn-outline-secondary" href="<?= e(url('admin/configuracoes/seguranca.php')) ?>"><i class="bi bi-shield-lock me-1"></i> Segurança</a><?php endif; ?>
-        <a class="btn btn-outline-primary" href="<?= e($exportUrl) ?>"><i class="bi bi-download me-1"></i> Exportar CSV</a>
+                <a
+            class="btn btn-outline-secondary"
+            href="<?= e(
+                url(
+                    'admin/usuarios/atividade.php'
+                    . (
+                        $usuarioId > 0
+                            ? '?id=' . (int)$usuarioId
+                            : ''
+                    )
+                )
+            ) ?>"
+        >
+            <i class="bi bi-clock-history me-1"></i>
+            Atividade por usuário
+        </a>
+<a class="btn btn-outline-primary" href="<?= e($exportUrl) ?>"><i class="bi bi-download me-1"></i> Exportar CSV</a>
     </div>
 </div>
 
