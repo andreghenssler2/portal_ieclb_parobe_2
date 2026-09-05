@@ -1,5 +1,14 @@
 # Changelog — Portal IECLB Parobé
 
+## v0.95.0 — SPF, DKIM e DMARC
+
+- adiciona diagnóstico DNS de e-mail;
+- verifica SPF, DKIM, DMARC e MX;
+- adiciona seletor DKIM configurável;
+- adiciona teste CLI `tests/email-dns.php`;
+- não altera registros DNS automaticamente.
+
+
 ## v0.94.0 — Saúde do Cron e Tarefas Agendadas
 
 - adiciona heartbeat do Cron Job em `storage/cron/last-run.json`;
