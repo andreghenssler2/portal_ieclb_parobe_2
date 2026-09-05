@@ -1,5 +1,15 @@
 # Changelog — Portal IECLB Parobé
 
+## v0.94.0 — Saúde do Cron e Tarefas Agendadas
+
+- adiciona heartbeat do Cron Job em `storage/cron/last-run.json`;
+- diferencia Cron Job real de execuções manuais `--task` e `--all`;
+- adiciona `php cron.php --health` sem executar tarefas;
+- adiciona Admin → Ferramentas → Tarefas Agendadas → Saúde do cron;
+- mostra tarefas vencidas, erros consecutivos e execuções órfãs;
+- adiciona `tests/scheduler.php`;
+- nenhuma nova tabela é criada.
+
 ## v0.93.0 — Teste seguro de restaurabilidade
 
 - adiciona teste de restaurabilidade para backups do banco;

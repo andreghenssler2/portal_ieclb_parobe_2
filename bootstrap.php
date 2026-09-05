@@ -85,6 +85,7 @@ require_once __DIR__ . '/app/Services/WordPressImportService.php';
 require_once __DIR__ . '/app/Services/HomeService.php';
 require_once __DIR__ . '/app/Services/DocumentService.php';
 require_once __DIR__ . '/app/Services/LeadershipService.php';
+require_once __DIR__ . '/app/Services/CronHealthService.php';
 require_once __DIR__ . '/app/Services/SchedulerService.php';
 
 Session::start();

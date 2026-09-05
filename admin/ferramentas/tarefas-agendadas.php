@@ -85,6 +85,15 @@ $statusClass = static function(?string $status): string {
         <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard?.writeText(this.previousElementSibling.value)">Copiar</button>
     </div>
     <div class="small mt-2">O arquivo <code>cron.php</code> aceita somente execução por linha de comando; acessos pelo navegador recebem 404.</div>
+    <div class="mt-3">
+        <a
+            class="btn btn-sm btn-outline-primary"
+            href="<?=e(url('admin/ferramentas/cron-saude.php'))?>"
+        >
+            <i class="bi bi-heart-pulse me-1"></i>
+            Ver saúde do cron
+        </a>
+    </div>
 </div>
 
 <form method="post" class="card border-0 shadow-sm mb-4">
