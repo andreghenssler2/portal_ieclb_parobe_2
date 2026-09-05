@@ -38,6 +38,13 @@ require_once __DIR__ . '/app/Services/EditorialBulkService.php';
 require_once __DIR__ . '/app/Services/RevisionService.php';
 require_once __DIR__ . '/app/Services/EditorialWorkflowService.php';
 require_once __DIR__ . '/app/Services/AdminPendingService.php';
+$adminNotificationServiceFile =
+    __DIR__
+    . '/app/Services/AdminNotificationService.php';
+
+if (is_file($adminNotificationServiceFile)) {
+    require_once $adminNotificationServiceFile;
+}
 require_once __DIR__ . '/app/Services/MailService.php';
 require_once __DIR__ . '/app/Services/TwoFactorService.php';
 require_once __DIR__ . '/app/Services/SessionSecurityService.php';

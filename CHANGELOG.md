@@ -23,6 +23,15 @@ v0.66.0. Notas detalhadas de versões antigas podem permanecer arquivadas em
 
 
 
+
+## 0.85.0 — Central de Notificações
+
+- Central de notificações individual no Admin.
+- Badge de notificações não lidas.
+- Integração com as pendências do Portal.
+- Histórico de lidas e resolvidas.
+- Marcar como lida/não lida.
+- Nova tabela `admin_notifications`.
 ## 0.84.0 — Autosave e recuperação de rascunhos
 
 - Autosave nos editores de Notícias e Páginas.

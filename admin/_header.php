@@ -29,6 +29,7 @@ $documentsOpen = $startsPath('documentos');
 $newsletterOpen = $startsPath('newsletter');
 $accountOpen = $isPath('minha-conta.php');
 $pendingCenterOpen = $isPath('pendencias.php');
+$notificationCenterOpen = $isPath('notificacoes.php');
 
 $canAppearance = Auth::can('home.gerenciar') || Auth::can('aparencia.gerenciar') || Auth::can('tema_editor.gerenciar') || Auth::can('menus.gerenciar') || Auth::can('banners.gerenciar') || Auth::can('configuracoes.gerenciar');
 $pendingComments = 0;
@@ -66,6 +67,28 @@ if ($canSeePendingCenter) {
 
 $adminPendingTotal =
     (int)($adminPendingOverview['total'] ?? 0);
+
+$adminNotificationUnread = 0;
+
+if (
+    class_exists('AdminNotificationService')
+    && Auth::id()
+) {
+    try {
+        $notificationOverview =
+            AdminNotificationService::syncCurrentUser(
+                Database::connection()
+            );
+
+        $adminNotificationUnread =
+            (int)(
+                $notificationOverview['unread']
+                ?? 0
+            );
+    } catch (Throwable $ignored) {
+        $adminNotificationUnread = 0;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -101,13 +124,29 @@ $adminPendingTotal =
         </div>
 
         <?php if ($canSeePendingCenter): ?>
-            <a
+                    <a
+            class="btn btn-sm admin-user-button position-relative me-2"
+            href="<?= e(url('admin/notificacoes.php')) ?>"
+            title="Central de Notificações"
+            aria-label="Central de Notificações<?= $adminNotificationUnread > 0 ? ': ' . (int)$adminNotificationUnread . ' não lida(s)' : '' ?>"
+        >
+            <i class="bi bi-bell-fill"></i>
+
+            <?php if ($adminNotificationUnread > 0): ?>
+                <span
+                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger"
+                >
+                    <?= $adminNotificationUnread > 99 ? '99+' : (int)$adminNotificationUnread ?>
+                </span>
+            <?php endif; ?>
+        </a>
+<a
                 class="btn btn-sm admin-user-button position-relative me-2"
                 href="<?= e(url('admin/pendencias.php')) ?>"
                 title="Central de Pendências"
                 aria-label="Central de Pendências<?= $adminPendingTotal > 0 ? ': ' . (int)$adminPendingTotal . ' item(s)' : '' ?>"
             >
-                <i class="bi bi-bell"></i>
+                <i class="bi bi-clipboard-check"></i>
 
                 <?php if ($adminPendingTotal > 0): ?>
                     <span
@@ -166,6 +205,20 @@ $adminPendingTotal =
             <nav class="admin-nav flex-grow-1 py-3" aria-label="Navegação administrativa">
                 <a class="admin-nav-link <?= $isPath('index.php') ? 'active' : '' ?>" href="<?= e(url('admin/index.php')) ?>">
                     <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+                </a>
+
+                <a
+                    class="admin-nav-link <?= $notificationCenterOpen ? 'active' : '' ?>"
+                    href="<?= e(url('admin/notificacoes.php')) ?>"
+                >
+                    <i class="bi bi-bell"></i>
+                    <span>Notificações</span>
+
+                    <?php if ($adminNotificationUnread > 0): ?>
+                        <span class="badge text-bg-danger ms-auto">
+                            <?= $adminNotificationUnread > 99 ? '99+' : (int)$adminNotificationUnread ?>
+                        </span>
+                    <?php endif; ?>
                 </a>
 
                 <?php if ($canSeePendingCenter): ?>
