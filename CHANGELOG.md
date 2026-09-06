@@ -1,5 +1,15 @@
 # Changelog — Portal IECLB Parobé
 
+## v1.0.1 — Acabamento pós-release
+
+- atualiza os textos históricos do checklist operacional;
+- torna a validação final compatível com a série 1.x;
+- diferencia OPcache CLI do OPcache do servidor web;
+- mantém aviso de OPcache quando o SAPI web estiver sem cache;
+- melhora a mensagem da tarefa opcional de IMAP;
+- adiciona teste pós-release v1.0.1;
+- sem migração de banco.
+
 ## v1.0.0 — Release estável de produção
 
 - consolida o Portal como versão estável;
