@@ -89,10 +89,25 @@ final class AccessibilityAuditService
 
             $scanned++;
 
+            /*
+             * PORTAL_ACCESSIBILITY_TEMPLATE_SANITIZE_R2
+             *
+             * Remove somente os blocos PHP da cópia usada pelo scanner.
+             * Isso impede que o "?>" de atributos dinâmicos encerre a regex
+             * da tag HTML antes de chegar em alt/title.
+             */
+            $htmlTemplate =
+                preg_replace(
+                    '/<\?(?:php|=)?[\s\S]*?\?>/i',
+                    '',
+                    $content
+                )
+                ?? $content;
+
             if (
                 preg_match_all(
                     '/<img\b[^>]*>/i',
-                    $content,
+                    $htmlTemplate,
                     $imgMatches
                 )
             ) {
@@ -112,7 +127,7 @@ final class AccessibilityAuditService
             if (
                 preg_match_all(
                     '/<iframe\b[^>]*>/i',
-                    $content,
+                    $htmlTemplate,
                     $iframeMatches
                 )
             ) {
