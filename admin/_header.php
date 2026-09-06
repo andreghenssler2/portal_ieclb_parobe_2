@@ -498,6 +498,12 @@ if (
                                 class="<?= $isPath('ferramentas/acessibilidade.php') ? 'active' : '' ?>"
                                 href="<?= e(url('admin/ferramentas/acessibilidade.php')) ?>"
                             >Acessibilidade</a>
+                        <?php if (Auth::can('configuracoes.gerenciar') || Auth::isAdmin()): ?>
+                            <a
+                                class="<?= $isPath('ferramentas/pre-producao.php') ? 'active' : '' ?>"
+                                href="<?= e(url('admin/ferramentas/pre-producao.php')) ?>"
+                            >Pré-produção</a>
+                        <?php endif; ?>
                         <?php endif; ?>
                         <?php endif; ?>
                         <?php endif; ?>

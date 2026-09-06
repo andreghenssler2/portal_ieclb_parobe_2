@@ -1,5 +1,14 @@
 # Changelog — Portal IECLB Parobé
 
+## v0.99.0 — Pré-produção / Release Readiness
+
+- adiciona Central de Pré-produção;
+- consolida ambiente, PHP, arquivos, segurança, permissões, backups, cron, e-mail, desempenho e acessibilidade;
+- classifica o Portal como Pronto, Atenção ou Bloqueado;
+- adiciona checklist de go-live;
+- adiciona `tests/release-readiness.php`;
+- não altera banco ou conteúdo.
+
 ## v0.98.0 — Acessibilidade e navegação por teclado
 
 - adiciona skip link no Portal e no Admin;
