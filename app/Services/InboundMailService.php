@@ -300,8 +300,10 @@ final class InboundMailService
         if (!self::extensionAvailable()) {
             return [
                 'status' => 'ignorado',
+                /* PORTAL_IMAP_OPTIONAL_V101 */
                 'message' =>
-                    'Extensão PHP IMAP não está disponível.',
+                    'Extensão PHP IMAP não está disponível neste ambiente. '
+                    . 'Tarefa ignorada sem erro; habilite IMAP somente se o recebimento de respostas por e-mail for utilizado.',
                 'checked' => 0,
                 'imported' => 0,
                 'ignored' => 0,

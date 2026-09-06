@@ -1,5 +1,14 @@
 # Changelog — Portal IECLB Parobé
 
+## v1.1.0 — Saúde do Portal
+
+- adiciona painel operacional permanente em Ferramentas;
+- adiciona snapshots manuais de saúde em JSON;
+- mantém até 120 snapshots sem nova tabela de banco;
+- adiciona histórico e tendência de pontuação;
+- adiciona teste `tests/portal-health.php`;
+- APP_VERSION passa para 1.1.0.
+
 ## v1.0.1 — Acabamento pós-release
 
 - atualiza os textos históricos do checklist operacional;

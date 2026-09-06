@@ -99,9 +99,12 @@ final class PerformanceHealthService
                 . ' arquivo(s) de cache expirado(s) aguardam limpeza.';
         }
 
+                /* PORTAL_OPCACHE_DIAGNOSTIC_V101 */
         if (!$opcacheEnabled) {
             $warnings[] =
-                'OPcache está desativado neste ambiente PHP.';
+                PHP_SAPI === 'cli'
+                    ? 'OPcache está desativado no PHP CLI; isso não confirma o estado do servidor web.'
+                    : 'OPcache está desativado no SAPI ' . PHP_SAPI . '.';
         } elseif (
             is_array($opcacheStatus)
             && !empty($opcacheStatus['cache_full'])

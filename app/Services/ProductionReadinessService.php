@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Central de pré-produção v0.99.0.
+ * Central operacional de produção v1.0.1.
  *
  * Agrega verificações já existentes no Portal e adiciona checagens de ambiente.
  * Não altera configuração, banco, DNS, cache ou arquivos do site.
@@ -70,7 +70,7 @@ final class ProductionReadinessService
         $add(
             'Aplicação',
             'Versão do Portal',
-            version_compare($version, '0.99.0', '>=') ? 'ok' : 'error',
+            version_compare($version, '1.0.0', '>=') ? 'ok' : 'error',
             $version !== '' ? $version : 'APP_VERSION não definida.'
         );
 
@@ -647,19 +647,31 @@ final class ProductionReadinessService
                         : 'Desativado.'
                 );
 
+                                /* PORTAL_OPCACHE_CONTEXT_V101 */
+                $opcacheActive =
+                    !empty(
+                        $performance['php']['opcache_enabled']
+                    );
+
+                $opcacheCli =
+                    PHP_SAPI === 'cli';
+
                 $add(
                     'Desempenho',
                     'OPcache',
-                    !empty(
-                        $performance['php']['opcache_enabled']
+                    (
+                        $opcacheActive
+                        || $opcacheCli
                     )
                         ? 'ok'
                         : 'warning',
-                    !empty(
-                        $performance['php']['opcache_enabled']
-                    )
-                        ? 'Ativo.'
-                        : 'Inativo.'
+                    $opcacheActive
+                        ? 'Ativo no SAPI ' . PHP_SAPI . '.'
+                        : (
+                            $opcacheCli
+                                ? 'Não avaliado como falha no PHP CLI; confirme o OPcache no servidor web.'
+                                : 'Inativo no SAPI ' . PHP_SAPI . '.'
+                        )
                 );
             } catch (Throwable $e) {
                 $add(

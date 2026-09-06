@@ -19,6 +19,7 @@ require_once __DIR__ . '/app/Services/CacheService.php';
 require_once __DIR__ . '/app/Services/PerformanceHealthService.php';
 require_once __DIR__ . '/app/Services/AccessibilityAuditService.php';
 require_once __DIR__ . '/app/Services/ProductionReadinessService.php';
+require_once __DIR__ . '/app/Services/PortalHealthSnapshotService.php';
 require_once __DIR__ . '/app/Services/CookieConsentService.php';
 $contentPageCacheServiceFile =
     __DIR__

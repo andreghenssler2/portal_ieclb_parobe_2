@@ -503,6 +503,11 @@ if (
                                 class="<?= $isPath('ferramentas/pre-producao.php') ? 'active' : '' ?>"
                                 href="<?= e(url('admin/ferramentas/pre-producao.php')) ?>"
                             >Pré-produção</a>
+                            <?php /* PORTAL_HEALTH_MENU_V110 */ ?>
+                            <a
+                                class="<?= $isPath('ferramentas/saude-portal.php') ? 'active' : '' ?>"
+                                href="<?= e(url('admin/ferramentas/saude-portal.php')) ?>"
+                            >Saúde do Portal</a>
                         <?php endif; ?>
                         <?php endif; ?>
                         <?php endif; ?>

@@ -502,7 +502,28 @@ final class PermissionAuditService
                     true
                 );
 
-            $protection =
+            
+            /*
+             * PORTAL_PUBLIC_DOCUMENT_ROUTES_V101_R2
+             *
+             * Estes arquivos ficam em admin/ por legado de roteamento, mas
+             * são endpoints públicos do módulo Documentos. Eles consultam
+             * apenas documentos publicados e renderizam o tema público.
+             */
+            if (
+                in_array(
+                    $relative,
+                    [
+                        'admin/documento-baixar.php',
+                        'admin/documento.php',
+                        'admin/documentos.php',
+                    ],
+                    true
+                )
+            ) {
+                $isPublic = true;
+            }
+$protection =
                 (
                     $requiredPermissions
                     || (
