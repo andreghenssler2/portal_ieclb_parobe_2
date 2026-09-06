@@ -1,5 +1,15 @@
 # Changelog — Portal IECLB Parobé
 
+## v1.0.0 — Release estável de produção
+
+- consolida o Portal como versão estável;
+- não adiciona migração de banco;
+- fecha o ciclo de pré-produção sem bloqueadores;
+- adiciona teste final de release;
+- adiciona guia de deploy de produção;
+- adiciona histórico resumido do ciclo 0.x;
+- APP_VERSION passa para 1.0.0.
+
 ## v0.99.0 — Pré-produção / Release Readiness
 
 - adiciona Central de Pré-produção;
