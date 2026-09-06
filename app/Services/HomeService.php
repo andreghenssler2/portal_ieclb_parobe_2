@@ -334,8 +334,40 @@ final class HomeService
         $where = [];
         $params = [];
         $status = $this->findColumn($cols, ['status','situacao']);
+
+        /*
+         * PORTAL_PUBLIC_SCHEDULE_VISIBILITY_V112
+         *
+         * Posts da Home precisam obedecer à mesma regra da notícia individual:
+         * somente status publicado e data de publicação já disponível.
+         *
+         * Antes desta correção, o filtro genérico apenas excluía rascunho,
+         * lixeira e privado, fazendo o status "agendado" aparecer na Home.
+         */
         if ($status) {
-            $where[] = "LOWER(COALESCE(`$status`,'')) NOT IN ('lixeira','trash','rascunho','draft','privado','private','inativo')";
+            if ($table === 'posts') {
+                $where[] = "LOWER(COALESCE(`$table`.`$status`,'')) = 'publicado'";
+            } else {
+                $where[] = "LOWER(COALESCE(`$status`,'')) NOT IN ('lixeira','trash','rascunho','draft','privado','private','inativo')";
+            }
+        }
+
+        if ($table === 'posts') {
+            $publicationDate =
+                $this->findColumn(
+                    $cols,
+                    [
+                        'publicado_em',
+                        'data_publicacao',
+                        'publication_date',
+                    ]
+                );
+
+            if ($publicationDate) {
+                $where[] =
+                    "(`$table`.`$publicationDate` IS NULL"
+                    . " OR `$table`.`$publicationDate` <= NOW())";
+            }
         }
 
         $joins = '';

@@ -13,7 +13,7 @@ $root = __DIR__;
 
 require_once $root . DIRECTORY_SEPARATOR . 'bootstrap.php';
 
-echo "Portal IECLB Parobé - Diagnóstico v1.1.0\n";
+echo "Portal IECLB Parobé - Diagnóstico v1.1.1\n";
 echo str_repeat('=', 82) . "\n";
 
 $errors = 0;
@@ -25,24 +25,18 @@ $version =
 
 echo "[INFO] APP_VERSION: {$version}\n";
 
-if ($version !== '1.1.0') {
-    echo "[ERRO] Versão esperada: 1.1.0\n";
+if ($version !== '1.1.1') {
+    echo "[ERRO] Versão esperada: 1.1.1\n";
     $errors++;
 }
 
 $files = [
-    'app/Services/PortalHealthSnapshotService.php' =>
-        'final class PortalHealthSnapshotService',
-    'admin/ferramentas/saude-portal.php' =>
-        "Auth::requirePermission('configuracoes.gerenciar')",
-    'tests/portal-health.php' =>
-        'teste Saúde do Portal v1.1.0',
-    'docs/RELEASE_v1.1.0.md' =>
-        'Saúde do Portal',
-    'bootstrap.php' =>
-        'PortalHealthSnapshotService.php',
-    'admin/_header.php' =>
-        'PORTAL_HEALTH_MENU_V110',
+    'tests/portal-health-automation.php' =>
+        'teste automação Saúde do Portal v1.1.1',
+    'docs/RELEASE_v1.1.1.md' =>
+        'Snapshots automáticos',
+    'app/Services/SchedulerService.php' =>
+        'PORTAL_HEALTH_SNAPSHOT_ALERT_V111',
 ];
 
 foreach ($files as $relative => $marker) {
@@ -72,11 +66,50 @@ foreach ($files as $relative => $marker) {
     }
 }
 
-if (class_exists('PortalHealthSnapshotService')) {
-    try {
-        $pdo =
-            Database::connection();
+try {
+    $pdo =
+        Database::connection();
 
+    if (!class_exists('SchedulerService')) {
+        throw new RuntimeException(
+            'SchedulerService indisponível.'
+        );
+    }
+
+    $tasks =
+        SchedulerService::tasks(
+            $pdo
+        );
+
+    $healthTask = null;
+
+    foreach ($tasks as $task) {
+        if (
+            (string)($task['slug'] ?? '')
+            === 'registrar_saude_portal'
+        ) {
+            $healthTask = $task;
+            break;
+        }
+    }
+
+    if (is_array($healthTask)) {
+        echo "[OK] Tarefa registrar_saude_portal registrada.\n";
+        echo '     Ativa: '
+            . (!empty($healthTask['ativa']) ? 'sim' : 'não')
+            . "\n";
+        echo '     Intervalo: '
+            . (int)($healthTask['intervalo_minutos'] ?? 0)
+            . " minuto(s)\n";
+        echo '     Próxima execução: '
+            . (string)($healthTask['proxima_execucao_em'] ?? '')
+            . "\n";
+    } else {
+        echo "[ERRO] Tarefa registrar_saude_portal ausente.\n";
+        $errors++;
+    }
+
+    if (class_exists('PortalHealthSnapshotService')) {
         $current =
             PortalHealthSnapshotService::current(
                 $pdo,
@@ -96,38 +129,33 @@ if (class_exists('PortalHealthSnapshotService')) {
         echo '  Pontuação: '
             . (int)$current['score']
             . "%\n";
-        echo '  Aprovadas: '
-            . (int)$current['passed']
-            . '/'
-            . (int)$current['checks']
-            . "\n";
         echo '  Avisos: '
-            . count($current['warnings'])
+            . count((array)$current['warnings'])
             . "\n";
         echo '  Bloqueadores: '
-            . count($current['blockers'])
+            . count((array)$current['blockers'])
             . "\n";
         echo '  Snapshots salvos: '
             . count($history)
             . " (últimos 10 consultados)\n";
 
-        foreach ($current['blockers'] as $blocker) {
+        foreach ((array)$current['blockers'] as $blocker) {
             echo "[ERRO] {$blocker}\n";
             $errors++;
         }
-    } catch (Throwable $e) {
-        echo "[ERRO] Saúde do Portal: {$e->getMessage()}\n";
+    } else {
+        echo "[ERRO] PortalHealthSnapshotService indisponível.\n";
         $errors++;
     }
-} else {
-    echo "[ERRO] PortalHealthSnapshotService indisponível.\n";
+} catch (Throwable $e) {
+    echo "[ERRO] {$e->getMessage()}\n";
     $errors++;
 }
 
 echo "\n" . str_repeat('=', 82) . "\n";
 
 if ($errors === 0) {
-    echo "RESULTADO: v1.1.0 instalada e módulo Saúde do Portal operacional.\n";
+    echo "RESULTADO: v1.1.1 instalada e snapshots automáticos configurados.\n";
     exit(0);
 }
 

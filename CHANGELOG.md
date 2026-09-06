@@ -1,5 +1,14 @@
 # Changelog — Portal IECLB Parobé
 
+## v1.1.1 — Snapshots automáticos
+
+- adiciona tarefa diária `registrar_saude_portal`;
+- grava snapshots automáticos pelo cron;
+- compara o snapshot novo com o anterior;
+- alerta administradores quando a pontuação cair, surgir novo aviso ou bloqueador;
+- utiliza a Central de Notificações já existente;
+- sem nova tabela ou migração de banco.
+
 ## v1.1.0 — Saúde do Portal
 
 - adiciona painel operacional permanente em Ferramentas;

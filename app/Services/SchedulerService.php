@@ -66,7 +66,15 @@ final class SchedulerService
                 'enabled' => true,
                 'priority' => 65,
             ],
-            'backup_completo_automatico' => [
+                        /* PORTAL_HEALTH_SNAPSHOT_TASK_V111 */
+            'registrar_saude_portal' => [
+                'name' => 'Registrar saúde do Portal',
+                'description' => 'Grava diariamente um snapshot da saúde operacional e alerta administradores quando houver piora.',
+                'interval' => 1440,
+                'enabled' => true,
+                'priority' => 58,
+            ],
+'backup_completo_automatico' => [
                 'name' => 'Backup completo automático',
                 'description' => 'Cria um backup completo periódico usando as opções de uploads, temas e retenção de Ferramentas > Backups.',
                 'interval' => 10080,
@@ -315,7 +323,9 @@ final class SchedulerService
             'receber_respostas_email' => self::syncInboundFormReplies($pdo),
             'limpar_derivados_midia' => self::cleanupMediaDerivedFiles($pdo),            'backup_banco_automatico' => self::automaticDatabaseBackup($pdo),
             'backup_completo_automatico' => self::automaticFullBackup($pdo),
-            default => throw new RuntimeException('Handler da tarefa não encontrado: ' . $slug),
+
+            /* PORTAL_HEALTH_SNAPSHOT_HANDLER_V111 */
+            'registrar_saude_portal' => self::automaticPortalHealthSnapshot($pdo),            default => throw new RuntimeException('Handler da tarefa não encontrado: ' . $slug),
         };
     }
 
@@ -350,7 +360,251 @@ final class SchedulerService
         ];
     }
         /** @return array{status:string,message:string} */
-    private static function automaticDatabaseBackup(PDO $pdo): array
+        /**
+     * Snapshot automático da saúde operacional.
+     *
+     * @return array{status:string,message:string}
+     */
+    private static function automaticPortalHealthSnapshot(
+        PDO $pdo
+    ): array {
+        /* PORTAL_HEALTH_SNAPSHOT_ALERT_V111 */
+        if (
+            !class_exists(
+                'PortalHealthSnapshotService'
+            )
+        ) {
+            return [
+                'status' => 'ignorado',
+                'message' =>
+                    'PortalHealthSnapshotService não está disponível.',
+            ];
+        }
+
+        $root =
+            dirname(
+                __DIR__,
+                2
+            );
+
+        $previousHistory =
+            PortalHealthSnapshotService::history(
+                $root,
+                1
+            );
+
+        $previous =
+            $previousHistory[0]
+            ?? null;
+
+        $current =
+            PortalHealthSnapshotService::save(
+                $pdo,
+                $root,
+                'cron'
+            );
+
+        $currentScore =
+            (int)($current['score'] ?? 0);
+
+        $currentWarnings =
+            array_values(
+                array_unique(
+                    array_map(
+                        'strval',
+                        (array)($current['warnings'] ?? [])
+                    )
+                )
+            );
+
+        $currentBlockers =
+            array_values(
+                array_unique(
+                    array_map(
+                        'strval',
+                        (array)($current['blockers'] ?? [])
+                    )
+                )
+            );
+
+        $alertReasons = [];
+
+        if (is_array($previous)) {
+            $previousScore =
+                (int)($previous['score'] ?? 0);
+
+            $previousWarnings =
+                array_values(
+                    array_unique(
+                        array_map(
+                            'strval',
+                            (array)($previous['warnings'] ?? [])
+                        )
+                    )
+                );
+
+            $previousBlockers =
+                array_values(
+                    array_unique(
+                        array_map(
+                            'strval',
+                            (array)($previous['blockers'] ?? [])
+                        )
+                    )
+                );
+
+            if ($currentScore < $previousScore) {
+                $alertReasons[] =
+                    'pontuação caiu de '
+                    . $previousScore
+                    . '% para '
+                    . $currentScore
+                    . '%';
+            }
+
+            $newWarnings =
+                array_values(
+                    array_diff(
+                        $currentWarnings,
+                        $previousWarnings
+                    )
+                );
+
+            if ($newWarnings) {
+                $alertReasons[] =
+                    count($newWarnings)
+                    . ' novo(s) aviso(s)';
+            }
+
+            $newBlockers =
+                array_values(
+                    array_diff(
+                        $currentBlockers,
+                        $previousBlockers
+                    )
+                );
+
+            if ($newBlockers) {
+                $alertReasons[] =
+                    count($newBlockers)
+                    . ' novo(s) bloqueador(es)';
+            }
+        } elseif ($currentBlockers) {
+            /*
+             * Primeiro snapshot automático: bloqueador já existente também
+             * merece alerta.
+             */
+            $alertReasons[] =
+                count($currentBlockers)
+                . ' bloqueador(es) detectado(s)';
+        }
+
+        $notified = 0;
+
+        if (
+            $alertReasons
+            && class_exists(
+                'AdminNotificationService'
+            )
+        ) {
+            try {
+                $adminIds =
+                    $pdo->query(
+                        "SELECT u.id
+                         FROM usuarios u
+                         INNER JOIN perfis p
+                            ON p.id=u.perfil_id
+                         WHERE u.ativo=1
+                           AND p.slug='administrador'
+                         ORDER BY u.id"
+                    )->fetchAll(
+                        PDO::FETCH_COLUMN
+                    )
+                    ?: [];
+
+                $message =
+                    'Snapshot automático: '
+                    . implode(
+                        '; ',
+                        $alertReasons
+                    )
+                    . '. Estado atual: '
+                    . strtoupper(
+                        (string)($current['state'] ?? 'attention')
+                    )
+                    . '; avisos: '
+                    . count($currentWarnings)
+                    . '; bloqueadores: '
+                    . count($currentBlockers)
+                    . '.';
+
+                foreach ($adminIds as $adminId) {
+                    $adminId =
+                        (int)$adminId;
+
+                    if ($adminId <= 0) {
+                        continue;
+                    }
+
+                    AdminNotificationService::notify(
+                        $pdo,
+                        $adminId,
+                        'portal-health:auto',
+                        'Saúde do Portal requer atenção',
+                        $message,
+                        'admin/ferramentas/saude-portal.php',
+                        $currentBlockers
+                            ? 'danger'
+                            : 'warning',
+                        'bi-heart-pulse',
+                        true
+                    );
+
+                    $notified++;
+                }
+            } catch (Throwable $ignored) {
+                /*
+                 * Falha ao criar notificação não invalida o snapshot.
+                 * A execução permanece registrada no histórico do agendador.
+                 */
+            }
+        }
+
+        $message =
+            'Snapshot automático: '
+            . $currentScore
+            . '% - '
+            . strtoupper(
+                (string)($current['state'] ?? 'attention')
+            )
+            . '.';
+
+        if ($alertReasons) {
+            $message .=
+                ' Alteração relevante: '
+                . implode(
+                    '; ',
+                    $alertReasons
+                )
+                . '.';
+
+            if ($notified > 0) {
+                $message .=
+                    ' '
+                    . $notified
+                    . ' administrador(es) notificado(s).';
+            }
+        } else {
+            $message .=
+                ' Sem piora relevante em relação ao snapshot anterior.';
+        }
+
+        return [
+            'status' => 'ok',
+            'message' => $message,
+        ];
+    }
+private static function automaticDatabaseBackup(PDO $pdo): array
     {
         $root =
             dirname(
