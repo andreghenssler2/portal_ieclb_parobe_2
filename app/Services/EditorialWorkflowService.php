@@ -421,6 +421,17 @@ final class EditorialWorkflowService
         self::requirePublisher();
 
         /*
+         * PORTAL_ADMIN_WORKFLOW_OVERRIDE_V112_R1
+         *
+         * A revisão obrigatória continua sendo aplicada aos demais perfis.
+         * O Administrador, que já possui o controle total do Portal, pode
+         * publicar ou agendar diretamente pelo editor quando necessário.
+         */
+        if (Auth::isAdmin()) {
+            return;
+        }
+
+        /*
          * Com revisão obrigatória, a publicação de um conteúdo novo deve
          * ocorrer pela Fila de revisão. Assim a versão publicada é
          * exatamente a mesma versão cujo hash foi aprovado.

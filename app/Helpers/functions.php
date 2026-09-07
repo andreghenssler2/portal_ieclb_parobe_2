@@ -246,7 +246,7 @@ function slugify(string $text): string
 
 function uniqueSlug(PDO $pdo, string $table, string $title, ?int $ignoreId = null): string
 {
-    $allowed = ['posts', 'paginas', 'comunidades', 'categorias', 'tags', 'eventos', 'evento_categorias', 'menus', 'galerias', 'formularios', 'documentos', 'documento_categorias', 'liderancas'];
+    $allowed = ['posts', 'paginas', 'comunidades', 'categorias', 'tags', 'eventos', 'evento_categorias', 'menus', 'galerias', 'formularios', 'documentos', 'documento_categorias', 'liderancas', 'grupos'];
     if (!in_array($table, $allowed, true)) {
         throw new InvalidArgumentException('Tabela inválida para slug.');
     }
