@@ -30,7 +30,12 @@ $report =
         $root
     );
 
-echo "Portal IECLB Parobé - checklist de pré-produção v0.99.0\n";
+$portalVersion =
+    defined('APP_VERSION')
+        ? (string)APP_VERSION
+        : 'não identificada';
+
+echo "Portal IECLB Parobé - checklist operacional série 1.x - Portal {$portalVersion}\n";
 echo str_repeat('=', 78) . "\n";
 
 echo '[INFO] Estado: '
@@ -68,14 +73,14 @@ foreach ($report['blockers'] as $blocker) {
 echo str_repeat('=', 78) . "\n";
 
 if ($report['blockers']) {
-    echo "RESULTADO: existem bloqueadores para a entrada em produção.\n";
+    echo "RESULTADO: existem bloqueadores operacionais para revisão.\n";
     exit(1);
 }
 
 if ($report['warnings']) {
-    echo "RESULTADO: estrutura aprovada, com aviso(s) para revisão antes da v1.0.\n";
+    echo "RESULTADO: estrutura aprovada, com aviso(s) de ambiente/operação para revisão.\n";
     exit(0);
 }
 
-echo "RESULTADO: checklist automático aprovado sem avisos.\n";
+echo "RESULTADO: checklist operacional aprovado sem avisos.\n";
 exit(0);

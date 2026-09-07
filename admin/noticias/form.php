@@ -112,6 +112,15 @@ if ($id) {
     }
 }
 
+/*
+ * PORTAL_EDITOR_ORIGINAL_STATUS_V112_R1
+ *
+ * Guarda o status carregado do banco antes que os campos enviados por POST
+ * sobrescrevam $post. O workflow precisa conhecer o estado anterior real.
+ */
+$originalPublicStatus =
+    (string)($post['status'] ?? 'rascunho');
+
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach (['titulo', 'slug', 'resumo', 'seo_titulo', 'seo_descricao', 'conteudo', 'comunidade_id', 'status', 'publicado_em', 'imagem_capa_id'] as $field) {
@@ -194,13 +203,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $status = 'rascunho';
                 }
 
+                /*
+                 * PORTAL_AUTO_SCHEDULE_STATUS_V112_R2
+                 *
+                 * Uma data/hora futura significa agendamento. A regra fica
+                 * também no servidor para não depender apenas do JavaScript.
+                 */
+                $requestedPublishAt =
+                    trim(
+                        (string)($_POST['publicado_em'] ?? '')
+                    );
+
+                if ($requestedPublishAt !== '') {
+                    try {
+                        $requestedPublishDate =
+                            new DateTimeImmutable(
+                                $requestedPublishAt
+                            );
+
+                        if (
+                            $requestedPublishDate
+                            > new DateTimeImmutable('now')
+                        ) {
+                            $status = 'agendado';
+                        } elseif ($status === 'agendado') {
+                            throw new RuntimeException(
+                                'A data/hora do agendamento precisa estar no futuro.'
+                            );
+                        }
+                    } catch (RuntimeException $e) {
+                        throw $e;
+                    } catch (Throwable $e) {
+                        throw new RuntimeException(
+                            'Data/hora de publicação inválida.'
+                        );
+                    }
+                } elseif ($status === 'agendado') {
+                    throw new RuntimeException(
+                        'Informe uma data/hora futura para agendar a notícia.'
+                    );
+                }
+
                 
                 // v0.61.0 - publicação de novos conteúdos passa pelo workflow editorial.
                 EditorialWorkflowService::assertStatusTransitionAllowed(
                     $pdo,
                     $id,
                     $status,
-                    (string)($post['status'] ?? 'rascunho')
+                    $originalPublicStatus
                 );
 $publicadoEm = trim((string)($_POST['publicado_em'] ?? ''));
                 if ($publicadoEm !== '') {
@@ -547,7 +597,7 @@ require __DIR__ . '/../_header.php';
                     <div class="wp-property-list">
                         <label class="wp-property-row">
                             <span>Status</span>
-                            <select class="wp-property-control" name="status">
+                            <select class="wp-property-control" name="status" id="postStatus">
                                 <?php foreach (['rascunho' => 'Rascunho', 'agendado' => 'Agendado', 'publicado' => 'Publicado', 'arquivado' => 'Arquivado'] as $v => $l): ?>
                                     <option value="<?= e($v) ?>" <?= $post['status'] === $v ? 'selected' : '' ?>><?= e($l) ?></option>
                                 <?php endforeach; ?>
@@ -556,7 +606,7 @@ require __DIR__ . '/../_header.php';
 
                         <label class="wp-property-row">
                             <span>Publicar</span>
-                            <input type="datetime-local" class="wp-property-control" name="publicado_em" value="<?= $post['publicado_em'] ? e((new DateTime((string)$post['publicado_em']))->format('Y-m-d\TH:i')) : '' ?>">
+                            <input type="datetime-local" class="wp-property-control" name="publicado_em" id="postPublishAt" value="<?= $post['publicado_em'] ? e((new DateTime((string)$post['publicado_em']))->format('Y-m-d\TH:i')) : '' ?>">
                         </label>
 
                         <label class="wp-property-row">
@@ -703,6 +753,32 @@ PortalMediaPicker.init({
 });
 
 ContentBlockEditor.init();
+
+/* PORTAL_AUTO_SCHEDULE_STATUS_V112_R2 */
+const postStatus = document.getElementById('postStatus');
+const postPublishAt = document.getElementById('postPublishAt');
+
+if (postStatus && postPublishAt) {
+    postPublishAt.addEventListener('change', function () {
+        const value = String(postPublishAt.value || '').trim();
+
+        if (!value) {
+            return;
+        }
+
+        const selectedDate = new Date(value);
+
+        if (
+            !Number.isNaN(selectedDate.getTime())
+            && selectedDate.getTime() > Date.now()
+        ) {
+            postStatus.value = 'agendado';
+            postStatus.dispatchEvent(
+                new Event('change', { bubbles: true })
+            );
+        }
+    });
+}
 
 tinymce.init({
     selector: '#conteudo',

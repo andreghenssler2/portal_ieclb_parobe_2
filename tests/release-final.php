@@ -13,7 +13,7 @@ $root = dirname(__DIR__);
 
 require_once $root . DIRECTORY_SEPARATOR . 'bootstrap.php';
 
-echo "Portal IECLB Parobé - validação final v1.0.0\n";
+echo "Portal IECLB Parobé - validação final série 1.x\n";
 echo str_repeat('=', 78) . "\n";
 
 $errors = 0;
@@ -24,10 +24,14 @@ $version =
         ? (string)APP_VERSION
         : '0.0.0';
 
-if ($version === '1.0.0') {
-    echo "[OK] APP_VERSION = 1.0.0\n";
+$seriesOk =
+    version_compare($version, '1.0.0', '>=')
+    && version_compare($version, '2.0.0', '<');
+
+if ($seriesOk) {
+    echo "[OK] APP_VERSION = {$version} (série 1.x)\n";
 } else {
-    echo "[FALHA] APP_VERSION esperado 1.0.0; atual: {$version}\n";
+    echo "[FALHA] APP_VERSION fora da série 1.x; atual: {$version}\n";
     $errors++;
 }
 
@@ -40,9 +44,10 @@ foreach (
         'tests/run.php',
         'tests/release-readiness.php',
         'tests/accessibility.php',
+        'tests/post-release-v101.php',
         'docs/RELEASE_v1.0.0.md',
+        'docs/RELEASE_v1.0.1.md',
         'docs/DEPLOY_PRODUCAO_v1.0.0.md',
-        'docs/CHECKLIST_GO_LIVE_v0.99.md',
     ]
     as $relative
 ) {
@@ -69,7 +74,7 @@ if (class_exists('ProductionReadinessService')) {
                 $root
             );
 
-        echo "\nPré-produção consolidada:\n";
+        echo "\nSaúde operacional consolidada:\n";
         echo '  Estado: ' . strtoupper((string)$report['state']) . "\n";
         echo '  Pontuação: ' . (int)$report['score'] . "%\n";
         echo '  Aprovadas: '
@@ -90,7 +95,7 @@ if (class_exists('ProductionReadinessService')) {
             $errors++;
         }
     } catch (Throwable $e) {
-        echo "[FALHA] Central de Pré-produção: {$e->getMessage()}\n";
+        echo "[FALHA] Central operacional: {$e->getMessage()}\n";
         $errors++;
     }
 } else {
@@ -130,14 +135,14 @@ if (class_exists('AccessibilityAuditService')) {
 echo str_repeat('=', 78) . "\n";
 
 if ($errors > 0) {
-    echo "RESULTADO: {$errors} falha(s); release v1.0.0 não aprovada.\n";
+    echo "RESULTADO: {$errors} falha(s); série 1.x não aprovada.\n";
     exit(1);
 }
 
 if ($warnings > 0) {
-    echo "RESULTADO: v1.0.0 aprovada com {$warnings} aviso(s) de ambiente/produção.\n";
+    echo "RESULTADO: Portal {$version} aprovado com {$warnings} aviso(s) de ambiente/operação.\n";
     exit(0);
 }
 
-echo "RESULTADO: v1.0.0 aprovada sem avisos automáticos.\n";
+echo "RESULTADO: Portal {$version} aprovado sem avisos automáticos.\n";
 exit(0);

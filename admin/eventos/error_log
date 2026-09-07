@@ -1,0 +1,10 @@
+[07-Sep-2026 19:42:49 America/Sao_Paulo] PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY093]: Invalid parameter number in /home1/ieclbp28/public_html/admin/eventos/index.php:46
+Stack trace:
+#0 /home1/ieclbp28/public_html/admin/eventos/index.php(46): PDOStatement->execute(Array)
+#1 {main}
+  thrown in /home1/ieclbp28/public_html/admin/eventos/index.php on line 46
+[07-Sep-2026 19:43:02 America/Sao_Paulo] PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY093]: Invalid parameter number in /home1/ieclbp28/public_html/admin/eventos/index.php:46
+Stack trace:
+#0 /home1/ieclbp28/public_html/admin/eventos/index.php(46): PDOStatement->execute(Array)
+#1 {main}
+  thrown in /home1/ieclbp28/public_html/admin/eventos/index.php on line 46
