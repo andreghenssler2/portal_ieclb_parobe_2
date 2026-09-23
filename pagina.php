@@ -146,6 +146,11 @@ if (
     }
 }
 
+/* PORTAL_TRUSTED_EMBED_PAGE_V112_R5 */
+$pageContentPublic =
+    TrustedEmbedService::normalize(
+        $pageContentPublic
+    );
 require themeFile($pdo, 'header.php');
 ?>
 <article class="container py-5 content-reading">

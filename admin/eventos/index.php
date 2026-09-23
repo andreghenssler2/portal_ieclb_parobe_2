@@ -29,8 +29,12 @@ if ($comunidadeId > 0) {
     $params['comunidade_id'] = $comunidadeId;
 }
 if ($busca !== '') {
-    $where[] = '(e.titulo LIKE :busca OR e.local LIKE :busca OR e.resumo LIKE :busca)';
-    $params['busca'] = '%' . $busca . '%';
+    /* PORTAL_EVENT_SEARCH_PARAMS_V112_R3 */
+    $where[] = '(e.titulo LIKE :busca_titulo OR e.local LIKE :busca_local OR e.resumo LIKE :busca_resumo)';
+    $searchTerm = '%' . $busca . '%';
+    $params['busca_titulo'] = $searchTerm;
+    $params['busca_local'] = $searchTerm;
+    $params['busca_resumo'] = $searchTerm;
 }
 
 $sql = "SELECT e.*, c.nome AS comunidade_nome, ec.nome AS categoria_nome

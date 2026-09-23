@@ -1,5 +1,14 @@
 # Changelog — Portal IECLB Parobé
 
+## v1.1.2 — Correção de notícias agendadas
+
+- impede notícias com status `agendado` de aparecerem na Home modular;
+- a Home passa a exigir `status='publicado'` para posts;
+- a Home respeita `publicado_em <= NOW()`;
+- alinha a listagem da Home à regra da página individual da notícia;
+- invalida o cache público após a atualização;
+- sem migração de banco.
+
 ## v1.1.1 — Snapshots automáticos
 
 - adiciona tarefa diária `registrar_saude_portal`;

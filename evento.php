@@ -39,6 +39,14 @@ $metaImageHeight = (int)($evento['imagem_capa_altura'] ?? 0);
 $metaImageType = trim((string)($evento['imagem_capa_mime'] ?? ''));$metaOgType = 'article';
 $canonicalUrl = contentUrl('evento', (string)$evento['slug']);
 $metaOgType = 'article';
+/* PORTAL_TRUSTED_EMBED_EVENT_V112_R5 */
+$eventDescriptionPublic =
+    TrustedEmbedService::normalize(
+        (string)(
+            $evento['descricao']
+            ?? ''
+        )
+    );
 require themeFile($pdo, 'header.php');
 ?>
 <article class="container py-5 content-reading">
@@ -90,7 +98,7 @@ require themeFile($pdo, 'header.php');
         </div>
     </div>
 
-    <?php if ($evento['descricao']): ?><div class="article-body"><?= $evento['descricao'] ?></div><?php endif; ?>
+    <?php if (trim($eventDescriptionPublic) !== ''): ?><div class="article-body"><?= $eventDescriptionPublic ?></div><?php endif; ?>
 
     <div class="mt-4 d-flex flex-wrap gap-2">
         <a class="btn btn-outline-primary" href="<?= e(url('agenda')) ?>">Voltar para a agenda</a>

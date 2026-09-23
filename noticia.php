@@ -165,6 +165,11 @@ if (
     }
 }
 
+/* PORTAL_TRUSTED_EMBED_POST_V112_R5 */
+$articleContentPublic =
+    TrustedEmbedService::normalize(
+        $articleContentPublic
+    );
 require themeFile($pdo, 'header.php');
 ?>
 <article class="container py-5 content-reading"><div class="mb-4"><div class="text-secondary mb-2"><?php if ($postCategories): ?><?php foreach ($postCategories as $i=>$cat): ?><?= $i ? ' · ' : '' ?><a class="text-reset text-decoration-none" href="<?= e(categoryUrl((string)$cat['slug'])) ?>"><?= e($cat['nome']) ?></a><?php endforeach; ?><?php else: ?>Notícia<?php endif; ?> · <?= e($post['comunidade_nome'] ?: 'Paroquial') ?></div><h1 class="display-5 fw-bold"><?= e($post['titulo']) ?></h1><div class="text-secondary">Publicado em <?= e(formatDateBr($post['publicado_em'] ?: $post['created_at'])) ?><?php if ($post['autor_nome']): ?> · <?= e($post['autor_nome']) ?><?php endif; ?></div></div>

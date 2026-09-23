@@ -123,6 +123,36 @@ $originalPublicStatus =
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    /*
+     * PORTAL_MODSEC_EDITOR_TRANSPORT_V112_R7
+     *
+     * Evita enviar HTML rico em texto bruto ao ModSecurity. O navegador
+     * transporta o conteúdo em base64url e o Portal restaura aqui.
+     */
+    if (array_key_exists('conteudo_transport', $_POST)) {
+        $transport = trim((string)$_POST['conteudo_transport']);
+
+        if ($transport === '') {
+            $_POST['conteudo'] = '';
+        } elseif (preg_match('/^[A-Za-z0-9_-]+$/D', $transport) === 1) {
+            $base64 = strtr($transport, '-_', '+/');
+            $remainder = strlen($base64) % 4;
+
+            if ($remainder > 0) {
+                $base64 .= str_repeat('=', 4 - $remainder);
+            }
+
+            $decodedContent = base64_decode($base64, true);
+
+            if ($decodedContent === false) {
+                $error = 'Não foi possível decodificar o conteúdo enviado pelo editor.';
+            } else {
+                $_POST['conteudo'] = $decodedContent;
+            }
+        } else {
+            $error = 'Formato de transporte do conteúdo inválido.';
+        }
+    }
     foreach (['titulo', 'slug', 'resumo', 'seo_titulo', 'seo_descricao', 'conteudo', 'comunidade_id', 'status', 'publicado_em', 'imagem_capa_id'] as $field) {
         if (array_key_exists($field, $_POST)) {
             $post[$field] = $_POST[$field];
@@ -458,6 +488,7 @@ require __DIR__ . '/../_header.php';
 
     <form method="post" enctype="multipart/form-data" id="postEditorForm">
         <?= Csrf::field() ?>
+        <input type="hidden" name="conteudo_transport" id="conteudoTransport" value="">
 
         <div class="wp-post-editor-shell">
             <main class="wp-post-editor-main">
@@ -840,8 +871,49 @@ tinymce.init({
     }
 });
 
+function portalEncodeEditorTransport(value) {
+    const text = String(value || '');
+    let binary = '';
+
+    if (typeof TextEncoder !== 'undefined') {
+        const bytes = new TextEncoder().encode(text);
+        const chunkSize = 0x8000;
+
+        for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+            const chunk = bytes.subarray(
+                offset,
+                Math.min(offset + chunkSize, bytes.length)
+            );
+            binary += String.fromCharCode.apply(null, chunk);
+        }
+    } else {
+        binary = unescape(encodeURIComponent(text));
+    }
+
+    return btoa(binary)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/g, '');
+}
+
 document.getElementById('postEditorForm').addEventListener('submit', function () {
-    if (typeof tinymce !== 'undefined') tinymce.triggerSave();
+    if (typeof tinymce !== 'undefined') {
+        tinymce.triggerSave();
+    }
+
+    const postContentField = document.getElementById('conteudo');
+    const postContentTransport = document.getElementById('conteudoTransport');
+
+    if (postContentField && postContentTransport) {
+        postContentTransport.value =
+            portalEncodeEditorTransport(postContentField.value);
+
+        /*
+         * Impede a serialização do HTML bruto. O PHP restaura o conteúdo a
+         * partir de conteudo_transport.
+         */
+        postContentField.removeAttribute('name');
+    }
 });
 
 const titleInput = document.getElementById('postTitulo');
