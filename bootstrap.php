@@ -21,6 +21,7 @@ require_once __DIR__ . '/app/Services/AccessibilityAuditService.php';
 require_once __DIR__ . '/app/Services/ProductionReadinessService.php';
 require_once __DIR__ . '/app/Services/PortalHealthSnapshotService.php';
 require_once __DIR__ . '/app/Services/CookieConsentService.php';
+require_once __DIR__ . '/app/Services/MaintenanceExpiryService.php';
 require_once __DIR__ . '/app/Services/TrustedEmbedService.php';
 $contentPageCacheServiceFile =
     __DIR__
@@ -129,6 +130,12 @@ try {
     }
 
     // v0.21.0: bloqueia apenas a área pública quando o modo manutenção estiver ativo.
+    /*
+     * PORTAL_MAINTENANCE_AUTO_EXPIRE_V113_R2
+     * Encerra automaticamente a manutenção quando a previsão já venceu.
+     */
+    MaintenanceExpiryService::expireIfDue($bootstrapPdo);
+
     enforceMaintenanceMode($bootstrapPdo);
 
     // v0.31.0: cache seguro apenas para a Home pública e visitantes anônimos.
