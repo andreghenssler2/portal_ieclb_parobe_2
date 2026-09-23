@@ -6,6 +6,34 @@ $footerEmail = trim((string)($footerSettings['site_email'] ?? ''));
 $footerPhone = trim((string)($footerSettings['site_telefone'] ?? ''));
 $footerAddress = trim((string)($footerSettings['site_endereco'] ?? ''));
 $newsletterFooterEnabled = (string)($footerSettings['newsletter_enabled'] ?? '1') === '1';
+
+/* PORTAL_FOOTER_MENU_V112_R4 */
+$footerMenuLinks = [];
+try {
+    $footerMenu = publicMenu($footerPdo, 'rodape');
+
+    $collectFooterMenu = static function (array $items) use (&$collectFooterMenu, &$footerMenuLinks): void {
+        foreach ($items as $item) {
+            $title = trim((string)($item['titulo'] ?? ''));
+            if ($title !== '') {
+                $footerMenuLinks[] = [
+                    'titulo' => $title,
+                    'url' => menuItemUrl($item),
+                    'nova_aba' => (int)($item['nova_aba'] ?? 0) === 1,
+                ];
+            }
+
+            $children = is_array($item['children'] ?? null) ? $item['children'] : [];
+            if ($children) {
+                $collectFooterMenu($children);
+            }
+        }
+    };
+
+    $collectFooterMenu($footerMenu);
+} catch (Throwable $e) {
+    $footerMenuLinks = [];
+}
 $analyticsEnabled = (string)($footerSettings['analytics_enabled'] ?? '0') === '1';
 $analyticsMeasurementId = strtoupper(trim((string)($footerSettings['analytics_measurement_id'] ?? '')));
 $analyticsActive =
@@ -46,6 +74,13 @@ try {
                 <?php endif; ?>
             </div>
             <div class="col-lg-5 text-lg-end">
+                <?php foreach ($footerMenuLinks as $footerMenuLink): ?>
+                    <a
+                        class="footer-social-link"
+                        href="<?= e((string)$footerMenuLink['url']) ?>"
+                        <?= !empty($footerMenuLink['nova_aba']) ? 'target="_blank" rel="noopener"' : '' ?>
+                    ><?= e((string)$footerMenuLink['titulo']) ?></a>
+                <?php endforeach; ?>
                 <?php if ($privacyPage): ?><a class="footer-social-link" href="<?= e(contentUrl('pagina',(string)$privacyPage['slug'])) ?>">Política de Privacidade</a><?php endif; ?>
                 <?php if ($newsletterFooterEnabled): ?><a class="footer-social-link" href="<?= e(url('newsletter')) ?>">Newsletter</a><?php endif; ?>
                                 <?php if (
