@@ -357,6 +357,7 @@ if (
         [
             'todos',
             'imagens',
+            'videos',
             'documentos',
         ],
         true
@@ -448,14 +449,16 @@ if ($q !== '') {
     ];
 }
 
+/* PORTAL_VIDEO_LIBRARY_V116_R2 */
 if ($filter === 'imagens') {
-    $where[] =
-        "m.mime_type LIKE 'image/%'";
+    $where[] = "m.mime_type LIKE 'image/%'";
+} elseif ($filter === 'videos') {
+    $where[] = "m.mime_type IN ('video/mp4','application/mp4')";
 } elseif ($filter === 'documentos') {
     $where[] =
-        "m.mime_type NOT LIKE 'image/%'";
+        "m.mime_type NOT LIKE 'image/%'
+         AND m.mime_type NOT IN ('video/mp4','application/mp4')";
 }
-
 $whereSql =
     $where
         ? 'WHERE ' . implode(' AND ', $where)
@@ -525,6 +528,7 @@ $midias =
 $counts = [
     'todos' => 0,
     'imagens' => 0,
+    'videos' => 0,
     'documentos' => 0,
 ];
 
@@ -562,6 +566,28 @@ try {
 } catch (Throwable $ignored) {
 }
 
+
+/* PORTAL_VIDEO_LIBRARY_COUNTS_V116_R2 */
+try {
+    $videoCounts =
+        $pdo->query(
+            "SELECT
+                SUM(CASE WHEN mime_type IN ('video/mp4','application/mp4') THEN 1 ELSE 0 END) AS videos,
+                SUM(CASE
+                    WHEN mime_type NOT LIKE 'image/%'
+                     AND mime_type NOT IN ('video/mp4','application/mp4')
+                    THEN 1 ELSE 0 END) AS documentos
+             FROM midias"
+        )->fetch(PDO::FETCH_ASSOC)
+        ?: [];
+
+    $counts['videos'] =
+        (int)($videoCounts['videos'] ?? 0);
+
+    $counts['documentos'] =
+        (int)($videoCounts['documentos'] ?? 0);
+} catch (Throwable $ignored) {
+}
 $firstItem =
     $total > 0
         ? $offset + 1
@@ -770,6 +796,13 @@ require __DIR__ . '/../_header.php';
                     </option>
 
                     <option
+                        value="videos"
+                        <?= $filter === 'videos' ? 'selected' : '' ?>
+                    >
+                        Vídeos
+                    </option>
+
+                    <option
                         value="documentos"
                         <?= $filter === 'documentos' ? 'selected' : '' ?>
                     >
@@ -852,7 +885,8 @@ require __DIR__ . '/../_header.php';
             [
                 'todos' => 'Todos',
                 'imagens' => 'Imagens',
-                'documentos' => 'Documentos e vídeos',
+                'videos' => 'Vídeos',
+                'documentos' => 'Documentos',
             ]
             as $value => $label
         ): ?>
@@ -957,6 +991,11 @@ require __DIR__ . '/../_header.php';
                         'image/'
                     );
 
+                $isVideo =
+                    MediaService::isVideo(
+                        $m
+                    );
+
                 $title =
                     trim(
                         (string)(
@@ -1004,6 +1043,15 @@ require __DIR__ . '/../_header.php';
                                 ) ?>"
                                 loading="lazy"
                             >
+                        <?php elseif ($isVideo): ?>
+                            <video
+                                class="card-img-top media-thumb"
+                                src="<?= e(mediaUrl((string)$m['caminho'])) ?>"
+                                controls
+                                preload="metadata"
+                                playsinline
+                                style="background:#111;object-fit:contain"
+                            ></video>
                         <?php else: ?>
                             <div class="media-file-placeholder">
                                 <strong>
@@ -1111,6 +1159,11 @@ require __DIR__ . '/../_header.php';
                                     'image/'
                                 );
 
+                $isVideo =
+                    MediaService::isVideo(
+                        $m
+                    );
+
                             $title =
                                 trim(
                                     (string)(
@@ -1154,6 +1207,14 @@ require __DIR__ . '/../_header.php';
                                                 loading="lazy"
                                                 style="width:56px;height:56px;object-fit:cover;border-radius:.5rem"
                                             >
+                                        <?php elseif ($isVideo): ?>
+                                            <video
+                                                src="<?= e(mediaUrl((string)$m['caminho'])) ?>"
+                                                muted
+                                                preload="metadata"
+                                                playsinline
+                                                style="width:72px;height:56px;object-fit:cover;border-radius:.5rem;background:#111"
+                                            ></video>
                                         <?php else: ?>
                                             <span
                                                 class="rounded bg-body-tertiary border d-inline-flex align-items-center justify-content-center flex-shrink-0"

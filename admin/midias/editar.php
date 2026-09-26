@@ -188,6 +188,12 @@ $isImage =
         $media
     );
 
+/* PORTAL_VIDEO_DETAILS_V116_R2 */
+$isVideo =
+    MediaService::isVideo(
+        $media
+    );
+
 $fileUrl =
     mediaUrl(
         (string)$media['caminho']
@@ -314,6 +320,15 @@ require __DIR__ . '/../_header.php';
                             )
                         ) ?>"
                     >
+                <?php elseif ($isVideo): ?>
+                    <video
+                        class="w-100 rounded"
+                        src="<?= e($fileUrl) ?>"
+                        controls
+                        preload="metadata"
+                        playsinline
+                        style="max-height:520px;background:#111"
+                    ></video>
                 <?php else: ?>
                     <div class="media-file-placeholder rounded">
                         <strong>

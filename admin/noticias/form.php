@@ -91,7 +91,14 @@ foreach ($selectedTags as $tagId) {
 $tagInputValue = implode(', ', $tagNames);
 $popularTags = array_slice($tags, 0, 14);
 
-$midias = $pdo->query("SELECT id,caminho,titulo,alt_text,nome_original,largura,altura FROM midias WHERE mime_type LIKE 'image/%' ORDER BY id DESC")->fetchAll();
+/* PORTAL_VIDEO_EDITOR_V116_R2 */
+$midias = $pdo->query(
+    "SELECT id,caminho,titulo,alt_text,nome_original,largura,altura,mime_type
+     FROM midias
+     WHERE mime_type LIKE 'image/%'
+        OR mime_type IN ('video/mp4','application/mp4')
+     ORDER BY id DESC"
+)->fetchAll();
 $imagemCapaAtual = !empty($post['imagem_capa_id']) ? MediaService::find($pdo, (int)$post['imagem_capa_id']) : null;
 
 $contentBlocks = $id
@@ -863,8 +870,8 @@ tinymce.init({
     content_style: 'body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:17px;line-height:1.75;padding:24px 34px;max-width:920px;margin:0 auto;} img{max-width:100%;height:auto;}',
     setup: function (editor) {
         editor.ui.registry.addButton('portalmedia', {
-            icon: 'image',
-            tooltip: 'Inserir imagens da Biblioteca de Mídia',
+            icon: 'collection-play',
+            tooltip: 'Inserir imagem ou vídeo da Biblioteca de Mídia',
             onAction: function () { PortalMediaPicker.openForEditor(editor); }
         });
         editor.on('change keyup', function () { editor.save(); });

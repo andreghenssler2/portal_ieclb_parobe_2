@@ -22,11 +22,7 @@
             this.config = config || {};
             this.modalElement = document.getElementById(this.config.modalId || 'portalMediaPickerModal');
             if (!this.modalElement) return;
-
-            if (!window.bootstrap || !window.bootstrap.Modal) {
-                console.error('PortalMediaPicker: Bootstrap 5 não foi carregado.');
-                return;
-            }
+            if (!window.bootstrap || !window.bootstrap.Modal) return;
 
             this.modal = window.bootstrap.Modal.getOrCreateInstance(this.modalElement);
             this.grid = this.modalElement.querySelector('#portalMediaGrid');
@@ -40,10 +36,9 @@
 
             this.grid.addEventListener('click', (event) => {
                 const card = event.target.closest('.media-picker-card');
-                if (!card) return;
+                if (!card || card.classList.contains('d-none')) return;
                 this.toggleCard(card);
             });
-
             this.search.addEventListener('input', () => this.filter());
             this.insertButton.addEventListener('click', () => this.confirmSelection());
             this.uploadButton.addEventListener('click', () => this.upload());
@@ -55,8 +50,9 @@
             this.mode = 'editor';
             this.editor = editor;
             this.featuredCallback = null;
-            this.modalElement.querySelector('#portalMediaPickerTitle').textContent = 'Inserir imagens no conteúdo';
-            this.modalElement.querySelector('#portalMediaPickerSubtitle').textContent = 'Selecione uma ou várias imagens. Elas serão inseridas no ponto atual do editor.';
+            this.modalElement.querySelector('#portalMediaPickerTitle').textContent = 'Inserir mídia no conteúdo';
+            this.modalElement.querySelector('#portalMediaPickerSubtitle').textContent =
+                'Selecione imagens e/ou vídeos MP4. Eles serão inseridos no ponto atual do editor.';
             this.insertButton.textContent = 'Inserir selecionadas';
             this.resetSelection();
             this.modal.show();
@@ -68,15 +64,14 @@
             this.editor = null;
             this.featuredCallback = callback;
             this.modalElement.querySelector('#portalMediaPickerTitle').textContent = 'Escolher imagem destacada';
-            this.modalElement.querySelector('#portalMediaPickerSubtitle').textContent = 'Clique em uma imagem para selecioná-la como destaque.';
+            this.modalElement.querySelector('#portalMediaPickerSubtitle').textContent =
+                'A imagem destacada aceita somente arquivos de imagem.';
             this.insertButton.textContent = 'Usar como imagem destacada';
             this.resetSelection();
-
             if (currentId) {
                 const card = this.grid.querySelector('[data-media-id="' + CSS.escape(String(currentId)) + '"]');
-                if (card) this.toggleCard(card, true);
+                if (card && card.dataset.mediaKind !== 'video') this.toggleCard(card, true);
             }
-
             this.modal.show();
         },
 
@@ -99,12 +94,12 @@
             bindRemove();
             openButton.addEventListener('click', () => {
                 this.openForFeatured((item) => {
+                    if (item.kind === 'video') return;
                     input.value = String(item.id);
                     preview.innerHTML = '';
 
                     const wrap = document.createElement('div');
                     wrap.className = 'd-flex align-items-center gap-3';
-
                     const img = document.createElement('img');
                     img.src = item.url;
                     img.alt = item.alt || item.title || '';
@@ -114,11 +109,13 @@
                     const title = document.createElement('div');
                     title.className = 'fw-semibold';
                     title.textContent = item.title || 'Imagem selecionada';
+
                     const remove = document.createElement('button');
                     remove.type = 'button';
                     remove.className = 'btn btn-sm btn-link text-danger p-0 mt-1';
                     remove.setAttribute('data-media-featured-remove', '');
                     remove.textContent = 'Remover imagem';
+
                     text.append(title, remove);
                     wrap.append(img, text);
                     preview.append(wrap);
@@ -130,15 +127,13 @@
         toggleCard(card, forceSelect) {
             const id = String(card.dataset.mediaId || '');
             if (!id) return;
-            const shouldSelect = forceSelect === true ? true : !this.selected.has(id);
+            if (this.mode === 'featured' && card.dataset.mediaKind === 'video') return;
 
-            if (this.mode === 'featured' && shouldSelect) {
-                this.resetSelection(false);
-            }
+            const shouldSelect = forceSelect === true ? true : !this.selected.has(id);
+            if (this.mode === 'featured' && shouldSelect) this.resetSelection(false);
 
             if (shouldSelect) {
-                const item = this.cardData(card);
-                this.selected.set(id, item);
+                this.selected.set(id, this.cardData(card));
                 card.classList.add('is-selected');
                 card.setAttribute('aria-pressed', 'true');
             } else {
@@ -154,7 +149,9 @@
                 id: Number(card.dataset.mediaId),
                 url: card.dataset.mediaUrl || '',
                 title: card.dataset.mediaTitle || '',
-                alt: card.dataset.mediaAlt || ''
+                alt: card.dataset.mediaAlt || '',
+                kind: card.dataset.mediaKind || 'image',
+                mime: card.dataset.mediaMime || ''
             };
         },
 
@@ -166,10 +163,8 @@
                     card.setAttribute('aria-pressed', 'false');
                 });
             }
-            if (clearSearch && this.search) {
-                this.search.value = '';
-                this.filter();
-            }
+            if (clearSearch && this.search) this.search.value = '';
+            this.filter();
             this.updateSelectionState();
             if (this.uploadStatus) {
                 this.uploadStatus.textContent = '';
@@ -187,12 +182,16 @@
             if (!this.grid) return;
             const term = (this.search?.value || '').trim().toLocaleLowerCase('pt-BR');
             let visible = 0;
+
             this.grid.querySelectorAll('.media-picker-card').forEach((card) => {
                 const haystack = (card.dataset.mediaSearch || '').toLocaleLowerCase('pt-BR');
-                const show = term === '' || haystack.includes(term);
+                const allowedByMode = this.mode !== 'featured' || card.dataset.mediaKind !== 'video';
+                const allowedBySearch = term === '' || haystack.includes(term);
+                const show = allowedByMode && allowedBySearch;
                 card.classList.toggle('d-none', !show);
                 if (show) visible++;
             });
+
             if (this.empty) this.empty.classList.toggle('d-none', visible > 0);
         },
 
@@ -201,11 +200,25 @@
             if (!items.length) return;
 
             if (this.mode === 'featured') {
-                if (typeof this.featuredCallback === 'function') this.featuredCallback(items[0]);
+                const image = items.find((item) => item.kind !== 'video');
+                if (image && typeof this.featuredCallback === 'function') this.featuredCallback(image);
             } else if (this.editor) {
                 const html = items.map((item) => {
-                    return '<p><img src="' + this.escapeAttribute(item.url) + '" alt="' + this.escapeAttribute(item.alt || item.title || '') + '"></p>';
+                    if (item.kind === 'video') {
+                        const url = this.escapeAttribute(item.url);
+                        const mime = this.escapeAttribute(item.mime || 'video/mp4');
+                        return '<p class="portal-video-wrap">'
+                            + '<video controls preload="metadata" playsinline '
+                            + 'style="display:block;width:100%;max-width:960px;height:auto;margin:0 auto;">'
+                            + '<source src="' + url + '" type="' + mime + '">'
+                            + 'Seu navegador não suporta vídeo HTML5.'
+                            + '</video></p>';
+                    }
+
+                    return '<p><img src="' + this.escapeAttribute(item.url)
+                        + '" alt="' + this.escapeAttribute(item.alt || item.title || '') + '"></p>';
                 }).join('');
+
                 this.editor.focus();
                 this.editor.insertContent(html);
                 this.editor.save();
@@ -217,7 +230,7 @@
         async upload() {
             const files = Array.from(this.uploadInput?.files || []);
             if (!files.length) {
-                this.setUploadStatus('Selecione uma ou mais imagens.', 'danger');
+                this.setUploadStatus('Selecione uma ou mais imagens ou vídeos MP4.', 'danger');
                 return;
             }
 
@@ -227,7 +240,7 @@
 
             this.uploadButton.disabled = true;
             this.uploadInput.disabled = true;
-            this.setUploadStatus('Enviando imagens...', 'secondary');
+            this.setUploadStatus('Enviando mídias...', 'secondary');
 
             try {
                 const response = await fetch(this.config.uploadUrl, {
@@ -237,13 +250,14 @@
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 const data = await response.json();
-                if (!response.ok || !data.ok) throw new Error(data.message || 'Não foi possível enviar as imagens.');
+                if (!response.ok || !data.ok) throw new Error(data.message || 'Não foi possível enviar as mídias.');
 
                 (data.items || []).slice().reverse().forEach((item) => {
                     const card = this.createCard(item);
                     this.grid.prepend(card);
-                    this.toggleCard(card, true);
+                    if (this.mode !== 'featured' || item.kind !== 'video') this.toggleCard(card, true);
                 });
+
                 this.uploadInput.value = '';
                 this.search.value = '';
                 this.filter();
@@ -264,31 +278,47 @@
             button.dataset.mediaUrl = item.url || '';
             button.dataset.mediaTitle = item.title || item.fileName || '';
             button.dataset.mediaAlt = item.alt || item.title || '';
-            button.dataset.mediaSearch = ((item.title || '') + ' ' + (item.fileName || '')).toLocaleLowerCase('pt-BR');
+            button.dataset.mediaKind = item.kind || 'image';
+            button.dataset.mediaMime = item.mime || '';
+            button.dataset.mediaSearch =
+                ((item.title || '') + ' ' + (item.fileName || '')).toLocaleLowerCase('pt-BR');
             button.setAttribute('aria-pressed', 'false');
 
             const check = document.createElement('span');
             check.className = 'media-picker-check';
             check.innerHTML = '<i class="bi bi-check-lg"></i>';
 
-            const img = document.createElement('img');
-            img.src = item.url;
-            img.alt = item.alt || item.title || '';
-            img.loading = 'lazy';
+            let preview;
+            if (item.kind === 'video') {
+                preview = document.createElement('video');
+                preview.src = item.url || '';
+                preview.preload = 'metadata';
+                preview.muted = true;
+                preview.playsInline = true;
+                preview.style.width = '100%';
+                preview.style.aspectRatio = '16 / 9';
+                preview.style.objectFit = 'cover';
+                preview.style.background = '#111';
+            } else {
+                preview = document.createElement('img');
+                preview.src = item.url || '';
+                preview.alt = item.alt || item.title || '';
+                preview.loading = 'lazy';
+            }
 
             const info = document.createElement('span');
             info.className = 'media-picker-card-info';
             const strong = document.createElement('strong');
-            strong.textContent = item.title || item.fileName || 'Imagem';
+            strong.textContent = item.title || item.fileName || 'Mídia';
             strong.title = strong.textContent;
             info.append(strong);
-            if (item.width && item.height) {
-                const small = document.createElement('small');
-                small.textContent = item.width + ' × ' + item.height;
-                info.append(small);
-            }
 
-            button.append(check, img, info);
+            const small = document.createElement('small');
+            if (item.kind === 'video') small.textContent = 'Vídeo MP4';
+            else if (item.width && item.height) small.textContent = item.width + ' × ' + item.height;
+            if (small.textContent) info.append(small);
+
+            button.append(check, preview, info);
             return button;
         },
 

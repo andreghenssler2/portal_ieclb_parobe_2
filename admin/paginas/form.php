@@ -39,10 +39,12 @@ if ($id) {
     $pagina = $found;
 }
 
+/* PORTAL_VIDEO_EDITOR_V116_R2 */
 $midias = $pdo->query(
-    "SELECT id, caminho, titulo, alt_text, nome_original, largura, altura
+    "SELECT id, caminho, titulo, alt_text, nome_original, largura, altura, mime_type
      FROM midias
      WHERE mime_type LIKE 'image/%'
+        OR mime_type IN ('video/mp4','application/mp4')
      ORDER BY id DESC"
 )->fetchAll();
 $imagemCapaAtual = !empty($pagina['imagem_capa_id']) ? MediaService::find($pdo, (int)$pagina['imagem_capa_id']) : null;
@@ -61,7 +63,35 @@ $contentPatterns = ContentPatternService::activeFor(
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    foreach (['titulo', 'slug', 'resumo', 'seo_titulo', 'seo_descricao', 'conteudo', 'imagem_capa_id', 'parent_id', 'status', 'ordem', 'publicado_em'] as $field) {
+
+    /*
+     * PORTAL_PAGE_MODSEC_TRANSPORT_V116_R2
+     * Evita enviar HTML rico em texto bruto ao ModSecurity.
+     */
+    if (array_key_exists('conteudo_transport', $_POST)) {
+        $transport = trim((string)$_POST['conteudo_transport']);
+
+        if ($transport === '') {
+            $_POST['conteudo'] = '';
+        } elseif (preg_match('/^[A-Za-z0-9_-]+$/D', $transport) === 1) {
+            $base64 = strtr($transport, '-_', '+/');
+            $remainder = strlen($base64) % 4;
+
+            if ($remainder > 0) {
+                $base64 .= str_repeat('=', 4 - $remainder);
+            }
+
+            $decodedContent = base64_decode($base64, true);
+
+            if ($decodedContent === false) {
+                $error = 'Não foi possível decodificar o conteúdo enviado pelo editor.';
+            } else {
+                $_POST['conteudo'] = $decodedContent;
+            }
+        } else {
+            $error = 'Formato de transporte do conteúdo inválido.';
+        }
+    }    foreach (['titulo', 'slug', 'resumo', 'seo_titulo', 'seo_descricao', 'conteudo', 'imagem_capa_id', 'parent_id', 'status', 'ordem', 'publicado_em'] as $field) {
         if (array_key_exists($field, $_POST)) {
             $pagina[$field] = $_POST[$field];
         }
@@ -331,6 +361,7 @@ require __DIR__ . '/../_header.php';
         id="pageEditorForm"
     >
         <?= Csrf::field() ?>
+        <input type="hidden" name="conteudo_transport" id="conteudoTransport" value="">
 
         <div class="wp-post-editor-shell">
             <main class="wp-post-editor-main">
@@ -911,8 +942,8 @@ tinymce.init({
     toolbar: 'undo redo | blocks fontfamily fontsize lineheight | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link portalmedia media table charmap | blockquote removeformat | searchreplace visualblocks preview fullscreen code',
     setup: function(editor) {
         editor.ui.registry.addButton('portalmedia', {
-            icon: 'image',
-            tooltip: 'Inserir imagens da Biblioteca de Mídia',
+            icon: 'collection-play',
+            tooltip: 'Inserir imagem ou vídeo da Biblioteca de Mídia',
             onAction: function() {
                 PortalMediaPicker.openForEditor(editor);
             }
@@ -924,6 +955,30 @@ tinymce.init({
     }
 });
 
+function portalEncodePageEditorTransport(value) {
+    const text = String(value || '');
+    let binary = '';
+
+    if (typeof TextEncoder !== 'undefined') {
+        const bytes = new TextEncoder().encode(text);
+        const chunkSize = 0x8000;
+
+        for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+            const chunk = bytes.subarray(
+                offset,
+                Math.min(offset + chunkSize, bytes.length)
+            );
+            binary += String.fromCharCode.apply(null, chunk);
+        }
+    } else {
+        binary = unescape(encodeURIComponent(text));
+    }
+
+    return btoa(binary)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/g, '');
+}
 const pageEditorForm =
     document.getElementById('pageEditorForm');
 
@@ -931,10 +986,23 @@ if (pageEditorForm) {
     pageEditorForm.addEventListener(
         'submit',
         function() {
-            if (
-                typeof tinymce !== 'undefined'
-            ) {
+            if (typeof tinymce !== 'undefined') {
                 tinymce.triggerSave();
+            }
+
+            const contentField =
+                document.getElementById('conteudo');
+
+            const transportField =
+                document.getElementById('conteudoTransport');
+
+            if (contentField && transportField) {
+                transportField.value =
+                    portalEncodePageEditorTransport(
+                        contentField.value
+                    );
+
+                contentField.removeAttribute('name');
             }
         }
     );
