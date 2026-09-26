@@ -85,6 +85,8 @@ require_once __DIR__ . '/app/Services/FormReplyService.php';
 require_once __DIR__ . '/app/Services/InboundMailService.php';
 require_once __DIR__ . '/app/Services/SearchService.php';
 require_once __DIR__ . '/app/Services/EventCalendarService.php';
+/* PORTAL_NEWS_FEATURES_V118 */
+require_once __DIR__ . '/app/Services/NewsFeatureService.php';
 require_once __DIR__ . '/app/Services/NewsAnalyticsService.php';
 require_once __DIR__ . '/app/Services/NewsEngagementService.php';
 require_once __DIR__ . '/app/Services/NewsletterService.php';

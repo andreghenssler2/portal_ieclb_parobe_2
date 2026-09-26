@@ -167,7 +167,8 @@ final class SearchService
                 'type' => 'noticia',
                 'table' => 'posts',
                 'select' => "SELECT titulo,slug,resumo,conteudo,COALESCE(publicado_em,created_at) dt FROM posts",
-                'base_where' => "status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW())",
+                /* PORTAL_NEWS_EXPIRATION_SEARCH_V118 */
+                'base_where' => "status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND NOT EXISTS (SELECT 1 FROM post_publicacao_extras pfx WHERE pfx.post_id=posts.id AND pfx.publicado_ate IS NOT NULL AND pfx.publicado_ate<=NOW())",
                 'fields' => ['titulo','slug','resumo','conteudo'],
                 'order' => 'COALESCE(publicado_em,created_at) DESC',
                 'limit' => 40,

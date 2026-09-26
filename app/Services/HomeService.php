@@ -370,6 +370,24 @@ final class HomeService
             }
         }
 
+        /*
+         * PORTAL_NEWS_EXPIRATION_HOME_V118
+         * Notícias com fim de publicação vencido não aparecem na Home modular.
+         */
+        if (
+            $table === 'posts'
+            && $this->tableExists('post_publicacao_extras')
+        ) {
+            $where[] =
+                "NOT EXISTS (
+                    SELECT 1
+                    FROM post_publicacao_extras pfx
+                    WHERE pfx.post_id=`$table`.`id`
+                      AND pfx.publicado_ate IS NOT NULL
+                      AND pfx.publicado_ate <= NOW()
+                )";
+        }
+
         $joins = '';
         $distinct = '';
         if ($categoryId && $table === 'posts') {

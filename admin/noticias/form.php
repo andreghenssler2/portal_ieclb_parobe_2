@@ -7,6 +7,8 @@ Auth::requirePermission('noticias.gerenciar');
 $pdo = Database::connection();
 CategoryService::ensureSchema($pdo);
 ContentBlockService::ensureSchema($pdo);
+/* PORTAL_NEWS_EDITOR_FEATURES_V118 */
+NewsFeatureService::ensureSchema($pdo);
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 $defaultCategory = (int)siteConfig($pdo, 'writing_default_category', '0');
 $defaultStatus = siteConfig($pdo, 'writing_default_status', 'rascunho');
@@ -101,6 +103,19 @@ $midias = $pdo->query(
 )->fetchAll();
 $imagemCapaAtual = !empty($post['imagem_capa_id']) ? MediaService::find($pdo, (int)$post['imagem_capa_id']) : null;
 
+$newsFeatures =
+    NewsFeatureService::load(
+        $pdo,
+        $id
+            ? (int)$id
+            : 0
+    );
+
+$newsFeatureMedia =
+    NewsFeatureService::editorMedia(
+        $pdo
+    );
+
 $contentBlocks = $id
     ? ContentBlockService::loadForEditor($pdo, 'post', $id)
     : [];
@@ -169,6 +184,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $post['comentarios_ativos'] = isset($_POST['comentarios_ativos']) ? 1 : 0;
     $post['seo_noindex'] = isset($_POST['seo_noindex']) ? 1 : 0;
     $post['exibir_imagem_capa'] = ((string)($_POST['exibir_imagem_capa'] ?? (string)$defaultShowPostCover) === '0') ? 0 : 1;
+
+    $newsFeatures =
+        NewsFeatureService::formState(
+            $_POST,
+            $newsFeatures
+        );
 
     $contentBlocks = ContentBlockService::prepareForEditor(
         $pdo,
@@ -372,6 +393,12 @@ $publicadoEm = trim((string)($_POST['publicado_em'] ?? ''));
                         'post',
                         $savedId,
                         $contentBlocks
+                    );
+
+                    NewsFeatureService::save(
+                        $pdo,
+                        $savedId,
+                        $_POST
                     );
 
                     $pdo->commit();
@@ -745,10 +772,21 @@ require __DIR__ . '/../_header.php';
                     </div>
                 </details>
 
+                <?php require __DIR__ . '/_news_features.php'; ?>
+
                 <div class="wp-sidebar-save">
                     <button class="btn btn-primary w-100" type="submit">
                         <i class="bi bi-check2 me-1"></i><?= $id ? 'Atualizar' : 'Salvar notícia' ?>
-                    </button>
+                    </button>                    <?php if ($id): ?>
+                        <a
+                            class="btn btn-outline-secondary w-100 mt-2"
+                            target="_blank"
+                            rel="noopener"
+                            href="<?= e(url('admin/noticias/preview.php?id=' . (int)$id)) ?>"
+                        >
+                            <i class="bi bi-eye me-1"></i>Pré-visualizar
+                        </a>
+                    <?php endif; ?>
                     <?php if ($id && !empty($post['slug'])): ?>
                         <a class="btn btn-link w-100 text-decoration-none" target="_blank" href="<?= e(contentUrl('noticia', (string)$post['slug'])) ?>">Visualizar notícia</a>
                     <?php endif; ?>

@@ -70,6 +70,13 @@ final class NewsAnalyticsService
                     LEFT JOIN comunidades c ON c.id=p.comunidade_id
                     WHERE p.status='publicado'
                       AND (p.publicado_em IS NULL OR p.publicado_em<=NOW())
+                      /* PORTAL_NEWS_EXPIRATION_RANKING_V118 */
+                      AND NOT EXISTS (
+                          SELECT 1 FROM post_publicacao_extras pfx
+                          WHERE pfx.post_id=p.id
+                            AND pfx.publicado_ate IS NOT NULL
+                            AND pfx.publicado_ate<=NOW()
+                      )
                     ORDER BY COALESCE(p.visualizacoes,0) DESC,
                              COALESCE(p.publicado_em,p.created_at) DESC,p.id DESC
                     LIMIT " . $limit;
@@ -94,6 +101,13 @@ final class NewsAnalyticsService
                 LEFT JOIN comunidades c ON c.id=p.comunidade_id
                 WHERE p.status='publicado'
                   AND (p.publicado_em IS NULL OR p.publicado_em<=NOW())
+                      /* PORTAL_NEWS_EXPIRATION_RANKING_V118 */
+                      AND NOT EXISTS (
+                          SELECT 1 FROM post_publicacao_extras pfx
+                          WHERE pfx.post_id=p.id
+                            AND pfx.publicado_ate IS NOT NULL
+                            AND pfx.publicado_ate<=NOW()
+                      )
                 ORDER BY v.visualizacoes_periodo DESC,
                          COALESCE(p.publicado_em,p.created_at) DESC,p.id DESC
                 LIMIT " . $limit;

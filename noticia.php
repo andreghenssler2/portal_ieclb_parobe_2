@@ -2,8 +2,10 @@
 require_once __DIR__ . '/bootstrap.php';
 $pdo = Database::connection();
 CategoryService::ensureSchema($pdo);
+/* PORTAL_NEWS_PUBLIC_FEATURES_V118 */
+NewsFeatureService::ensureSchema($pdo);
 $slug = routeSlug('noticia');
-$stmt = $pdo->prepare("SELECT p.*, c.nome AS comunidade_nome, u.nome AS autor_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt, m.largura AS imagem_capa_largura, m.altura AS imagem_capa_altura, m.mime_type AS imagem_capa_mime FROM posts p LEFT JOIN comunidades c ON c.id=p.comunidade_id LEFT JOIN usuarios u ON u.id=p.autor_id LEFT JOIN midias m ON m.id=p.imagem_capa_id WHERE p.slug=:slug AND p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em <= NOW()) LIMIT 1");
+$stmt = $pdo->prepare("SELECT p.*, c.nome AS comunidade_nome, u.nome AS autor_nome, m.caminho AS imagem_capa_midia, m.alt_text AS imagem_capa_alt, m.largura AS imagem_capa_largura, m.altura AS imagem_capa_altura, m.mime_type AS imagem_capa_mime FROM posts p LEFT JOIN comunidades c ON c.id=p.comunidade_id LEFT JOIN usuarios u ON u.id=p.autor_id LEFT JOIN midias m ON m.id=p.imagem_capa_id WHERE p.slug=:slug AND p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em <= NOW()) AND NOT EXISTS (SELECT 1 FROM post_publicacao_extras pfx WHERE pfx.post_id=p.id AND pfx.publicado_ate IS NOT NULL AND pfx.publicado_ate <= NOW()) LIMIT 1");
 $stmt->execute(['slug'=>$slug]);
 $post=$stmt->fetch();
 if (!$post) { http_response_code(404); $metaTitle='Notícia não encontrada'; require __DIR__.'/theme/ieclb/header.php'; echo '<div class="container py-5"><h1>Notícia não encontrada</h1></div>'; require themeFile($pdo, 'footer.php'); exit; }
@@ -182,6 +184,10 @@ require themeFile($pdo, 'header.php');
 <?php endif; ?>
 <?php if (trim($articleContentPublic) !== ''): ?><div class="article-body"><?= $articleContentPublic ?></div><?php endif; ?>
 <?= ContentBlockService::render($pdo, 'post', (int)$post['id']) ?>
+<?= NewsFeatureService::renderAssets(
+    $pdo,
+    (int)$post['id']
+) ?>
 </article>
 <?php if ($relatedPosts): ?>
 <section class="container pb-5">
