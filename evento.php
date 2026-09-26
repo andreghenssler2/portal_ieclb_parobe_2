@@ -105,6 +105,13 @@ require themeFile($pdo, 'header.php');
         <a class="btn btn-outline-success" href="<?= e(EventCalendarService::eventIcsUrl($evento)) ?>">
             <i class="bi bi-calendar-plus me-1"></i>Adicionar ao calendário
         </a>
+        <?php /* PORTAL_EVENT_GOOGLE_CALENDAR_V117 */ ?>
+        <?php $googleCalendarUrl = EventCalendarService::googleCalendarUrl($evento); ?>
+        <?php if ($googleCalendarUrl !== ''): ?>
+            <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e($googleCalendarUrl) ?>">
+                <i class="bi bi-google me-1"></i>Google Agenda
+            </a>
+        <?php endif; ?>
     </div>
 </article>
 <?php require themeFile($pdo, 'footer.php'); ?>

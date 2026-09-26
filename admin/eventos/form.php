@@ -62,7 +62,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $tipo = (string)($_POST['tipo'] ?? 'culto');
         $titulo = trim((string)($_POST['titulo'] ?? ''));
-        $dataInicioInput = trim((string)($_POST['data_inicio'] ?? ''));
+                $dataInicioInput = trim((string)($_POST['data_inicio'] ?? ''));
+
+        /* PORTAL_EVENT_RECURRENCE_V117 */
+        $repeticao =
+            strtolower(
+                trim(
+                    (string)(
+                        $_POST['repeticao']
+                        ?? 'nenhuma'
+                    )
+                )
+            );
+
+        if (
+            !in_array(
+                $repeticao,
+                [
+                    'nenhuma',
+                    'semanal',
+                    'mensal',
+                    'anual',
+                ],
+                true
+            )
+        ) {
+            $repeticao = 'nenhuma';
+        }
+
+        $repeticoes =
+            max(
+                1,
+                min(
+                    52,
+                    (int)(
+                        $_POST['repeticoes']
+                        ?? 1
+                    )
+                )
+            );
+
+        if ($id) {
+            $repeticao = 'nenhuma';
+            $repeticoes = 1;
+        }
 
         if (!in_array($tipo, ['culto', 'festa', 'atividade', 'reuniao'], true)) {
             $tipo = 'atividade';
@@ -161,10 +204,106 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     );
                 }
 
-                $stmt->execute($data);
-                $savedId = $id ?: (int)$pdo->lastInsertId();
-                logAction($pdo, $id ? 'agenda.editar' : 'agenda.criar', 'eventos', $savedId, $tipo . ': ' . $titulo);
-                Session::flash('success', $id ? 'Item da agenda atualizado.' : 'Item da agenda criado.');
+                $generatedCount = 0;
+
+                $pdo->beginTransaction();
+
+                try {
+                    $stmt->execute($data);
+                    $savedId =
+                        $id
+                            ? (int)$id
+                            : (int)$pdo->lastInsertId();
+
+                    if (
+                        !$id
+                        && $repeticao !== 'nenhuma'
+                        && $repeticoes > 1
+                    ) {
+                        $occurrences =
+                            EventCalendarService::recurrenceOccurrences(
+                                $dataInicio,
+                                $dataFim,
+                                $repeticao,
+                                $repeticoes
+                            );
+
+                        foreach (
+                            array_slice(
+                                $occurrences,
+                                1
+                            )
+                            as $occurrence
+                        ) {
+                            $copy = $data;
+
+                            $copy['data_inicio'] =
+                                (string)$occurrence['data_inicio'];
+
+                            $copy['data_fim'] =
+                                $occurrence['data_fim'];
+
+                            $copy['slug'] =
+                                uniqueSlug(
+                                    $pdo,
+                                    'eventos',
+                                    $titulo
+                                    . '-'
+                                    . substr(
+                                        (string)$occurrence['data_inicio'],
+                                        0,
+                                        10
+                                    )
+                                );
+
+                            $stmt->execute(
+                                $copy
+                            );
+
+                            $generatedCount++;
+                        }
+                    }
+
+                    $pdo->commit();
+                } catch (Throwable $transactionError) {
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+
+                    throw $transactionError;
+                }
+
+                logAction(
+                    $pdo,
+                    $id
+                        ? 'agenda.editar'
+                        : 'agenda.criar',
+                    'eventos',
+                    $savedId,
+                    $tipo
+                    . ': '
+                    . $titulo
+                    . (
+                        $generatedCount > 0
+                            ? ' + '
+                              . $generatedCount
+                              . ' ocorrência(s) recorrente(s)'
+                            : ''
+                    )
+                );
+
+                Session::flash(
+                    'success',
+                    $id
+                        ? 'Item da agenda atualizado.'
+                        : (
+                            $generatedCount > 0
+                                ? 'Item criado com '
+                                  . $generatedCount
+                                  . ' repetição(ões).'
+                                : 'Item da agenda criado.'
+                        )
+                );
                 header('Location: ' . url('admin/eventos/index.php'));
                 exit;
             } catch (Throwable $e) {
@@ -239,6 +378,38 @@ require __DIR__ . '/../_header.php';
                 <label class="form-label">Data e hora de término <span class="text-secondary fw-normal">(opcional)</span></label>
                 <input class="form-control" type="datetime-local" name="data_fim" value="<?= $evento['data_fim'] ? e((new DateTime((string)$evento['data_fim']))->format('Y-m-d\TH:i')) : '' ?>">
             </div>
+            <?php if (!$id): ?>
+                <div class="col-md-6">
+                    <label class="form-label">Repetição</label>
+                    <select class="form-select" name="repeticao" id="eventoRepeticao">
+                        <?php
+                        $repeatValue =
+                            (string)(
+                                $_POST['repeticao']
+                                ?? 'nenhuma'
+                            );
+                        ?>
+                        <option value="nenhuma" <?= $repeatValue === 'nenhuma' ? 'selected' : '' ?>>Não repetir</option>
+                        <option value="semanal" <?= $repeatValue === 'semanal' ? 'selected' : '' ?>>Semanal</option>
+                        <option value="mensal" <?= $repeatValue === 'mensal' ? 'selected' : '' ?>>Mensal</option>
+                        <option value="anual" <?= $repeatValue === 'anual' ? 'selected' : '' ?>>Anual</option>
+                    </select>
+                    <div class="form-text">As ocorrências serão criadas como eventos independentes.</div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Quantidade de ocorrências</label>
+                    <input
+                        class="form-control"
+                        type="number"
+                        name="repeticoes"
+                        min="1"
+                        max="52"
+                        value="<?= e((string)($_POST['repeticoes'] ?? '1')) ?>"
+                    >
+                    <div class="form-text">Inclui o primeiro evento. Máximo: 52.</div>
+                </div>
+            <?php endif; ?>
 
             <div class="col-md-6">
                 <label class="form-label">Local</label>

@@ -267,6 +267,233 @@ final class EventCalendarService
     }
 
     /** @return array{0:array<int,string>,1:array<int,mixed>} */
+    /*
+     * PORTAL_AGENDA_SERVICE_V117
+     */
+    public static function googleCalendarUrl(array $event): string
+    {
+        try {
+            $timezone =
+                new DateTimeZone(
+                    self::TZ
+                );
+
+            $utc =
+                new DateTimeZone(
+                    'UTC'
+                );
+
+            $start =
+                new DateTimeImmutable(
+                    (string)($event['data_inicio'] ?? ''),
+                    $timezone
+                );
+
+            $endRaw =
+                trim(
+                    (string)($event['data_fim'] ?? '')
+                );
+
+            $end =
+                $endRaw !== ''
+                    ? new DateTimeImmutable(
+                        $endRaw,
+                        $timezone
+                    )
+                    : $start->modify('+1 hour');
+
+            if ($end <= $start) {
+                $end =
+                    $start->modify('+1 hour');
+            }
+
+            $dates =
+                $start
+                    ->setTimezone($utc)
+                    ->format('Ymd\THis\Z')
+                . '/'
+                . $end
+                    ->setTimezone($utc)
+                    ->format('Ymd\THis\Z');
+        } catch (Throwable $e) {
+            return '';
+        }
+
+        $title =
+            trim(
+                (string)($event['titulo'] ?? 'Evento')
+            );
+
+        $details =
+            trim(
+                implode(
+                    "\n\n",
+                    array_filter(
+                        [
+                            trim((string)($event['resumo'] ?? '')),
+                            trim(strip_tags((string)($event['descricao'] ?? ''))),
+                            !empty($event['slug'])
+                                ? contentUrl(
+                                    'evento',
+                                    (string)$event['slug']
+                                )
+                                : '',
+                        ],
+                        static fn(string $value): bool =>
+                            trim($value) !== ''
+                    )
+                )
+            );
+
+        $location =
+            trim(
+                implode(
+                    ' - ',
+                    array_filter(
+                        [
+                            trim((string)($event['local'] ?? '')),
+                            trim((string)($event['endereco'] ?? '')),
+                        ],
+                        static fn(string $value): bool =>
+                            trim($value) !== ''
+                    )
+                )
+            );
+
+        return
+            'https://calendar.google.com/calendar/render?'
+            . http_build_query(
+                [
+                    'action' => 'TEMPLATE',
+                    'text' => $title,
+                    'dates' => $dates,
+                    'details' => $details,
+                    'location' => $location,
+                ],
+                '',
+                '&',
+                PHP_QUERY_RFC3986
+            );
+    }
+
+    /**
+     * Retorna a ocorrência inicial e as repetições seguintes.
+     *
+     * @return array<int,array{data_inicio:string,data_fim:?string}>
+     */
+    public static function recurrenceOccurrences(
+        string $startRaw,
+        ?string $endRaw,
+        string $frequency,
+        int $count
+    ): array {
+        $frequency =
+            strtolower(
+                trim(
+                    $frequency
+                )
+            );
+
+        if (
+            !in_array(
+                $frequency,
+                [
+                    'semanal',
+                    'mensal',
+                    'anual',
+                ],
+                true
+            )
+        ) {
+            $frequency = 'nenhuma';
+        }
+
+        $count =
+            max(
+                1,
+                min(
+                    52,
+                    $count
+                )
+            );
+
+        try {
+            $timezone =
+                new DateTimeZone(
+                    self::TZ
+                );
+
+            $start =
+                new DateTimeImmutable(
+                    $startRaw,
+                    $timezone
+                );
+
+            $end =
+                trim(
+                    (string)$endRaw
+                ) !== ''
+                    ? new DateTimeImmutable(
+                        (string)$endRaw,
+                        $timezone
+                    )
+                    : null;
+        } catch (Throwable $e) {
+            return [];
+        }
+
+        $items = [];
+
+        for ($i = 0; $i < $count; $i++) {
+            if (
+                $frequency === 'nenhuma'
+                && $i > 0
+            ) {
+                break;
+            }
+
+            $modifier =
+                match ($frequency) {
+                    'semanal' =>
+                        '+' . $i . ' week',
+                    'mensal' =>
+                        '+' . $i . ' month',
+                    'anual' =>
+                        '+' . $i . ' year',
+                    default =>
+                        '+0 day',
+                };
+
+            $occurrenceStart =
+                $i === 0
+                    ? $start
+                    : $start->modify($modifier);
+
+            $occurrenceEnd =
+                $end === null
+                    ? null
+                    : (
+                        $i === 0
+                            ? $end
+                            : $end->modify($modifier)
+                    );
+
+            $items[] = [
+                'data_inicio' =>
+                    $occurrenceStart->format(
+                        'Y-m-d H:i:s'
+                    ),
+                'data_fim' =>
+                    $occurrenceEnd
+                        ? $occurrenceEnd->format(
+                            'Y-m-d H:i:s'
+                        )
+                        : null,
+            ];
+        }
+
+        return $items;
+    }
     private static function filterSql(array $filters): array
     {
         $where = ["e.status='publicado'"];

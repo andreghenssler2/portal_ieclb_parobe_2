@@ -157,6 +157,19 @@ require __DIR__ . '/../_header.php';
                             <a class="btn btn-sm btn-outline-primary" target="_blank" href="<?= e(contentUrl('evento', (string)$evento['slug'])) ?>">Ver</a>
                         <?php endif; ?>
                         <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('admin/eventos/form.php?id=' . (int)$evento['id'])) ?>">Editar</a>
+                        <?php /* PORTAL_EVENT_DUPLICATE_V117 */ ?>
+                        <form
+                            method="post"
+                            action="<?= e(url('admin/eventos/duplicar.php')) ?>"
+                            class="d-inline"
+                            onsubmit="return confirm('Criar uma cópia deste item como rascunho?')"
+                        >
+                            <?= Csrf::field() ?>
+                            <input type="hidden" name="id" value="<?= (int)$evento['id'] ?>">
+                            <button class="btn btn-sm btn-outline-secondary" type="submit">
+                                <i class="bi bi-copy me-1"></i>Duplicar
+                            </button>
+                        </form>
                     </td>
                 </tr>
             <?php endforeach; ?>

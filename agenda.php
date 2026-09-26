@@ -93,6 +93,39 @@ require themeFile($pdo, 'header.php');
 .portal-agenda-filter-actions .btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:38px}
 .portal-agenda-month-arrow{font-size:1.35rem;line-height:1;font-weight:700}
 .portal-agenda-list-date{position:sticky;top:0;z-index:2;background:var(--bs-body-bg)}
+/* PORTAL_AGENDA_V117 */
+.portal-agenda-legend{display:flex;flex-wrap:wrap;gap:.65rem 1rem;align-items:center}
+.portal-agenda-legend-item{display:inline-flex;align-items:center;gap:.4rem;font-size:.9rem}
+.portal-agenda-legend-dot{width:.75rem;height:.75rem;border-radius:50%;display:inline-block}
+.portal-agenda-legend-dot.is-culto{background:var(--bs-primary)}
+.portal-agenda-legend-dot.is-festa{background:var(--bs-danger)}
+.portal-agenda-legend-dot.is-atividade{background:var(--bs-success)}
+.portal-agenda-legend-dot.is-reuniao{background:var(--bs-secondary)}
+.portal-google-calendar{white-space:nowrap}
+@media(max-width:767.98px){
+    .portal-calendar-shell{overflow:visible!important;box-shadow:none!important}
+    .portal-calendar{min-width:0;display:block;border:0;background:transparent}
+    .portal-calendar-weekday{display:none}
+    .portal-calendar-day{display:none;min-height:0;border:1px solid var(--bs-border-color);border-radius:.75rem;margin-bottom:.75rem;padding:.8rem;background:var(--bs-body-bg)}
+    .portal-calendar-day.has-events,.portal-calendar-day.is-today{display:block}
+    .portal-calendar-day.is-outside{display:none}
+    .portal-calendar-day-mobile{display:block;font-size:.78rem;color:var(--bs-secondary-color);font-weight:600;margin-left:.45rem}
+    .portal-calendar-number{width:2rem;height:2rem}
+    .portal-calendar-event{font-size:.9rem;padding:.55rem .65rem;margin-top:.55rem}
+    .portal-calendar-time{font-size:.78rem}
+}
+@media(min-width:768px){
+    .portal-calendar-day-mobile{display:none}
+}
+@media print{
+    header,.portal-site-header,footer,.portal-site-footer,.portal-agenda-controls,.portal-agenda-print-hide{display:none!important}
+    body{background:#fff!important}
+    .container{max-width:none!important;width:100%!important}
+    .portal-calendar-shell{overflow:visible!important;box-shadow:none!important}
+    .portal-calendar{min-width:0!important}
+    .portal-calendar-day{break-inside:avoid}
+    a{text-decoration:none!important;color:#000!important}
+}
 @media(max-width:767.98px){
     .portal-calendar{min-width:760px}
     .portal-calendar-day{min-height:125px}
@@ -106,13 +139,20 @@ require themeFile($pdo, 'header.php');
             <p class="lead text-secondary mb-0">Cultos, festas, atividades e reuniões da Paróquia de Parobé.</p>
         </div>
 
-        <div class="d-flex flex-wrap gap-2">
+        <div class="d-flex flex-wrap gap-2 portal-agenda-print-hide">
                         <a
                 class="btn btn-success"
                 href="<?=e(url('agenda-exportar.php'))?>"
             >
                 <i class="bi bi-link-45deg me-1"></i>Exportar / Assinar
             </a>
+<button
+                class="btn btn-outline-secondary"
+                type="button"
+                onclick="window.print()"
+            >
+                <i class="bi bi-printer me-1"></i>Imprimir agenda
+            </button>
 <a
                 class="btn btn-outline-success"
                 href="<?=e(EventCalendarService::agendaIcsUrl($filters, $view === 'calendario' || $listMode === 'mes' ? $month : null))?>"
@@ -125,7 +165,7 @@ require themeFile($pdo, 'header.php');
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card border-0 shadow-sm mb-4 portal-agenda-controls">
         <div class="card-body p-3 p-lg-4">
             <form method="get" action="<?=e(url('agenda'))?>">
                 <input type="hidden" name="mes" value="<?=e($month)?>">
@@ -199,7 +239,7 @@ require themeFile($pdo, 'header.php');
         </div>
     </div>
 
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 portal-agenda-toolbar mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 portal-agenda-toolbar portal-agenda-controls mb-4">
         <div class="btn-group" role="group" aria-label="Navegação mensal">
             <a
                 class="btn btn-outline-secondary"
@@ -266,6 +306,13 @@ require themeFile($pdo, 'header.php');
         </div>
     </div>
 
+    <div class="portal-agenda-legend mb-4 portal-agenda-print-hide" aria-label="Legenda">
+        <span class="fw-semibold">Legenda:</span>
+        <span class="portal-agenda-legend-item"><span class="portal-agenda-legend-dot is-culto"></span>Culto</span>
+        <span class="portal-agenda-legend-item"><span class="portal-agenda-legend-dot is-festa"></span>Festa</span>
+        <span class="portal-agenda-legend-item"><span class="portal-agenda-legend-dot is-atividade"></span>Atividade</span>
+        <span class="portal-agenda-legend-item"><span class="portal-agenda-legend-dot is-reuniao"></span>Reunião</span>
+    </div>
     <?php if(!$eventos):?>
         <div class="alert alert-light border">
             Nenhum item da agenda encontrado com esses filtros.
@@ -278,8 +325,9 @@ require themeFile($pdo, 'header.php');
                 <?php endforeach;?>
 
                 <?php foreach($calendarDays as $day):?>
-                    <div class="portal-calendar-day <?=$day['in_month'] ? '' : 'is-outside'?> <?=$day['is_today'] ? 'is-today' : ''?>">
+                    <div class="portal-calendar-day <?=$day['in_month'] ? '' : 'is-outside'?> <?=$day['is_today'] ? 'is-today' : ''?> <?=$day['events'] ? 'has-events' : ''?>">
                         <div class="portal-calendar-number"><?=$day['day']?></div>
+                        <span class="portal-calendar-day-mobile"><?=e(EventCalendarService::dateLabel((string)$day['date']))?></span>
 
                         <?php foreach($day['events'] as $evento):?>
                             <a
@@ -351,6 +399,17 @@ require themeFile($pdo, 'header.php');
                                     <a class="btn btn-sm btn-outline-primary" href="<?=e(contentUrl('evento', (string)$evento['slug']))?>">
                                         Ver detalhes
                                     </a>
+                                    <?php $googleCalendarUrl = EventCalendarService::googleCalendarUrl($evento); ?>
+                                    <?php if ($googleCalendarUrl !== ''): ?>
+                                        <a
+                                            class="btn btn-sm btn-outline-primary portal-google-calendar"
+                                            target="_blank"
+                                            rel="noopener"
+                                            href="<?=e($googleCalendarUrl)?>"
+                                        >
+                                            <i class="bi bi-google me-1"></i>Google Agenda
+                                        </a>
+                                    <?php endif; ?>
                                     <a class="btn btn-sm btn-outline-success" href="<?=e(EventCalendarService::eventIcsUrl($evento))?>">
                                         <i class="bi bi-calendar-plus me-1"></i>.ics
                                     </a>
