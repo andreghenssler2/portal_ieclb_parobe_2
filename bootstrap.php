@@ -93,6 +93,8 @@ require_once __DIR__ . '/app/Services/NewsletterService.php';
 require_once __DIR__ . '/app/Services/WordPressImportService.php';
 require_once __DIR__ . '/app/Services/HomeService.php';
 require_once __DIR__ . '/app/Services/DocumentService.php';
+/* PORTAL_COMMUNITY_PROFILE_V119 */
+require_once __DIR__ . '/app/Services/CommunityProfileService.php';
 require_once __DIR__ . '/app/Services/LeadershipService.php';
 require_once __DIR__ . '/app/Services/CronHealthService.php';
 require_once __DIR__ . '/app/Services/SchedulerService.php';

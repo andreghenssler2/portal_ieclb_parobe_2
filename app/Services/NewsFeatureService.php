@@ -12,8 +12,55 @@ declare(strict_types=1);
  */
 final class NewsFeatureService
 {
+    /* PORTAL_NEWS_SCHEMA_TX_GUARD_V118_R3 */
+    private static array $schemaReady = [];
+
     public static function ensureSchema(PDO $pdo): void
     {
+        $key =
+            spl_object_id(
+                $pdo
+            );
+
+        if (!empty(self::$schemaReady[$key])) {
+            return;
+        }
+
+        /*
+         * Nunca executar DDL dentro da transação do editor.
+         * MySQL/MariaDB fazem commit implícito em CREATE TABLE.
+         */
+        if ($pdo->inTransaction()) {
+            foreach (
+                [
+                    'post_publicacao_extras',
+                    'post_galeria_midias',
+                    'post_anexos_midias',
+                ]
+                as $table
+            ) {
+                $stmt =
+                    $pdo->prepare(
+                        'SELECT COUNT(*)
+                         FROM information_schema.tables
+                         WHERE table_schema=DATABASE()
+                           AND table_name=?'
+                    );
+
+                $stmt->execute([$table]);
+
+                if ((int)$stmt->fetchColumn() <= 0) {
+                    throw new RuntimeException(
+                        'Estrutura da v1.1.8 não inicializada antes da transação: '
+                        . $table
+                    );
+                }
+            }
+
+            self::$schemaReady[$key] = true;
+            return;
+        }
+
         $pdo->exec(
             "CREATE TABLE IF NOT EXISTS post_publicacao_extras (
                 post_id BIGINT UNSIGNED NOT NULL,
@@ -52,8 +99,9 @@ final class NewsFeatureService
                 KEY idx_post_anexo_ordem (post_id, ordem)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
-    }
 
+        self::$schemaReady[$key] = true;
+    }
     /**
      * @return array{
      *   destaque_inicio:string,
