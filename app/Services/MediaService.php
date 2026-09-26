@@ -9,6 +9,9 @@ final class MediaService
         'image/png' => 'png',
         'image/webp' => 'webp',
         'image/gif' => 'gif',
+        /* PORTAL_MP4_UPLOAD_V114_R1 */
+        'video/mp4' => 'mp4',
+        'application/mp4' => 'mp4',
         'application/pdf' => 'pdf',
         'application/msword' => 'doc',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
@@ -54,7 +57,21 @@ final class MediaService
         if ($extension === null) {
             throw new RuntimeException('Tipo de arquivo não permitido: ' . ($mime ?: 'desconhecido') . '.');
         }
-        if (!str_starts_with($mime, 'image/') && !mediaDocumentsAllowed($pdo)) {
+        $isImageUpload = str_starts_with($mime, 'image/');
+        $isVideoUpload = in_array(
+            $mime,
+            [
+                'video/mp4',
+                'application/mp4',
+            ],
+            true
+        );
+
+        if (
+            !$isImageUpload
+            && !$isVideoUpload
+            && !mediaDocumentsAllowed($pdo)
+        ) {
             throw new RuntimeException('O envio de documentos está desativado nas configurações de mídia.');
         }
 
@@ -160,7 +177,22 @@ return $media;
         return str_starts_with((string)($media['mime_type'] ?? ''), 'image/');
     }
 
-    public static function delete(PDO $pdo, int $id): bool
+        public static function isVideo(array $media): bool
+    {
+        return in_array(
+            strtolower(
+                trim(
+                    (string)($media['mime_type'] ?? '')
+                )
+            ),
+            [
+                'video/mp4',
+                'application/mp4',
+            ],
+            true
+        );
+    }
+public static function delete(PDO $pdo, int $id): bool
     {
         $media = self::find($pdo, $id);
         if (!$media) {

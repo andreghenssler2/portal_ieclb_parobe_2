@@ -614,7 +614,7 @@ require __DIR__ . '/../_header.php';
         </h1>
 
         <p class="text-secondary mb-0">
-            Pesquise, filtre e gerencie imagens e documentos do Portal.
+            Pesquise, filtre e gerencie imagens, vídeos MP4 e documentos do Portal.
         </p>
     </div>
 
@@ -700,11 +700,12 @@ require __DIR__ . '/../_header.php';
                         name="arquivos[]"
                         multiple
                         required
-                        accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+                        accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,video/mp4,application/mp4,.mp4"
                     >
+<!-- PORTAL_MP4_UPLOAD_V114_R1 -->
 
                     <div class="form-text">
-                        Imagens, PDF e documentos.
+                        Imagens, vídeos MP4, PDF e documentos.
                         Máximo
                         <?= e(
                             formatBytes(
@@ -851,7 +852,7 @@ require __DIR__ . '/../_header.php';
             [
                 'todos' => 'Todos',
                 'imagens' => 'Imagens',
-                'documentos' => 'Documentos',
+                'documentos' => 'Documentos e vídeos',
             ]
             as $value => $label
         ): ?>
