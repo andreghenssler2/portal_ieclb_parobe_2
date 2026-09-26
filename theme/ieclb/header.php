@@ -143,6 +143,8 @@ if (!$menuPrincipal) {
 
     <?php if ($faviconMedia): ?><link rel="icon" href="<?= e(mediaUrl((string)$faviconMedia['caminho'])) ?>"><?php endif; ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <?php /* PORTAL_PUBLIC_ICONS_V115 */ ?>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= e(url('public/css/site.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('public/css/cookie-consent-v91.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.91.0'))) ?>">
     <?php if ($activeThemeStyle): ?><link rel="stylesheet" href="<?= e($activeThemeStyle) ?>"><?php endif; ?>

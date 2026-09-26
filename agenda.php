@@ -89,6 +89,9 @@ require themeFile($pdo, 'header.php');
 .portal-calendar-event:hover{background:var(--bs-tertiary-bg)}
 .portal-calendar-time{display:block;font-size:.7rem;color:var(--bs-secondary-color);margin-bottom:.1rem}
 .portal-agenda-toolbar .btn{white-space:nowrap}
+/* PORTAL_AGENDA_BUTTONS_V115 */
+.portal-agenda-filter-actions .btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:38px}
+.portal-agenda-month-arrow{font-size:1.35rem;line-height:1;font-weight:700}
 .portal-agenda-list-date{position:sticky;top:0;z-index:2;background:var(--bs-body-bg)}
 @media(max-width:767.98px){
     .portal-calendar{min-width:760px}
@@ -151,7 +154,7 @@ require themeFile($pdo, 'header.php');
                 </select>
                     </div>
 
-                    <div class="col-xl-3 col-md-6">
+                    <div class="col-xl-2 col-md-6">
                         <label class="form-label">Categoria</label>
                         <select class="form-select" name="categoria">
                             <option value="">Todas</option>
@@ -181,12 +184,14 @@ require themeFile($pdo, 'header.php');
                         </select>
                     </div>
 
-                    <div class="col-xl-1 col-md-6 d-flex gap-2">
-                        <button class="btn btn-primary flex-grow-1" title="Filtrar">
-                            <i class="bi bi-funnel"></i>
+                    <div class="col-xl-2 col-md-6 d-flex gap-2 portal-agenda-filter-actions">
+                        <button class="btn btn-primary flex-grow-1" title="Filtrar" type="submit">
+                            <i class="bi bi-funnel" aria-hidden="true"></i>
+                            <span>Filtrar</span>
                         </button>
                         <a class="btn btn-outline-secondary" href="<?=e(url('agenda'))?>" title="Limpar">
-                            <i class="bi bi-x-lg"></i>
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                            <span>Limpar</span>
                         </a>
                     </div>
                 </div>
@@ -201,7 +206,7 @@ require themeFile($pdo, 'header.php');
                 href="<?=e($monthUrl($monthInfo['previous'], $view))?>"
                 title="Mês anterior"
             >
-                <i class="bi bi-chevron-left"></i>
+                <span class="portal-agenda-month-arrow" aria-hidden="true">‹</span><span class="visually-hidden">Mês anterior</span>
             </a>
 
             <a
@@ -216,7 +221,7 @@ require themeFile($pdo, 'header.php');
                 href="<?=e($monthUrl($monthInfo['next'], $view))?>"
                 title="Próximo mês"
             >
-                <i class="bi bi-chevron-right"></i>
+                <span class="portal-agenda-month-arrow" aria-hidden="true">›</span><span class="visually-hidden">Próximo mês</span>
             </a>
         </div>
 
@@ -247,7 +252,7 @@ require themeFile($pdo, 'header.php');
                     title="Calendário"
                 >
                     <i class="bi bi-calendar3"></i>
-                    <span class="d-none d-md-inline ms-1">Calendário</span>
+                    <span class="ms-1">Calendário</span>
                 </a>
                 <a
                     class="btn <?=$view === 'lista' ? 'btn-primary' : 'btn-outline-primary'?>"
@@ -255,7 +260,7 @@ require themeFile($pdo, 'header.php');
                     title="Lista"
                 >
                     <i class="bi bi-list-ul"></i>
-                    <span class="d-none d-md-inline ms-1">Lista</span>
+                    <span class="ms-1">Lista</span>
                 </a>
             </div>
         </div>
