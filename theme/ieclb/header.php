@@ -2,10 +2,10 @@
 $themePdo = $pdo ?? Database::connection();
 $siteSettings = siteConfigAll($themePdo);
 
-$siteName = trim((string)($siteSettings['site_nome'] ?? '')) ?: 'Paróquia Evangélica de Confissão Luterana de Parobé';
-$brandName = trim((string)($siteSettings['hero_titulo'] ?? '')) ?: 'IECLB Parobé';
-$defaultTitle = trim((string)($siteSettings['seo_titulo'] ?? '')) ?: 'IECLB Parobé';
-$defaultDescription = trim((string)($siteSettings['seo_descricao'] ?? '')) ?: (trim((string)($siteSettings['site_descricao'] ?? '')) ?: 'Portal da IECLB Parobé');
+$siteName = trim((string)($siteSettings['site_nome'] ?? '')) ?: 'Portal de Noticias Paroquial';
+$brandName = trim((string)($siteSettings['hero_titulo'] ?? '')) ?: 'Noticias Paroquial';
+$defaultTitle = trim((string)($siteSettings['seo_titulo'] ?? '')) ?: 'Noticias Paroquial';
+$defaultDescription = trim((string)($siteSettings['seo_descricao'] ?? '')) ?: (trim((string)($siteSettings['site_descricao'] ?? '')) ?: 'Portal de notícias da Paróquia. Notícias, eventos, cultos e informações sobre a comunidade.');
 $defaultKeywords = trim((string)($siteSettings['seo_keywords'] ?? ''));
 
 $resolvedTitle = trim((string)($metaTitle ?? '')) ?: $defaultTitle;
