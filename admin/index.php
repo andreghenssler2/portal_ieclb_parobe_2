@@ -402,65 +402,7 @@ require __DIR__ . '/_header.php';
         </div>
     <?php endif; ?>
 
-    <?php if (!empty($dashboard['events'])): ?>
-        <div class="col-xl-5">
-            <section class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center gap-3">
-                    <div>
-                        <div class="fw-semibold">
-                            Próximos eventos e cultos
-                        </div>
-
-                        <div class="small text-secondary">
-                            Agenda futura publicada.
-                        </div>
-                    </div>
-
-                    <a
-                        class="small text-decoration-none"
-                        href="<?= e(url('admin/eventos/index.php')) ?>"
-                    >
-                        Ver agenda
-                    </a>
-                </div>
-
-                <div class="list-group list-group-flush">
-                    <?php foreach ($dashboard['events'] as $event): ?>
-                        <a
-                            class="list-group-item list-group-item-action"
-                            href="<?= e(
-                                url(
-                                    'admin/eventos/form.php?id='
-                                    . (int)$event['id']
-                                )
-                            ) ?>"
-                        >
-                            <div class="d-flex justify-content-between gap-3">
-                                <div>
-                                    <div class="fw-semibold">
-                                        <?= e((string)$event['titulo']) ?>
-                                    </div>
-
-                                    <div class="small text-secondary">
-                                        <?= e((string)($event['comunidade_nome'] ?: $event['tipo'])) ?>
-
-                                        <?php if (!empty($event['santa_ceia'])): ?>
-                                            · Santa Ceia
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-
-                                <div class="small text-secondary text-nowrap">
-                                    <?= e(formatDateBr($event['data_inicio'])) ?>
-                                </div>
-                            </div>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </section>
-        </div>
-    <?php endif; ?>
-
+    <?php /* PORTAL_ADMIN_EVENTS_DEDUP_V1110_R1 */ ?>
     <?php if (!empty($dashboard['comments'])): ?>
         <div class="col-xl-6">
             <section class="card border-0 shadow-sm h-100">
