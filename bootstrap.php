@@ -54,6 +54,8 @@ require_once __DIR__ . '/app/Services/EditorialWorkflowService.php';
 require_once __DIR__ . '/app/Services/AdminPendingService.php';
 require_once __DIR__ . '/app/Services/PermissionAuditService.php';
 require_once __DIR__ . '/app/Services/BackupRestoreTestService.php';
+/* PORTAL_BACKUP_INTEGRITY_V1112 */
+require_once __DIR__ . '/app/Services/BackupIntegrityService.php';
 $adminAdvancedSearchServiceFile =
     __DIR__
     . '/app/Services/AdminAdvancedSearchService.php';

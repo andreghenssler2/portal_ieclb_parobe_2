@@ -81,6 +81,14 @@ final class SchedulerService
                 'enabled' => false,
                 'priority' => 70,
             ],
+            /* PORTAL_BACKUP_INTEGRITY_TASK_V1112 */
+            'backup_integridade_automatico' => [
+                'name' => 'Verificar integridade dos backups',
+                'description' => 'Valida diariamente o backup mais recente do banco e, quando existir, o backup completo, sem restaurar o Portal.',
+                'interval' => 1440,
+                'enabled' => true,
+                'priority' => 75,
+            ],
 ];
     }
 
@@ -325,7 +333,9 @@ final class SchedulerService
             'backup_completo_automatico' => self::automaticFullBackup($pdo),
 
             /* PORTAL_HEALTH_SNAPSHOT_HANDLER_V111 */
-            'registrar_saude_portal' => self::automaticPortalHealthSnapshot($pdo),            default => throw new RuntimeException('Handler da tarefa não encontrado: ' . $slug),
+            'registrar_saude_portal' => self::automaticPortalHealthSnapshot($pdo),                        /* PORTAL_BACKUP_INTEGRITY_HANDLER_V1112 */
+            'backup_integridade_automatico' => self::automaticBackupIntegrity($pdo),
+            default => throw new RuntimeException('Handler da tarefa não encontrado: ' . $slug),
         };
     }
 
@@ -669,6 +679,58 @@ private static function automaticDatabaseBackup(PDO $pdo): array
                 $pdo,
                 $root
             );
+    }
+    /*
+     * PORTAL_BACKUP_INTEGRITY_METHOD_V1112
+     *
+     * @return array{status:string,message:string}
+     */
+    private static function automaticBackupIntegrity(
+        PDO $pdo
+    ): array {
+        $root =
+            dirname(
+                __DIR__,
+                2
+            );
+
+        $serviceFile =
+            $root
+            . '/app/Services/BackupIntegrityService.php';
+
+        if (
+            !class_exists(
+                'BackupIntegrityService'
+            )
+            && is_file(
+                $serviceFile
+            )
+        ) {
+            require_once
+                $serviceFile;
+        }
+
+        if (
+            !class_exists(
+                'BackupIntegrityService'
+            )
+        ) {
+            return [
+                'status' =>
+                    'ignorado',
+                'message' =>
+                    'BackupIntegrityService não está disponível.',
+            ];
+        }
+
+        $service =
+            new BackupIntegrityService(
+                $pdo,
+                $root
+            );
+
+        return
+            $service->runScheduled();
     }
 private static function publishScheduledContent(PDO $pdo): array
     {

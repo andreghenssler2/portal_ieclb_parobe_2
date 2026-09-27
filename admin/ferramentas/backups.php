@@ -128,6 +128,14 @@ require __DIR__ . '/../_header.php';
         <p class="text-secondary mb-0">Backups do banco e cópias completas do conteúdo do portal.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        <?php /* PORTAL_BACKUP_CENTER_LINK_V1112 */ ?>
+        <a
+            class="btn btn-primary"
+            href="<?= e(url('admin/ferramentas/backup-integridade.php')) ?>"
+        >
+            <i class="bi bi-shield-check me-1"></i>
+            Backup e Integridade
+        </a>
         <a
             class="btn btn-outline-success"
             href="<?= e(url('admin/ferramentas/backup-teste.php')) ?>"
