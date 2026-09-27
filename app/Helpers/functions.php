@@ -1106,28 +1106,90 @@ function homeWidgets(PDO $pdo): array
 
 /**
  * Configurações do modo manutenção.
- * @return array{enabled:bool,title:string,message:string,expected_end:string,allow_admins:bool,allowed_ips:array<int,string>}
+ * PORTAL_MAINTENANCE_SCHEDULE_V113_R3
+ *
+ * @return array{
+ *   enabled:bool,
+ *   configured_enabled:bool,
+ *   state:string,
+ *   title:string,
+ *   message:string,
+ *   start_at:string,
+ *   end_at:string,
+ *   expected_end:string,
+ *   allow_admins:bool,
+ *   allowed_ips:array<int,string>
+ * }
  */
 function maintenanceSettings(PDO $pdo): array
 {
     $rawIps = preg_split('/[\s,;]+/', siteConfig($pdo, 'maintenance_allowed_ips', '')) ?: [];
     $ips = [];
+
     foreach ($rawIps as $ip) {
         $ip = trim($ip);
+
         if ($ip !== '' && filter_var($ip, FILTER_VALIDATE_IP)) {
             $ips[] = $ip;
         }
     }
+
+    $configuredEnabled =
+        siteConfig(
+            $pdo,
+            'maintenance_enabled',
+            '0'
+        ) === '1';
+
+    $startAt =
+        trim(
+            siteConfig(
+                $pdo,
+                'maintenance_start_at',
+                ''
+            )
+        );
+
+    $endAt =
+        trim(
+            siteConfig(
+                $pdo,
+                'maintenance_end_at',
+                siteConfig(
+                    $pdo,
+                    'maintenance_expected_end',
+                    ''
+                )
+            )
+        );
+
+    $window = [
+        'active' => $configuredEnabled,
+        'state' => $configuredEnabled ? 'active' : 'disabled',
+    ];
+
+    if (class_exists('MaintenanceExpiryService')) {
+        $window =
+            MaintenanceExpiryService::windowState(
+                $configuredEnabled,
+                $startAt,
+                $endAt
+            );
+    }
+
     return [
-        'enabled' => siteConfig($pdo, 'maintenance_enabled', '0') === '1',
+        'enabled' => (bool)$window['active'],
+        'configured_enabled' => $configuredEnabled,
+        'state' => (string)$window['state'],
         'title' => trim(siteConfig($pdo, 'maintenance_title', 'Portal temporariamente em manutenção')) ?: 'Portal temporariamente em manutenção',
         'message' => trim(siteConfig($pdo, 'maintenance_message', 'Estamos realizando melhorias. Tente novamente em alguns instantes.')) ?: 'Estamos realizando melhorias. Tente novamente em alguns instantes.',
-        'expected_end' => trim(siteConfig($pdo, 'maintenance_expected_end', '')),
+        'start_at' => $startAt,
+        'end_at' => $endAt,
+        'expected_end' => $endAt,
         'allow_admins' => siteConfig($pdo, 'maintenance_allow_admins', '1') === '1',
         'allowed_ips' => array_values(array_unique($ips)),
     ];
 }
-
 function shouldBypassMaintenance(PDO $pdo): bool
 {
     if (PHP_SAPI === 'cli') {

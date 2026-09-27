@@ -1,5 +1,15 @@
 # Changelog — Portal IECLB Parobé
 
+## v1.2.0 — Consolidação
+
+- consolida o ciclo v1.1.x em uma base oficial única;
+- transforma serviços antigos opcionais em dependências diretas do Portal;
+- remove wrappers de compatibilidade do bootstrap;
+- adiciona auditoria de release consolidada;
+- adiciona bateria completa de testes e lint recursivo;
+- adiciona gerador de distribuição limpa sem segredos, uploads, cache ou backups;
+- APP_VERSION passa para 1.2.0.
+
 ## v1.1.2 — Correção de notícias agendadas
 
 - impede notícias com status `agendado` de aparecerem na Home modular;

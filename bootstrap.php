@@ -19,17 +19,14 @@ require_once __DIR__ . '/app/Services/CacheService.php';
 require_once __DIR__ . '/app/Services/PerformanceHealthService.php';
 require_once __DIR__ . '/app/Services/AccessibilityAuditService.php';
 require_once __DIR__ . '/app/Services/ProductionReadinessService.php';
+/* PORTAL_CONSOLIDATED_BOOTSTRAP_V120 */
+require_once __DIR__ . '/app/Services/ReleaseAuditService.php';
 require_once __DIR__ . '/app/Services/PortalHealthSnapshotService.php';
 require_once __DIR__ . '/app/Services/CookieConsentService.php';
 require_once __DIR__ . '/app/Services/MaintenanceExpiryService.php';
 require_once __DIR__ . '/app/Services/TrustedEmbedService.php';
-$contentPageCacheServiceFile =
-    __DIR__
-    . '/app/Services/ContentPageCacheService.php';
+require_once __DIR__ . '/app/Services/ContentPageCacheService.php';
 
-if (is_file($contentPageCacheServiceFile)) {
-    require_once $contentPageCacheServiceFile;
-}
 require_once __DIR__ . '/app/Services/MediaService.php';
 require_once __DIR__ . '/app/Services/ImageOptimizationService.php';
 require_once __DIR__ . '/app/Services/MediaIntegrityService.php';
@@ -39,13 +36,8 @@ require_once __DIR__ . '/app/Services/CategoryService.php';
 require_once __DIR__ . '/app/Services/PageHierarchyService.php';
 require_once __DIR__ . '/app/Services/MenuHierarchyService.php';
 require_once __DIR__ . '/app/Services/ContentBlockService.php';
-$autosaveServiceFile =
-    __DIR__
-    . '/app/Services/ContentAutosaveService.php';
+require_once __DIR__ . '/app/Services/ContentAutosaveService.php';
 
-if (is_file($autosaveServiceFile)) {
-    require_once $autosaveServiceFile;
-}
 require_once __DIR__ . '/app/Services/DynamicContentBlockService.php';
 require_once __DIR__ . '/app/Services/ContentPatternService.php';
 require_once __DIR__ . '/app/Services/EditorialBulkService.php';
@@ -56,20 +48,10 @@ require_once __DIR__ . '/app/Services/PermissionAuditService.php';
 require_once __DIR__ . '/app/Services/BackupRestoreTestService.php';
 /* PORTAL_BACKUP_INTEGRITY_V1112 */
 require_once __DIR__ . '/app/Services/BackupIntegrityService.php';
-$adminAdvancedSearchServiceFile =
-    __DIR__
-    . '/app/Services/AdminAdvancedSearchService.php';
+require_once __DIR__ . '/app/Services/AdminAdvancedSearchService.php';
 
-if (is_file($adminAdvancedSearchServiceFile)) {
-    require_once $adminAdvancedSearchServiceFile;
-}
-$adminNotificationServiceFile =
-    __DIR__
-    . '/app/Services/AdminNotificationService.php';
+require_once __DIR__ . '/app/Services/AdminNotificationService.php';
 
-if (is_file($adminNotificationServiceFile)) {
-    require_once $adminNotificationServiceFile;
-}
 require_once __DIR__ . '/app/Services/MailService.php';
 /* PORTAL_MAIL_QUEUE_V1113 */
 require_once __DIR__ . '/app/Services/MailRetryQueueService.php';
@@ -79,13 +61,8 @@ require_once __DIR__ . '/app/Services/TwoFactorService.php';
 require_once __DIR__ . '/app/Services/SessionSecurityService.php';
 /* PORTAL_SECURITY_CENTER_V1111 */
 require_once __DIR__ . '/app/Services/SecurityCenterService.php';
-$userActivityServiceFile =
-    __DIR__
-    . '/app/Services/UserActivityService.php';
+require_once __DIR__ . '/app/Services/UserActivityService.php';
 
-if (is_file($userActivityServiceFile)) {
-    require_once $userActivityServiceFile;
-}
 require_once __DIR__ . '/app/Services/FormNotificationService.php';
 require_once __DIR__ . '/app/Services/EmbeddedFormService.php';
 require_once __DIR__ . '/app/Services/FormReplyService.php';

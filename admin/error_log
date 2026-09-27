@@ -1,0 +1,12 @@
+[27-Sep-2026 17:23:48 America/Sao_Paulo] PHP Warning:  require_once(/home1/ieclbp28/public_html/app/Services/BackupIntegrityService.php): Failed to open stream: No such file or directory in /home1/ieclbp28/public_html/bootstrap.php on line 58
+[27-Sep-2026 17:23:48 America/Sao_Paulo] PHP Fatal error:  Uncaught Error: Failed opening required '/home1/ieclbp28/public_html/app/Services/BackupIntegrityService.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home1/ieclbp28/public_html/bootstrap.php:58
+Stack trace:
+#0 /home1/ieclbp28/public_html/admin/index.php(3): require_once()
+#1 {main}
+  thrown in /home1/ieclbp28/public_html/bootstrap.php on line 58
+[27-Sep-2026 17:37:00 America/Sao_Paulo] PHP Warning:  require_once(/home1/ieclbp28/public_html/app/Services/MailRetryQueueService.php): Failed to open stream: No such file or directory in /home1/ieclbp28/public_html/bootstrap.php on line 75
+[27-Sep-2026 17:37:00 America/Sao_Paulo] PHP Fatal error:  Uncaught Error: Failed opening required '/home1/ieclbp28/public_html/app/Services/MailRetryQueueService.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home1/ieclbp28/public_html/bootstrap.php:75
+Stack trace:
+#0 /home1/ieclbp28/public_html/admin/login.php(3): require_once()
+#1 {main}
+  thrown in /home1/ieclbp28/public_html/bootstrap.php on line 75

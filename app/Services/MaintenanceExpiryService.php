@@ -3,63 +3,105 @@
 declare(strict_types=1);
 
 /**
- * Encerra automaticamente o modo manutenção quando a previsão de retorno
- * configurada já tiver sido atingida.
+ * Controle do período programado do modo manutenção.
+ *
+ * PORTAL_MAINTENANCE_SCHEDULE_V113_R3
  */
 final class MaintenanceExpiryService
 {
+    /**
+     * @return array{active:bool,state:string}
+     */
+    public static function windowState(
+        bool $configuredEnabled,
+        string $startAt,
+        string $endAt,
+        ?DateTimeImmutable $now = null
+    ): array {
+        if (!$configuredEnabled) {
+            return [
+                'active' => false,
+                'state' => 'disabled',
+            ];
+        }
+
+        $timezone = new DateTimeZone(date_default_timezone_get());
+        $now ??= new DateTimeImmutable('now', $timezone);
+
+        $start = self::parseDate($startAt, $timezone);
+        $end = self::parseDate($endAt, $timezone);
+
+        if ($start !== null && $now < $start) {
+            return [
+                'active' => false,
+                'state' => 'scheduled',
+            ];
+        }
+
+        if ($end !== null && $now >= $end) {
+            return [
+                'active' => false,
+                'state' => 'expired',
+            ];
+        }
+
+        return [
+            'active' => true,
+            'state' => 'active',
+        ];
+    }
+
     public static function expireIfDue(PDO $pdo): bool
     {
-        $enabled =
+        $configuredEnabled =
             (string)siteConfig(
                 $pdo,
                 'maintenance_enabled',
                 '0'
             ) === '1';
 
-        $expectedEnd =
+        if (!$configuredEnabled) {
+            return false;
+        }
+
+        $startAt =
             trim(
                 (string)siteConfig(
                     $pdo,
-                    'maintenance_expected_end',
+                    'maintenance_start_at',
                     ''
                 )
             );
 
-        if (
-            !self::isExpired(
-                $enabled,
-                $expectedEnd
-            )
-        ) {
+        $endAt =
+            trim(
+                (string)siteConfig(
+                    $pdo,
+                    'maintenance_end_at',
+                    siteConfig(
+                        $pdo,
+                        'maintenance_expected_end',
+                        ''
+                    )
+                )
+            );
+
+        $state =
+            self::windowState(
+                true,
+                $startAt,
+                $endAt
+            );
+
+        if ($state['state'] !== 'expired') {
             return false;
         }
 
-        /*
-         * PORTAL_MAINTENANCE_AUTO_EXPIRE_V113_R2
-         *
-         * Persiste a desativação para que a área administrativa e todas as
-         * requisições seguintes enxerguem o estado correto.
-         */
         saveSiteConfig(
             $pdo,
             'maintenance_enabled',
             '0',
             'booleano'
-        );
-
-        saveSiteConfig(
-            $pdo,
-            'maintenance_enabled_at',
-            '',
-            'texto'
-        );
-
-        saveSiteConfig(
-            $pdo,
-            'maintenance_expected_end',
-            '',
-            'texto'
         );
 
         saveSiteConfig(
@@ -76,7 +118,7 @@ final class MaintenanceExpiryService
                     'manutencao.expirar',
                     'configuracoes',
                     null,
-                    'Modo manutenção encerrado automaticamente ao atingir a previsão de retorno.',
+                    'Modo manutenção encerrado automaticamente na data final programada.',
                     'info'
                 );
             } catch (Throwable $ignored) {
@@ -86,49 +128,23 @@ final class MaintenanceExpiryService
         return true;
     }
 
-    public static function isExpired(
-        bool $enabled,
-        string $expectedEnd,
-        ?DateTimeImmutable $now = null
-    ): bool {
-        if (!$enabled) {
-            return false;
-        }
+    private static function parseDate(
+        string $value,
+        DateTimeZone $timezone
+    ): ?DateTimeImmutable {
+        $value = trim($value);
 
-        $expectedEnd =
-            trim(
-                $expectedEnd
-            );
-
-        if ($expectedEnd === '') {
-            return false;
+        if ($value === '') {
+            return null;
         }
 
         try {
-            $timezone =
-                new DateTimeZone(
-                    date_default_timezone_get()
-                );
-
-            $deadline =
-                new DateTimeImmutable(
-                    $expectedEnd,
-                    $timezone
-                );
-
-            $now ??=
-                new DateTimeImmutable(
-                    'now',
-                    $timezone
-                );
-
-            return $now >= $deadline;
+            return new DateTimeImmutable(
+                $value,
+                $timezone
+            );
         } catch (Throwable $ignored) {
-            /*
-             * Valor inválido não deve derrubar o Portal. A tela administrativa
-             * continua disponível para correção manual.
-             */
-            return false;
+            return null;
         }
     }
 }

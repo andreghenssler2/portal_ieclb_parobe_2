@@ -1,0 +1,2 @@
+[06-Sep-2026 18:10:52 America/Fortaleza] PHP Warning:  file_get_contents(/home1/ieclbp28/public_html/ieclb-mail/fest.php): Failed to open stream: Permission denied in /home1/ieclbp28/public_html/tests/run.php on line 177
+[06-Sep-2026 18:10:57 America/Fortaleza] PHP Warning:  file_get_contents(/home1/ieclbp28/public_html/ieclb-mail/fest.php): Failed to open stream: Permission denied in /home1/ieclbp28/public_html/tests/run.php on line 496
