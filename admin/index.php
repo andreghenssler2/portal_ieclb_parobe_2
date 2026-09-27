@@ -2,6 +2,8 @@
 
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../app/Services/AdminDashboardService.php';
+/* PORTAL_ADMIN_OPERATIONS_V1110 */
+require_once __DIR__ . '/../app/Services/AdminOperationsDashboardService.php';
 
 Auth::requireLogin();
 
@@ -18,6 +20,20 @@ $profile =
 
 $maintenance =
     maintenanceSettings($pdo);
+
+$adminOperations = [];
+
+try {
+    $adminOperations =
+        (
+            new AdminOperationsDashboardService(
+                $pdo,
+                dirname(__DIR__)
+            )
+        )->build();
+} catch (Throwable $ignored) {
+    $adminOperations = [];
+}
 
 $pendingOverview = [
     'total' => 0,
@@ -282,6 +298,8 @@ require __DIR__ . '/_header.php';
         </div>
     </section>
 <?php endif; ?>
+
+<?php require __DIR__ . '/_dashboard_operations_v110.php'; ?>
 
 <div class="row g-4">
     <?php if (!empty($dashboard['news'])): ?>
