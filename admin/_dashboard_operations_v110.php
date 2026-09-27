@@ -48,7 +48,7 @@ $opsMedia =
 
             <a
                 class="btn btn-sm btn-outline-<?= e($readinessClass) ?>"
-                href="<?= e(url('admin/ferramentas/diagnostico.php')) ?>"
+                href="<?= e(url('admin/ferramentas/saude-central.php')) ?>"
             >
                 <i class="bi bi-heart-pulse me-1"></i>
                 Saúde do Portal:
@@ -197,7 +197,8 @@ $opsMedia =
         <?php endif; ?>
 
         <?php if (!empty($adminOperations['events'])): ?>
-            <div class="col-xl-6">
+            <?php /* PORTAL_DASHBOARD_EVENTS_FULLWIDTH_V120_R6 */ ?>
+            <div class="col-12">
                 <section class="card border-0 shadow-sm h-100">
                     <div class="card-header bg-body py-3 d-flex justify-content-between align-items-center gap-3">
                         <div>

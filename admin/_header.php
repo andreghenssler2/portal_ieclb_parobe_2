@@ -503,11 +503,6 @@ if (
                                 class="<?= $isPath('ferramentas/pre-producao.php') ? 'active' : '' ?>"
                                 href="<?= e(url('admin/ferramentas/pre-producao.php')) ?>"
                             >Pré-produção</a>
-                            <?php /* PORTAL_HEALTH_MENU_V110 */ ?>
-                            <a
-                                class="<?= $isPath('ferramentas/saude-portal.php') ? 'active' : '' ?>"
-                                href="<?= e(url('admin/ferramentas/saude-portal.php')) ?>"
-                            >Saúde do Portal</a>
                         <?php endif; ?>
                         <?php endif; ?>
                         <?php endif; ?>
@@ -523,11 +518,11 @@ if (
                             <a class="<?= $isPath('ferramentas/wordpress.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/wordpress.php')) ?>">Importar WordPress</a>
                         <?php endif; ?>
                         <?php if (Auth::can('saude.visualizar')): ?>
-                                                        <a
-                                class="<?= $isPath('ferramentas/diagnostico.php') ? 'active' : '' ?>"
-                                href="<?= e(url('admin/ferramentas/diagnostico.php')) ?>"
-                            >Central de Diagnóstico</a>
-<a class="<?= $isPath('ferramentas/saude.php') ? 'active' : '' ?>" href="<?= e(url('admin/ferramentas/saude.php')) ?>">Saúde do Portal</a>
+                            <?php /* PORTAL_HEALTH_MENU_UNIFIED_V120_R5 */ ?>
+                            <a
+                                class="<?= $isPath('ferramentas/saude-central.php') ? 'active' : '' ?>"
+                                href="<?= e(url('admin/ferramentas/saude-central.php')) ?>"
+                            >Saúde do Portal</a>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>

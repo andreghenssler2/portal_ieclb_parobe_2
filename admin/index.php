@@ -253,57 +253,14 @@ require __DIR__ . '/_header.php';
     </section>
 <?php endif; ?>
 
-<?php if (!empty($dashboard['summary'])): ?>
-    <section class="mb-4">
-        <div class="mb-3">
-            <h2 class="h5 mb-1">
-                Visão geral
-            </h2>
-
-            <div class="text-secondary small">
-                Indicadores dos módulos liberados para você.
-            </div>
-        </div>
-
-        <div class="row g-3">
-            <?php foreach ($dashboard['summary'] as $card): ?>
-                <div class="col-sm-6 col-lg-4 col-xxl-3">
-                    <a
-                        class="card border-0 shadow-sm h-100 text-decoration-none text-reset"
-                        href="<?= e(url((string)$card['url'])) ?>"
-                    >
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start gap-3">
-                                <div>
-                                    <div class="text-secondary small mb-2">
-                                        <?= e((string)$card['label']) ?>
-                                    </div>
-
-                                    <div class="display-6 fw-semibold lh-1">
-                                        <?= (int)$card['value'] ?>
-                                    </div>
-                                </div>
-
-                                <span
-                                    class="rounded-circle bg-<?= e((string)$card['class']) ?>-subtle text-<?= e((string)$card['class']) ?> d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width:42px;height:42px"
-                                >
-                                    <i class="bi <?= e((string)$card['icon']) ?>"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </section>
-<?php endif; ?>
+<?php /* PORTAL_DASHBOARD_SUMMARY_DEDUP_V120_R6 - Visão geral antiga consolidada na Central operacional */ ?>
 
 <?php require __DIR__ . '/_dashboard_operations_v110.php'; ?>
 
 <div class="row g-4">
     <?php if (!empty($dashboard['news'])): ?>
-        <div class="col-xl-7">
+        <?php /* PORTAL_DASHBOARD_RECENT_FULLWIDTH_V120_R6 */ ?>
+        <div class="col-12">
             <section class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center gap-3">
                     <div>
