@@ -12,6 +12,9 @@ $resolvedTitle = trim((string)($metaTitle ?? '')) ?: $defaultTitle;
 $resolvedDescription = trim((string)($metaDescription ?? '')) ?: $defaultDescription;
 $resolvedKeywords = trim((string)($metaKeywords ?? '')) ?: $defaultKeywords;
 $resolvedCanonical = trim((string)($canonicalUrl ?? '')) ?: currentCanonicalUrl();
+if (class_exists('SeoSharingService')) {
+    $resolvedCanonical = SeoSharingService::absoluteUrl($resolvedCanonical);
+}
 $titleSeparator = trim((string)($siteSettings['seo_title_separator'] ?? '-')) ?: '-';
 $appendSiteName = (string)($siteSettings['seo_append_site_name'] ?? '1') === '1';
 if ($appendSiteName && $resolvedTitle !== $defaultTitle && mb_stripos($resolvedTitle, $defaultTitle) === false) {
@@ -27,6 +30,9 @@ $socialDescription = $hasSpecificMeta ? $resolvedDescription : (trim((string)($s
 $openGraphActive = (string)($siteSettings['seo_open_graph_ativo'] ?? '1') === '1';
 $twitterCardActive = (string)($siteSettings['seo_twitter_card_ativo'] ?? '1') === '1';
 $twitterSite = trim((string)($siteSettings['seo_twitter_site'] ?? ''));
+$resolvedOgType = isset($noticia) && is_array($noticia)
+    ? 'article'
+    : (string)($metaOgType ?? 'website');
 
 $logoMedia = null;
 $faviconMedia = null;
@@ -52,6 +58,31 @@ if ($resolvedImage !== '' && !preg_match('#^https?://#i', $resolvedImage)) {
     $resolvedImage = mediaUrl($resolvedImage);
 }
 
+/* PORTAL_SEO_SOCIAL_AUTO_V1114 */
+if (
+    $resolvedImage === ''
+    && (string)($siteSettings['seo_auto_social_image'] ?? '1') === '1'
+    && class_exists('SeoSharingService')
+) {
+    $resolvedImage =
+        SeoSharingService::socialImageForContent(
+            isset($noticia) && is_array($noticia)
+                ? $noticia
+                : null,
+            isset($evento) && is_array($evento)
+                ? $evento
+                : null,
+            isset($comunidade) && is_array($comunidade)
+                ? $comunidade
+                : null
+        );
+
+    if ($resolvedImage !== '') {
+        $resolvedImageWidth = 1200;
+        $resolvedImageHeight = 630;
+        $resolvedImageType = 'image/png';
+    }
+}
 if ($resolvedImage === '' && $ogMedia) {
     $resolvedImage = mediaUrl((string)$ogMedia['caminho']);
     $resolvedImageAlt = trim((string)($ogMedia['alt_text'] ?? $ogMedia['titulo'] ?? $siteName));
@@ -115,11 +146,16 @@ if (!$menuPrincipal) {
 
     <?php if ($openGraphActive): ?>
     <meta property="og:locale" content="pt_BR">
-    <meta property="og:type" content="<?= e((string)($metaOgType ?? 'website')) ?>">
+    <meta property="og:type" content="<?= e($resolvedOgType) ?>">
     <meta property="og:title" content="<?= e($socialTitle) ?>">
     <meta property="og:description" content="<?= e($socialDescription) ?>">
     <meta property="og:url" content="<?= e($resolvedCanonical) ?>">
     <meta property="og:site_name" content="<?= e($siteName) ?>">
+    <?php if ($resolvedOgType === 'article' && isset($noticia) && is_array($noticia)): ?>
+    <?php if (!empty($noticia['publicado_em'])): ?><meta property="article:published_time" content="<?= e(date(DATE_ATOM, strtotime((string)$noticia['publicado_em']))) ?>"><?php endif; ?>
+    <?php if (!empty($noticia['updated_at'])): ?><meta property="article:modified_time" content="<?= e(date(DATE_ATOM, strtotime((string)$noticia['updated_at']))) ?>"><?php endif; ?>
+    <?php if (!empty($noticia['autor_nome'])): ?><meta property="article:author" content="<?= e((string)$noticia['autor_nome']) ?>"><?php endif; ?>
+    <?php endif; ?>
     <?php if ($resolvedImage !== ''): ?>
     <meta property="og:image" content="<?= e($resolvedImage) ?>">
     <?php if (str_starts_with(strtolower($resolvedImage), 'https://')): ?><meta property="og:image:secure_url" content="<?= e($resolvedImage) ?>"><?php endif; ?>
@@ -153,6 +189,53 @@ if (!$menuPrincipal) {
     <link rel="stylesheet" href="<?= e(url('public/css/mobile-v97.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.97.0'))) ?>">
     <link rel="stylesheet" href="<?= e(url('public/css/accessibility-v98.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.98.0'))) ?>">
     <style>:root{--portal-primary:<?= e($appearancePrimary) ?>;--portal-secondary:<?= e($appearanceSecondary) ?>;--portal-bg:<?= e($appearanceBg) ?>;--portal-text:<?= e($appearanceText) ?>;--portal-footer-bg:<?= e($appearanceFooter) ?>;--portal-footer-text:<?= e($appearanceFooterText) ?>;--portal-container:<?= (int)$appearanceContainer ?>px;--portal-radius:<?= (int)$appearanceRadius ?>px}</style>
+    <?php
+    /*
+     * PORTAL_STRUCTURED_DATA_V1114
+     */
+    $portalStructuredData =
+        is_array($structuredData ?? null)
+            ? array_values($structuredData)
+            : [];
+
+    if (class_exists('SeoSharingService')) {
+        $portalStructuredData =
+            array_merge(
+                $portalStructuredData,
+                SeoSharingService::structuredDataForContent(
+                    isset($noticia) && is_array($noticia)
+                        ? $noticia
+                        : null,
+                    isset($evento) && is_array($evento)
+                        ? $evento
+                        : null,
+                    isset($comunidade) && is_array($comunidade)
+                        ? $comunidade
+                        : null,
+                    isset($profile) && is_array($profile)
+                        ? $profile
+                        : [],
+                    $resolvedCanonical,
+                    $resolvedImage,
+                    $siteName
+                )
+            );
+    }
+    ?>
+
+    <?php foreach ($portalStructuredData as $portalJsonLd): ?>
+        <?php if (is_array($portalJsonLd) && $portalJsonLd): ?>
+    <script type="application/ld+json"><?= json_encode(
+        $portalJsonLd,
+        JSON_UNESCAPED_SLASHES
+        | JSON_UNESCAPED_UNICODE
+        | JSON_HEX_TAG
+        | JSON_HEX_AMP
+        | JSON_HEX_APOS
+        | JSON_HEX_QUOT
+    ) ?></script>
+        <?php endif; ?>
+    <?php endforeach; ?>
     <?php /* PORTAL_GTM_HEAD_R16 */ echo googleTagManagerHead(($themePdo ?? ($pdo ?? Database::connection()))); ?>
 </head>
 <body>

@@ -102,6 +102,8 @@ require_once __DIR__ . '/app/Services/HomeService.php';
 require_once __DIR__ . '/app/Services/DocumentService.php';
 /* PORTAL_COMMUNITY_PROFILE_V119 */
 require_once __DIR__ . '/app/Services/CommunityProfileService.php';
+/* PORTAL_SEO_SHARING_V1114 */
+require_once __DIR__ . '/app/Services/SeoSharingService.php';
 require_once __DIR__ . '/app/Services/LeadershipService.php';
 require_once __DIR__ . '/app/Services/CronHealthService.php';
 require_once __DIR__ . '/app/Services/SchedulerService.php';
@@ -148,6 +150,9 @@ try {
     MaintenanceExpiryService::expireIfDue($bootstrapPdo);
 
     enforceMaintenanceMode($bootstrapPdo);
+
+    /* PORTAL_SEO_REDIRECTS_V1114 */
+    SeoSharingService::maybeRedirectRequest($bootstrapPdo);
 
     // v0.31.0: cache seguro apenas para a Home pública e visitantes anônimos.
     CacheService::bootstrapPublicPageCache($bootstrapPdo);

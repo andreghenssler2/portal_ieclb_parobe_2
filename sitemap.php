@@ -150,6 +150,7 @@ function sitemapMergeImages(array ...$groups): array
     return array_values($out);
 }
 
+/* PORTAL_SITEMAP_V1114 */
 function sitemapCover(?string $path): array
 {
     return $path ? [mediaUrl((string)$path)] : [];
@@ -260,7 +261,7 @@ $groups = [
     ],
     'posts.sitemaps.xml' => [
         'enabled' => ($settings['seo_sitemap_posts'] ?? '1') === '1',
-        'lastmod' => sitemapMaxDate($pdo, "SELECT MAX(COALESCE(updated_at,publicado_em,created_at)) FROM posts WHERE status='publicado' AND (publicado_em IS NULL OR publicado_em<=NOW()) AND seo_noindex=0"),
+        'lastmod' => sitemapMaxDate($pdo, "SELECT MAX(COALESCE(p.updated_at,p.publicado_em,p.created_at)) FROM posts p WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0 AND NOT EXISTS (SELECT 1 FROM post_publicacao_extras ex WHERE ex.post_id=p.id AND ex.publicado_ate IS NOT NULL AND ex.publicado_ate<=NOW())"),
     ],
     'paginas.sitemaps.xml' => [
         'enabled' => ($settings['seo_sitemap_paginas'] ?? '1') === '1',
@@ -367,12 +368,16 @@ try {
     }
 
     if ($requestFile === 'posts.sitemaps.xml') {
-        $sql = "SELECT p.slug,p.titulo,p.conteudo,COALESCE(p.updated_at,p.publicado_em,p.created_at) lm,m.caminho cover_path
+        $sql = "SELECT p.id,p.slug,p.titulo,p.conteudo,COALESCE(p.updated_at,p.publicado_em,p.created_at) lm,m.caminho cover_path
                 FROM posts p LEFT JOIN midias m ON m.id=p.imagem_capa_id
                 WHERE p.status='publicado' AND (p.publicado_em IS NULL OR p.publicado_em<=NOW()) AND p.seo_noindex=0
+                  AND NOT EXISTS (SELECT 1 FROM post_publicacao_extras ex WHERE ex.post_id=p.id AND ex.publicado_ate IS NOT NULL AND ex.publicado_ate<=NOW())
                 ORDER BY p.id DESC";
         foreach ($pdo->query($sql)->fetchAll() as $row) {
             $images = sitemapMergeImages(sitemapCover($row['cover_path'] ?? null), sitemapImagesFromHtml((string)($row['conteudo'] ?? '')));
+            if (!$images && class_exists('SeoSharingService')) {
+                $images[] = SeoSharingService::automaticSocialImageUrl('post', (int)$row['id'], (string)$row['lm']);
+            }
             sitemapEmitUrl(contentUrl('noticia', (string)$row['slug']), sitemapDate((string)$row['lm']), 'weekly', '0.8', $images, $includeImages);
         }
     }
@@ -389,12 +394,15 @@ try {
     }
 
     if ($requestFile === 'eventos.sitemaps.xml') {
-        $sql = "SELECT e.slug,e.titulo,e.descricao,COALESCE(e.updated_at,e.created_at) lm,m.caminho cover_path
+        $sql = "SELECT e.id,e.slug,e.titulo,e.descricao,COALESCE(e.updated_at,e.created_at) lm,m.caminho cover_path
                 FROM eventos e LEFT JOIN midias m ON m.id=e.imagem_capa_id
                 WHERE e.status='publicado' AND e.seo_noindex=0
                 ORDER BY e.data_inicio DESC";
         foreach ($pdo->query($sql)->fetchAll() as $row) {
             $images = sitemapMergeImages(sitemapCover($row['cover_path'] ?? null), sitemapImagesFromHtml((string)($row['descricao'] ?? '')));
+            if (!$images && class_exists('SeoSharingService')) {
+                $images[] = SeoSharingService::automaticSocialImageUrl('evento', (int)$row['id'], (string)$row['lm']);
+            }
             sitemapEmitUrl(contentUrl('evento', (string)$row['slug']), sitemapDate((string)$row['lm']), 'weekly', '0.7', $images, $includeImages);
         }
     }
@@ -416,7 +424,7 @@ try {
 
 
     if ($requestFile === 'comunidades.sitemaps.xml') {
-        $sql = "SELECT c.slug,c.nome,c.conteudo,c.imagem,COALESCE(c.updated_at,c.created_at) lm,m.caminho cover_path
+        $sql = "SELECT c.id,c.slug,c.nome,c.conteudo,c.imagem,COALESCE(c.updated_at,c.created_at) lm,m.caminho cover_path
                 FROM comunidades c LEFT JOIN midias m ON m.id=c.imagem_capa_id
                 WHERE c.ativa=1 AND c.seo_noindex=0
                 ORDER BY c.ordem,c.nome";
@@ -424,6 +432,9 @@ try {
             $cover = $row['cover_path'] ?? null;
             if (!$cover && !empty($row['imagem'])) $cover = (string)$row['imagem'];
             $images = sitemapMergeImages(sitemapCover($cover), sitemapImagesFromHtml((string)($row['conteudo'] ?? '')));
+            if (!$images && class_exists('SeoSharingService')) {
+                $images[] = SeoSharingService::automaticSocialImageUrl('comunidade', (int)$row['id'], (string)$row['lm']);
+            }
             sitemapEmitUrl(contentUrl('comunidade', (string)$row['slug']), sitemapDate((string)$row['lm']), 'monthly', '0.7', $images, $includeImages);
         }
     }

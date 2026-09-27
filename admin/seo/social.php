@@ -6,6 +6,7 @@ $defaults = [
     'seo_social_title' => '',
     'seo_social_description' => '',
     'seo_og_image_id' => '',
+    'seo_auto_social_image' => '1',
     'seo_open_graph_ativo' => '1',
     'seo_twitter_card_ativo' => '1',
     'seo_twitter_site' => '',
@@ -24,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $settings['seo_social_title'] = trim((string)($_POST['seo_social_title'] ?? ''));
     $settings['seo_social_description'] = trim((string)($_POST['seo_social_description'] ?? ''));
     $settings['seo_og_image_id'] = trim((string)($_POST['seo_og_image_id'] ?? ''));
+    $settings['seo_auto_social_image'] = isset($_POST['seo_auto_social_image']) ? '1' : '0';
     $settings['seo_twitter_site'] = trim((string)($_POST['seo_twitter_site'] ?? ''));
     $settings['seo_open_graph_ativo'] = isset($_POST['seo_open_graph_ativo']) ? '1' : '0';
     $settings['seo_twitter_card_ativo'] = isset($_POST['seo_twitter_card_ativo']) ? '1' : '0';
@@ -70,6 +72,21 @@ require __DIR__ . '/../_header.php';
 <div class="row g-3">
     <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="seo_open_graph_ativo" id="ogActive" <?= $settings['seo_open_graph_ativo']==='1'?'checked':'' ?>><label class="form-check-label" for="ogActive">Ativar Open Graph (Facebook, WhatsApp e outros)</label></div></div>
     <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="seo_twitter_card_ativo" id="twActive" <?= $settings['seo_twitter_card_ativo']==='1'?'checked':'' ?>><label class="form-check-label" for="twActive">Ativar Twitter/X Card</label></div></div>
+    <?php /* PORTAL_SEO_SOCIAL_ADMIN_V1114 */ ?>
+    <div class="col-md-6">
+        <div class="form-check form-switch">
+            <input
+                class="form-check-input"
+                type="checkbox"
+                name="seo_auto_social_image"
+                id="autoSocialImage"
+                <?= $settings['seo_auto_social_image']==='1'?'checked':'' ?>
+            >
+            <label class="form-check-label" for="autoSocialImage">
+                Gerar imagem social automática quando o conteúdo não possuir capa
+            </label>
+        </div>
+    </div>
     <div class="col-12"><label class="form-label">Título social padrão</label><input class="form-control" name="seo_social_title" maxlength="180" value="<?= e($settings['seo_social_title']) ?>" placeholder="Se vazio, usa o título SEO padrão"></div>
     <div class="col-12"><label class="form-label">Descrição social padrão</label><textarea class="form-control" name="seo_social_description" maxlength="320" rows="3" placeholder="Se vazia, usa a meta description padrão"><?= e($settings['seo_social_description']) ?></textarea></div>
     <div class="col-md-6"><label class="form-label">Usuário no X/Twitter</label><input class="form-control" name="seo_twitter_site" value="<?= e($settings['seo_twitter_site']) ?>" placeholder="@ieclbparobe"></div>
@@ -152,6 +169,33 @@ require __DIR__ . '/../_header.php';
 </div>
 <div class="mt-4"><button class="btn btn-primary px-4">Salvar alterações</button></div>
 </div></form>
+<div class="card border-0 shadow-sm mt-4 mb-4">
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <div class="fw-semibold">SEO v1.1.14</div>
+            <div class="small text-secondary">
+                Imagem social automática 1200 × 630, JSON-LD e redirects para URLs antigas.
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a
+                class="btn btn-outline-primary"
+                href="<?= e(url('admin/seo/redirects.php')) ?>"
+            >
+                Redirects antigos
+            </a>
+
+            <a
+                class="btn btn-outline-secondary"
+                target="_blank"
+                href="<?= e(url('sitemap.xml')) ?>"
+            >
+                Abrir sitemap
+            </a>
+        </div>
+    </div>
+</div>
 <?php require __DIR__ . '/../_editor_media_picker.php'; ?>
 
 <script src="<?= e(url('public/js/editor-media-picker.js?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '0.89.0'))) ?>"></script>
