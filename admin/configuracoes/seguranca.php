@@ -175,6 +175,14 @@ require __DIR__ . '/../_header.php';
     </div>
 
     <div class="d-flex flex-wrap gap-2">
+        <?php /* PORTAL_SECURITY_CENTER_LINK_V1111 */ ?>
+        <a
+            class="btn btn-primary"
+            href="<?= e(url('admin/seguranca.php')) ?>"
+        >
+            <i class="bi bi-shield-check me-1"></i>
+            Central de Segurança
+        </a>
         <a
             class="btn btn-outline-primary"
             href="<?= e(url('admin/minha-conta-2fa.php')) ?>"

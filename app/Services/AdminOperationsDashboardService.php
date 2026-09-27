@@ -700,6 +700,18 @@ final class AdminOperationsDashboardService
                     'admin/midias/index.php',
                 'icon' =>
                     'bi-images',
+            ],            /*
+             * PORTAL_SECURITY_QUICK_LINK_V1111
+             */
+            [
+                'permission' =>
+                    'seguranca.gerenciar',
+                'label' =>
+                    'Segurança',
+                'url' =>
+                    'admin/seguranca.php',
+                'icon' =>
+                    'bi-shield-lock',
             ],
             [
                 'permission' =>
@@ -777,7 +789,7 @@ final class AdminOperationsDashboardService
             array_slice(
                 $links,
                 0,
-                8
+                9
             );
     }
 

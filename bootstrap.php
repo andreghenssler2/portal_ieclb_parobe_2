@@ -72,6 +72,8 @@ require_once __DIR__ . '/app/Services/MailService.php';
 require_once __DIR__ . '/app/Services/MailDnsHealthService.php';
 require_once __DIR__ . '/app/Services/TwoFactorService.php';
 require_once __DIR__ . '/app/Services/SessionSecurityService.php';
+/* PORTAL_SECURITY_CENTER_V1111 */
+require_once __DIR__ . '/app/Services/SecurityCenterService.php';
 $userActivityServiceFile =
     __DIR__
     . '/app/Services/UserActivityService.php';
