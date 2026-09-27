@@ -89,6 +89,14 @@ final class SchedulerService
                 'enabled' => true,
                 'priority' => 75,
             ],
+            /* PORTAL_MAIL_QUEUE_TASK_V1113 */
+            'reenviar_emails_falhos' => [
+                'name' => 'Reenviar e-mails que falharam',
+                'description' => 'Processa a fila de e-mails que falharam por erro de transporte.',
+                'interval' => 15,
+                'enabled' => true,
+                'priority' => 80,
+            ],
 ];
     }
 
@@ -335,6 +343,8 @@ final class SchedulerService
             /* PORTAL_HEALTH_SNAPSHOT_HANDLER_V111 */
             'registrar_saude_portal' => self::automaticPortalHealthSnapshot($pdo),                        /* PORTAL_BACKUP_INTEGRITY_HANDLER_V1112 */
             'backup_integridade_automatico' => self::automaticBackupIntegrity($pdo),
+                        /* PORTAL_MAIL_QUEUE_HANDLER_V1113 */
+            'reenviar_emails_falhos' => self::retryFailedEmails($pdo),
             default => throw new RuntimeException('Handler da tarefa não encontrado: ' . $slug),
         };
     }
@@ -731,6 +741,53 @@ private static function automaticDatabaseBackup(PDO $pdo): array
 
         return
             $service->runScheduled();
+    }
+    /*
+     * PORTAL_MAIL_QUEUE_METHOD_V1113
+     *
+     * @return array{status:string,message:string}
+     */
+    private static function retryFailedEmails(PDO $pdo): array
+    {
+        $root = dirname(__DIR__, 2);
+        $serviceFile = $root . '/app/Services/MailRetryQueueService.php';
+
+        if (
+            !class_exists('MailRetryQueueService')
+            && is_file($serviceFile)
+        ) {
+            require_once $serviceFile;
+        }
+
+        if (!class_exists('MailRetryQueueService')) {
+            return [
+                'status' => 'ignorado',
+                'message' => 'MailRetryQueueService não está disponível.',
+            ];
+        }
+
+        if (siteConfig($pdo, 'mail_queue_enabled', '1') !== '1') {
+            return [
+                'status' => 'ignorado',
+                'message' => 'Fila automática de e-mail está desativada.',
+            ];
+        }
+
+        $result = MailRetryQueueService::processDue($pdo, 30);
+
+        return [
+            'status' => 'ok',
+            'message' =>
+                'Fila de e-mail: '
+                . (int)$result['processed']
+                . ' processado(s); '
+                . (int)$result['sent']
+                . ' enviado(s); '
+                . (int)$result['pending']
+                . ' reagendado(s); '
+                . (int)$result['failed']
+                . ' encerrado(s) com falha.',
+        ];
     }
 private static function publishScheduledContent(PDO $pdo): array
     {

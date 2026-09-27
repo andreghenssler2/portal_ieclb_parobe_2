@@ -9,24 +9,37 @@ if (PHP_SAPI !== 'cli') {
     exit("Execute pelo terminal.\n");
 }
 
-$root =
-    dirname(__DIR__);
+$root = dirname(__DIR__);
+require_once $root . DIRECTORY_SEPARATOR . 'bootstrap.php';
 
-require_once
-    $root
-    . DIRECTORY_SEPARATOR
-    . 'bootstrap.php';
+/* PORTAL_BACKUP_TEST_LOAD_V1112_R1 */
+foreach (
+    [
+        'BackupService' => 'app/Services/BackupService.php',
+        'FullBackupService' => 'app/Services/FullBackupService.php',
+        'AutomaticBackupService' => 'app/Services/AutomaticBackupService.php',
+    ]
+    as $class => $relative
+) {
+    if (class_exists($class)) {
+        continue;
+    }
 
-echo "Portal IECLB Parobé - teste Backup v1.1.12\n";
+    $file =
+        $root
+        . DIRECTORY_SEPARATOR
+        . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+
+    if (is_file($file)) {
+        require_once $file;
+    }
+}
+
+echo "Portal IECLB Parobé - teste Backup v1.1.12 R1\n";
 echo str_repeat('=', 88) . "\n";
 
 $errors = 0;
-
-$version =
-    defined('APP_VERSION')
-        ? (string)APP_VERSION
-        : '0.0.0';
-
+$version = defined('APP_VERSION') ? (string)APP_VERSION : '0.0.0';
 echo "[INFO] APP_VERSION: {$version}\n";
 
 if ($version !== '1.1.12') {
@@ -45,57 +58,30 @@ foreach (
     ]
     as $class
 ) {
-    $ok =
-        class_exists(
-            $class
-        );
-
-    echo '['
-        . ($ok ? 'OK' : 'FALHA')
-        . "] classe {$class}\n";
-
+    $ok = class_exists($class);
+    echo '[' . ($ok ? 'OK' : 'FALHA') . "] classe {$class}\n";
     if (!$ok) {
         $errors++;
     }
 }
 
 try {
-    $pdo =
-        Database::connection();
+    $pdo = Database::connection();
+    SchedulerService::ensureRegistry($pdo);
 
-    SchedulerService::ensureRegistry(
-        $pdo
+    $stmt = $pdo->prepare(
+        "SELECT slug,ativa,intervalo_minutos
+         FROM tarefas_agendadas
+         WHERE slug IN (
+            'backup_banco_automatico',
+            'backup_completo_automatico',
+            'backup_integridade_automatico'
+         )
+         ORDER BY slug"
     );
-
-    $stmt =
-        $pdo->prepare(
-            "SELECT
-                slug,
-                ativa,
-                intervalo_minutos
-             FROM tarefas_agendadas
-             WHERE slug IN (
-                'backup_banco_automatico',
-                'backup_completo_automatico',
-                'backup_integridade_automatico'
-             )
-             ORDER BY slug"
-        );
-
     $stmt->execute();
-
-    $rows =
-        $stmt->fetchAll(
-            PDO::FETCH_ASSOC
-        )
-        ?: [];
-
-    $found =
-        array_column(
-            $rows,
-            null,
-            'slug'
-        );
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    $found = array_column($rows, null, 'slug');
 
     foreach (
         [
@@ -105,60 +91,31 @@ try {
         ]
         as $slug
     ) {
-        $ok =
-            isset(
-                $found[$slug]
-            );
-
-        echo '['
-            . ($ok ? 'OK' : 'FALHA')
-            . "] tarefa {$slug}\n";
-
+        $ok = isset($found[$slug]);
+        echo '[' . ($ok ? 'OK' : 'FALHA') . "] tarefa {$slug}\n";
         if (!$ok) {
             $errors++;
         }
     }
 
-    $service =
-        new BackupIntegrityService(
-            $pdo,
-            $root
-        );
-
-    $status =
-        $service->status();
+    $service = new BackupIntegrityService($pdo, $root);
+    $status = $service->status();
 
     echo '[INFO] Limite de antiguidade: '
-        . (int)(
-            $status['stale_hours']
-            ?? 0
-        )
+        . (int)($status['stale_hours'] ?? 0)
         . "h\n";
 
-    echo '[INFO] Backup banco encontrado: '
-        . (
-            !empty(
-                $status['database']['exists']
-            )
-                ? 'sim'
-                : 'não'
-        )
-        . "\n";
+    $dbExists = !empty($status['database']['exists']);
+    echo '[INFO] Backup banco encontrado: ' . ($dbExists ? 'sim' : 'não') . "\n";
+    if (!$dbExists) {
+        echo "[AVISO] Ainda não há backup do banco; isso não invalida a instalação.\n";
+    }
 
     echo '[INFO] Backup completo encontrado: '
-        . (
-            !empty(
-                $status['full']['exists']
-            )
-                ? 'sim'
-                : 'não'
-        )
+        . (!empty($status['full']['exists']) ? 'sim' : 'não')
         . "\n";
 } catch (Throwable $e) {
-    echo '[FALHA] Banco/serviços: '
-        . $e->getMessage()
-        . "\n";
-
+    echo '[FALHA] Banco/serviços: ' . $e->getMessage() . "\n";
     $errors++;
 }
 
@@ -191,40 +148,17 @@ $checks = [
     ],
 ];
 
-foreach (
-    $checks
-    as $relative => $markers
-) {
+foreach ($checks as $relative => $markers) {
     $file =
         $root
         . DIRECTORY_SEPARATOR
-        . str_replace(
-            '/',
-            DIRECTORY_SEPARATOR,
-            $relative
-        );
+        . str_replace('/', DIRECTORY_SEPARATOR, $relative);
 
-    $content =
-        is_file($file)
-            ? (
-                file_get_contents(
-                    $file
-                )
-                ?: ''
-            )
-            : '';
+    $content = is_file($file) ? (file_get_contents($file) ?: '') : '';
 
     foreach ($markers as $marker) {
-        $ok =
-            str_contains(
-                $content,
-                $marker
-            );
-
-        echo '['
-            . ($ok ? 'OK' : 'FALHA')
-            . "] {$relative}: {$marker}\n";
-
+        $ok = str_contains($content, $marker);
+        echo '[' . ($ok ? 'OK' : 'FALHA') . "] {$relative}: {$marker}\n";
         if (!$ok) {
             $errors++;
         }
@@ -238,5 +172,5 @@ if ($errors > 0) {
     exit(1);
 }
 
-echo "RESULTADO: Backup v1.1.12 aprovado.\n";
+echo "RESULTADO: Backup v1.1.12 R1 aprovado.\n";
 exit(0);

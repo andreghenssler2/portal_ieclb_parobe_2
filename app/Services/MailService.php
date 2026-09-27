@@ -174,10 +174,46 @@ final class MailService
                 self::$lastError = self::friendlyMailerError($mail->ErrorInfo ?: 'O servidor não aceitou o envio da mensagem.');
             }
             self::logAttempt($pdo, $to, $subject, $transport, $ok, $ok ? null : self::$lastError, $messageId);
+            /* PORTAL_MAIL_QUEUE_FAILURE_V1113 */
+            if (
+                !$ok
+                && (!array_key_exists('queue_on_failure', $options) || (bool)$options['queue_on_failure'])
+                && class_exists('MailRetryQueueService')
+            ) {
+                try {
+                    MailRetryQueueService::enqueue(
+                        $pdo,
+                        $to,
+                        $subject,
+                        $html,
+                        $options,
+                        self::$lastError,
+                        $messageId
+                    );
+                } catch (Throwable $ignored) {
+                }
+            }
             return $ok;
         } catch (Throwable $e) {
             self::$lastError = self::friendlyMailerError($e->getMessage());
             self::logAttempt($pdo, $to, $subject, $transport, false, self::$lastError, $messageId);
+            if (
+                (!array_key_exists('queue_on_failure', $options) || (bool)$options['queue_on_failure'])
+                && class_exists('MailRetryQueueService')
+            ) {
+                try {
+                    MailRetryQueueService::enqueue(
+                        $pdo,
+                        $to,
+                        $subject,
+                        $html,
+                        $options,
+                        self::$lastError,
+                        $messageId
+                    );
+                } catch (Throwable $ignored) {
+                }
+            }
             return false;
         }
     }

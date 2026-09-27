@@ -191,6 +191,31 @@ require __DIR__ . '/../_header.php';
         <a class="btn btn-outline-primary" href="<?= e(url('admin/configuracoes/email-dns.php')) ?>">Verificar DNS de e-mail</a>
     </div>
 </div>
+<?php /* PORTAL_MAIL_HEALTH_LINK_V1113 */ ?>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <div class="fw-semibold">Operação e confiabilidade</div>
+            <div class="small text-secondary">Teste avançado, histórico de falhas e reenvio automático.</div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a
+                class="btn btn-outline-primary"
+                href="<?= e(url('admin/configuracoes/email-saude.php')) ?>"
+            >
+                Saúde do E-mail
+            </a>
+
+            <a
+                class="btn btn-outline-primary"
+                href="<?= e(url('admin/configuracoes/email-fila.php')) ?>"
+            >
+                Fila de falhas
+            </a>
+        </div>
+    </div>
+</div>
 <form method="post" class="card border-0 shadow-sm mb-4" autocomplete="off">
     <div class="card-body p-4">
         <?= Csrf::field() ?>

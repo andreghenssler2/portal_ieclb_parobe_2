@@ -71,7 +71,10 @@ if (is_file($adminNotificationServiceFile)) {
     require_once $adminNotificationServiceFile;
 }
 require_once __DIR__ . '/app/Services/MailService.php';
+/* PORTAL_MAIL_QUEUE_V1113 */
+require_once __DIR__ . '/app/Services/MailRetryQueueService.php';
 require_once __DIR__ . '/app/Services/MailDnsHealthService.php';
+require_once __DIR__ . '/app/Services/MailOperationsService.php';
 require_once __DIR__ . '/app/Services/TwoFactorService.php';
 require_once __DIR__ . '/app/Services/SessionSecurityService.php';
 /* PORTAL_SECURITY_CENTER_V1111 */
