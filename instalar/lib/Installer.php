@@ -408,7 +408,7 @@ final class PortalInstaller
         }
 
         $config = "<?php\n\ndeclare(strict_types=1);\n\n";
-        $config .= "define('APP_NAME', 'Portal IECLB Parobé');\n";
+        $config .= "define('APP_NAME', 'Portal Noticias Paroquial');\n";
         $config .= "define('APP_VERSION', " . var_export(self::TARGET_VERSION, true) . ");\n";
         $config .= "define('APP_ENV', 'production');\n";
         $config .= "define('APP_DEBUG', false);\n";

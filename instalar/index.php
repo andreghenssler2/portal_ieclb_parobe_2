@@ -291,7 +291,7 @@ $completedData = is_array($_SESSION['install_completed'] ?? null)
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Instalação · Portal IECLB Parobé</title>
+<title>Instalação · Portal Noticias Paroquial</title>
 <style>
 :root{
     --blue:#174f87;--blue2:#0f3c6a;--green:#198754;--red:#b42318;--orange:#b54708;
@@ -353,7 +353,7 @@ small.help{color:var(--muted);display:block;margin-top:6px}
     <div class="brand">
         <div class="logo">IE</div>
         <div>
-            <h1>Portal IECLB Parobé</h1>
+            <h1>Portal Noticias Paroquial</h1>
             <p>Assistente de instalação · v<?=h(PortalInstaller::TARGET_VERSION)?></p>
         </div>
     </div>
@@ -476,7 +476,7 @@ small.help{color:var(--muted);display:block;margin-top:6px}
                     </div>
                     <div class="field">
                         <label for="site_description">Descrição</label>
-                        <textarea id="site_description" name="site_description" rows="3"><?=h((string)($site['description'] ?? 'Portal de notícias e informações da IECLB Parobé'))?></textarea>
+                        <textarea id="site_description" name="site_description" rows="3"><?=h((string)($site['description'] ?? 'Portal de notícias e informações Paroquial'))?></textarea>
                     </div>
                     <div class="grid">
                         <div class="field">
@@ -587,7 +587,7 @@ small.help{color:var(--muted);display:block;margin-top:6px}
                     ? $completedData['site']
                     : [
                         'base_url' => (string)($lockData['base_url'] ?? $detectedBaseUrl),
-                        'name' => (string)($lockData['site_name'] ?? 'Portal IECLB Parobé'),
+                        'name' => (string)($lockData['site_name'] ?? 'Portal Noticias Paroquial'),
                     ];
                 $finalBase = rtrim((string)($finalSite['base_url'] ?? $detectedBaseUrl), '/');
                 ?>
@@ -607,7 +607,7 @@ small.help{color:var(--muted);display:block;margin-top:6px}
 
                 <div class="summary" style="margin-top:22px">
                     <div class="summary-row"><span>Versão</span><strong><?=h((string)($lockData['version'] ?? PortalInstaller::TARGET_VERSION))?></strong></div>
-                    <div class="summary-row"><span>Site</span><strong><?=h((string)($finalSite['name'] ?? 'Portal IECLB Parobé'))?></strong></div>
+                    <div class="summary-row"><span>Site</span><strong><?=h((string)($finalSite['name'] ?? 'Portal Noticias Paroquial'))?></strong></div>
                     <div class="summary-row"><span>URL</span><strong><?=h($finalBase)?></strong></div>
                     <?php if(!empty($completedData['admin_email'])):?><div class="summary-row"><span>Administrador</span><strong><?=h((string)$completedData['admin_email'])?></strong></div><?php endif;?>
                 </div>
